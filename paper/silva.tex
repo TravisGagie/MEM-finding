@@ -1,0 +1,279 @@
+% silva.tex -- owner: KATKA task.
+% Extracted by the merging task (2026-10-30) from tax_cpm.tex: Section 2 (matches and credit schemes,
+% Table 1, Figure 1), the SILVA part of Section 3, "Which credit: SILVA" in Section 4, Section 6 (tag
+% arrays) and SILVA in Section 7.  Key map and renamings applied (see NOTES.md).  Lines marked %MERGE
+% were added or rewritten by the merging task; please check them.
+\section{Short reads, many taxa: answering each MEM}
+\label{sec:silva}
+
+%MERGE
+Our second experiment classifies short 16S rRNA reads to genera.
+Long MEMs are still the right matches, but many of them occur in several genera, so the bottleneck is answering each MEM: deciding how it splits its credit among the taxa containing it, and computing what that split needs.
+
+\subsection{Matches and credit}
+\label{sec:schemes}
+\label{sec:background}
+
+\subparagraph*{Matches.}
+%MERGE: the definition of MEMs moved to the preliminaries
+Let $T$ be the reference text, consisting of the reference sequences and their reverse complements, grouped by taxon as in Section~\ref{sec:index}, and let $P$ be a read.
+We use the MEMs of $P$ (Section~\ref{sec:prelim}), as Tagger does.
+Cliffy instead cuts the read into consecutive \emph{Ziv--Merhav phrases} (ZMPs) by searching backward from the end of the read for as long as the match occurs, and starting a new search at the character where the previous one failed.
+This mirrors the cross parsing of Ziv and Merhav~\cite{ZM93}, later used as Relative Lempel--Ziv (RLZ) parsing~\cite{KPZ10}.
+Each ZMP $P[j..f)$ is the longest suffix of $P[0..f)$ that occurs in $T$, so it cannot be extended to the left and is a prefix of the MEM starting at $j$; ZMPs are generally shorter than the MEMs that contain them.
+A $k$-mer is a substring of fixed length $k$, and Kraken~2 uses minimizers: from each $k$-mer it keeps the substring of a fixed shorter length with the smallest hash.
+Short matches occur in many taxa, so they say little about where a read came from; with Boyer--Moore--Li we use only the MEMs of length at least a threshold $L$.
+
+\subparagraph*{Credit.}
+Let $M$ be a match, let $c_g$ be the number of occurrences of $M$ in the reference sequences of taxon $g$, counting both strands, let $D = \{g : c_g > 0\}$ and let $C = \sum_g c_g$.
+A \emph{credit scheme} splits the credit $|M|$ into weights $w_v \geq 0$ for the nodes $v$ of the taxonomy, with $\sum_v w_v = |M|$; all schemes except Kraken~2's give weight only to the leaves, which are the taxa we classify to.
+The read is assigned to the taxon with the largest total weight over all its matches, except with Kraken~2's scheme.
+Table~\ref{tab:schemes} lists the schemes we consider, with the $d$ taxa numbered $1, \ldots, d$ in the left-to-right order of the leaves of the taxonomy, so that the taxa under any node form an interval, and with $g_\ell = \min D$ and $g_r = \max D$.
+\begin{description}
+\item[LCA.] Kraken~2 gives $|M|$ to the LCA of $D$, and assigns the read to the leaf whose root-to-leaf path collects the most weight.
+Cliffy's LCA query instead splits the credit evenly over the \emph{range} of taxa from $g_\ell$ to $g_r$, giving $|M|/(g_r - g_\ell + 1)$ to each, including taxa that do not contain $M$; all of them lie under the LCA.
+\item[One label per position.] For each position of the read, SPUMONI~2 computes the length of the longest match starting there (the matching statistics, approximated), with the r-index~\cite{GagieNavarroPrezza2020}, and for classification into several classes the class of one occurrence of that match, read from document-array samples at the boundaries of BWT runs~\cite{AhmedEtAl2023}; the read goes to the class with the most positions.
+\item[One label per MEM.] Tagger gives $|M|$ to the taxon of the last occurrence of $M$ in BWT order, which it maintains during the search much as the r-index maintains its \emph{toehold}, the position of one occurrence of the current match.
+That occurrence is more likely to lie in a taxon with many occurrences, so we model this scheme as giving $|M|$ to one taxon $g$ drawn with probability $c_g / C$, although Tagger's label is deterministic.
+\item[Sample.] Cliffy's approximate document listing gives $|M|/|D'|$ to each taxon of a subset $D' \subseteq D$.
+At the boundaries of BWT runs, Cliffy stores a \emph{document array profile}~\cite{ARBL23}, which gives for each taxon the length of the longest common prefix of the suffix at that position with any suffix of that taxon, and keeps only its \emph{cliffs}: the entries larger than every entry to their left, or to their right, in the order of the taxa.
+These are left-to-right and right-to-left maxima, or records (B.~Langmead, personal communication), and a random permutation of $d$ distinct values has on average $H_d = \ln d + O(1)$ left-to-right maxima~\cite{Ren62}, so there are often about logarithmically many cliffs.
+$D'$ consists of the taxa whose cliffs are at least $|M|$, so it is determined by the order of the taxa, not drawn at random or weighted by counts, and it always contains $g_\ell$ and $g_r$.
+\item[Even.] Each taxon in $D$ gets $|M|/|D|$, as Cliffy's approximate document listing would if it listed $D$ exactly.
+\item[Proportional.] Each taxon in $D$ gets $|M| \cdot c_g / C$.
+\end{description}
+
+\begin{table}[t]
+\centering
+\caption{Matches and credit schemes. $M$ is a match, $c_g$ is the number of its occurrences in taxon $g$, $C = \sum_g c_g$, $D$ is the set of taxa containing it, and $g_\ell$ and $g_r$ are the leftmost and rightmost of them in the order of the leaves of the taxonomy.}
+\label{tab:schemes}
+\resizebox{\textwidth}{!}{\begin{tabular}{llll}
+\toprule
+classifier & matches & credit scheme & weights \\
+\midrule
+Kraken~2~\cite{WLL19} & $k$-mers (minimizers) & LCA & $|M|$ to $\mathrm{LCA}(D)$ \\
+SPUMONI~2~\cite{AhmedEtAl2023} & longest match at each position & one label per position & -- \\
+Tagger~\cite{DAF+25} & MEMs of length $\geq L$ & one label per MEM & $|M|$ to one $g \in D$ \\
+Cliffy~\cite{ABL25}, LCA query & ZMPs & range & $|M| / (g_r - g_\ell + 1)$ to each of $g_\ell..g_r$ \\
+Cliffy~\cite{ABL25}, approx.\ listing & ZMPs & sample & $|M|/|D'|$ to each of $D' \subseteq D$ \\
+-- & MEMs of length $\geq L$ & even & $|M|/|D|$ to each of $D$ \\
+ours & MEMs of length $\geq L$ & proportional & $|M| \cdot c_g / C$ to each $g \in D$ \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+\subparagraph*{Why proportional credit.}
+If one label is drawn uniformly at random from the occurrences of $M$, taxon $g$ gets it with probability $c_g / C$, so proportional credit gives each taxon the expected weight of such a draw.
+Summed over the matches of a read, proportional credit keeps the expected total weight of each taxon under one label per match, without the variance of the draws, which matters most for reads with few long matches.
+Similarly, even credit gives each taxon the expected weight of a label drawn uniformly from $D$.
+A sample like Cliffy's is not a uniform subset of $D$, since it always contains $g_\ell$ and $g_r$, so it only roughly approximates even credit.
+For a single match, $|M| \cdot c_g / C$ is also $|M|$ times the posterior probability that a string containing $M$ was drawn from taxon $g$, if it was drawn from a uniformly random position of the database, ignoring the boundaries of the sequences and overlapping occurrences of $M$.
+The implicit prior is thus proportional to the amount of sequence of each taxon in the database, and summing over the matches of a read is a heuristic; it does not give the posterior given all the matches.
+This prior can help when the taxa that are abundant in the sample also have much sequence in the database, and hurt when they do not; then normalising each count by the size of its taxon, or correcting towards a known or estimated composition of the sample, may be better.
+
+Even credit needs the set $D$ itself, not just $g_\ell$ and $g_r$, and proportional credit needs the counts, which matter when a match occurs much more often in some taxa than in others (Figure~\ref{fig:lca}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[level distance=6mm, every node/.style={inner sep=1.2pt},
+  level 1/.style={sibling distance=40mm}, level 2/.style={sibling distance=20mm}, level 3/.style={sibling distance=10mm}]
+\node[circle,fill] {}
+  child {node[circle,fill] {}
+    child {node[circle,fill] {} child {node (g1) {$g_1$}} child {node[draw,thick] (g2) {$g_2$}}}
+    child {node[circle,fill] (lca) {} child {node (g3) {$g_3$}} child {node (g4) {$g_4$}}}}
+  child {node[circle,fill] {}
+    child {node[circle,fill] {} child {node[draw,thick] (g5) {$g_5$}} child {node (g6) {$g_6$}}}
+    child {node[circle,fill] {} child {node (g7) {$g_7$}} child {node (g8) {$g_8$}}}};
+\node[below=1mm of g2, font=\scriptsize, align=center] {$c = 9$\\even $|M|/2$\\prop.\ $0.9|M|$};
+\node[below=1mm of g5, font=\scriptsize, align=center] {$c = 1$\\even $|M|/2$\\prop.\ $0.1|M|$};
+\draw[decorate, decoration={brace, mirror, amplitude=4pt}] ([yshift=-15mm]g2.west) -- ([yshift=-15mm]g5.east) node[midway, below=4pt, font=\scriptsize] {range (Cliffy's LCA query): $|M|/4$ to each of $g_2, \ldots, g_5$};
+\end{tikzpicture}
+\caption{A match $M$ that occurs 9 times in taxon $g_2$ and once in $g_5$ (boxed).
+The LCA of $g_2$ and $g_5$ is the root, so with Kraken~2's scheme the match gives weight only to the root.
+Cliffy's LCA query splits the credit $|M|$ evenly over the taxa from the leftmost to the rightmost one containing the match, including $g_3$ and $g_4$, which do not contain it.
+Even credit splits the credit between $g_2$ and $g_5$, and proportional credit gives $g_2$ nine times as much weight as $g_5$.}
+\label{fig:lca}
+\end{figure}
+
+Other r-index classifiers, such as SPUMONI~2 and col-BWT~\cite{BrownEtAl2026}, mostly decide whether a read comes from a target pangenome; Cobas, M\"akinen and Rossi~\cite{CMR20} report document frequencies from a grammar-compressed document array; and Omri et al.~\cite{OSM+26} classify genomic sequences by compression.
+
+\subsection{Data}
+\label{sec:silva-data}
+
+Many studies of bacterial and archaeal communities sequence only copies of the 16S ribosomal RNA gene, which is about 1\,500 bases long and present in every bacterium and archaeon.
+An experiment copies one or two of its nine \emph{hypervariable regions}, V1 to V9, which differ between taxa, and sequences each copy from both ends, giving two reads, or \emph{mates}; the reads are short and the regions similar across related taxa, so 16S reads are usually classified only to genera~\cite{JSL+19}.
+We reproduced Cliffy's SILVA experiment~\cite{ABL25} as closely as we could from its authors' scripts.
+We used SILVA 138.1 SSU NR99~\cite{QPY+13}, grouped its sequences by genus with their script, and kept 9\,118 genera containing 402\,378 sequences, in the left-to-right order of the leaves of the SILVA taxonomy.
+The database is much smaller than the Zymo reference, but the genera are very unevenly represented, and sequences of different genera often share long substrings, which makes classification with exact matches hard and the database very repetitive.
+With both strands, $T$ has $n = 1.17$ billion characters and its BWT has $r = 68.3$ million runs.
+We simulated 10 million pairs of 250-base reads for each of the regions V1--V2, V3--V4, V4 and V4--V5 with the authors' simulator, MicrobeMixer, using the sequencing-error simulator ART~\cite{HLMM12} and the genus abundances of an aquatic community, and measured accuracy on every 50th pair.
+Each mate is classified separately and the weights of the two mates are added; a read pair is \emph{strictly} correct if its true genus alone has the largest weight; ties and unclassified pairs count as wrong.
+Cliffy's scoring also counts ties for the largest weight as correct, and pairs without any match unless their genus is ``uncultured'' (a placeholder for sequences not assigned to a known genus).
+We report the strict accuracy unless stated otherwise, as the mean over the four regions.
+%MERGE: machine sentences split from KATKA's "Machines" paragraph
+We used a seven-year-old desktop (Intel Core i7-8700, 6 cores, 16\,GB of RAM) for SILVA.
+Cliffy's indexes do not fit on it, so the second author built and ran them, and our default configuration, on our reads on a server with 256\,GB of RAM (Appendix~\ref{app:details}).
+
+\subsection{Which credit}
+\label{sec:accuracy}
+
+On SILVA, a long MEM of one of our reads occurs in 3.8 genera on average (Section~\ref{sec:tags}), so the split matters.
+Long MEMs are still the right matches.
+With the range scheme, all the MEMs of each read were 0.4 to 1.3 points more accurate than ZMPs, both on the sequences and on their \emph{minimizer digests}~\cite{RHH+04,AhmedEtAl2023} (Appendix~\ref{app:matches}).
+With even credit, strict accuracy is 90.56\% with $L = 15$ and 90.28\% with $L = 30$, drops by about 2 points at $L = 50$ and collapses for larger $L$, as the 250-base reads start to have no MEM that long (Table~\ref{tab:L}); with proportional credit it is 93.74\% with $L = 15$, 93.77\% with $L = 30$ and 93.48\% with $L = 40$.
+Discarding short MEMs also makes classification much faster (Section~\ref{sec:tradeoffs}).
+
+Table~\ref{tab:credit} compares the credit schemes on the same long MEMs, so that only the split differs.
+For one label per MEM and for the sample, we simulate the schemes of Tagger and Cliffy from the counts: one label drawn with probability $c_g/C$, and the left-to-right and right-to-left maxima of random values given to the taxa in $D$, which form a sample containing $g_\ell$ and $g_r$ with $2 H_{|D|} - 1$ taxa on average.
+The tools themselves give answers that are not random, and use different matches, so this comparison measures the credit schemes, not the tools.
+One label drawn by counts is 1.6 points less accurate than proportional credit, which has the same expected weights, so this is roughly what the variance of one label per MEM costs; it is still 1.9 points more accurate than even credit.
+The sample is about as accurate as even credit, and both are 3.3 to 3.5 points less accurate than proportional credit.
+Proportional credit also almost eliminates ties, and it is 1 point more accurate than normalising each count by twice the number of sequences in the genus, which gives each genus credit in proportion to the fraction of its sequences containing the match.
+Even credit is more accurate than the range: with $L = 15$, by 3.5 points without digestion and 3.6 points with it (Appendix~\ref{app:matches}).
+On the same machine and reads, Kraken~2 and Tagger are less accurate than long MEMs with proportional credit (Table~\ref{tab:others}).
+
+\begin{table}[t]
+\centering
+\caption{Accuracy of the credit schemes on the same long MEMs ($L = 30$): species level on the Zymo reads (whole homopolymer-compressed reads, low-complexity MEMs ignored), and genus level on SILVA (strict, mean over the four regions, 200\,000 read pairs per region). One label per MEM and the sample simulate Tagger's and Cliffy's schemes from the counts.}
+\label{tab:credit}
+\small
+\begin{tabular}{lcc}
+\toprule
+credit scheme & Zymo (species) & SILVA (genus) \\
+\midrule
+range (Cliffy's LCA query) & 99.54\% & 87.0\% \\
+one label per MEM (drawn by counts) & 99.44\% & 92.18\% \\
+sample (simulated cliffs) & 99.58\% & 90.47\% \\
+even & 99.54\% & 90.28\% \\
+proportional, normalised by taxon size & 99.42\% & 92.76\% \\
+proportional & 99.43\% & 93.77\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subparagraph*{Composition.}
+MicrobeMixer chooses the genus of each simulated read according to the abundances of an aquatic community, and only then a sequence of that genus, so our SILVA reads are not drawn in proportion to how well each genus is represented in SILVA.
+Proportional credit is still the most accurate, and its 1-point advantage over normalised credit suggests that its prior is an advantage here, presumably because genera that are abundant in the community are also well represented in SILVA.
+
+\subsection{Counting with complete tag arrays}
+\label{sec:tags}
+\label{sec:freq}
+
+\subparagraph*{Tag arrays.}
+A tag array associates a tag with each row of the BWT~\cite{BalazEtAl2024,EskandarEtAl2025,ESP26,OO26}, and Wheeler maps~\cite{BalazEtAl2024} bound its space in terms of the number of runs in the tags.
+Here the tag array is $\mathcal{T}$, in which the tag of a row is the taxon of the corresponding suffix of $T$.
+If a document is the concatenation of the sequences of one taxon, then this tag array is the document array of Muthukrishnan~\cite{Mut02}; other tag arrays, such as those of Eskandar et al.~\cite{EskandarEtAl2025,ESP26}, whose tags are vertices of a pangenome graph, and of Olbrich and Ohlebusch~\cite{OO26}, whose tags are columns of a multiple alignment, are not document arrays.
+Tagger~\cite{DAF+25} stores only the tags at the ends of BWT runs, from which the tags of other rows cannot in general be recovered.
+To stress the difference, we call a tag array \emph{complete} if it gives the tag of every row, whether it stores them run-length compressed or recovers them from a sample.
+We run-length compress the tag array, storing the run starts with Elias--Fano coding and the tag of each run, and let $\rho$ be the number of runs in $\mathcal{T}$, which we call \emph{tag runs}.
+
+\subparagraph*{Contextual locality.}
+The runs are few because the BWT sorts the suffixes of $T$, and with them the characters preceding them, by their \emph{contexts}, the strings that follow those characters.
+A property has \emph{contextual locality}~\cite{Gagie2024tags,BalazEtAl2024,OO26} if suffixes that share long prefixes tend to have the same value of the property, their tag.
+Olbrich and Ohlebusch~\cite{OO26} note that the tag array of such a property is then likely to be run-length compressible, for the same reason that the BWT of a repetitive text is; Lemma~\ref{lem:runs} makes this precise for tags that are constant on segments of $T$, such as taxa.
+Let a \emph{tag boundary} be a row $p > 0$ with $\mathcal{T}[p - 1] \neq \mathcal{T}[p]$, so that $\rho$ is one more than the number of tag boundaries, and let $\mathrm{lcp}(p)$ be the length of the longest common prefix of the suffixes starting at $\mathrm{SA}[p - 1]$ and $\mathrm{SA}[p]$.
+A tag boundary $p$ with a large $\mathrm{lcp}(p)$ is a violation of contextual locality: two suffixes with a long common prefix but different tags.
+
+\begin{lemma}
+\label{lem:runs}
+Let $T[0..n)$, over an alphabet of size $\sigma$ and ending with a unique terminator, be cut into $d$ segments, each with a tag, let $\mathcal{T}[i]$ be the tag of the segment containing $\mathrm{SA}[i]$, and let $r$ be the number of runs in the BWT of $T$.
+For any $\lambda \geq 0$, if $B_\lambda$ is the number of tag boundaries $p$ with $\mathrm{lcp}(p) > \lambda$, then $\rho \leq (r + \sigma + 2d)(\lambda + 1) + B_\lambda + 1$.
+\end{lemma}
+
+\begin{proof}
+Call a row $p > 0$ a \emph{break} if $\Psi(p) \neq \Psi(p - 1) + 1$.
+$\Psi$ maps the rows whose suffixes start with a character $c$, in order, to the rows of the occurrences of $c$ in the BWT, so a break is either a row where the first character of the suffixes changes, or one where two consecutive occurrences of $c$ in the BWT are in different runs; there are at most $r + \sigma$ breaks.
+Let $p_0$ be a tag boundary with $\mathrm{lcp}(p_0) \leq \lambda$, and while $p_h$ is a tag boundary and not a break, let $p_{h + 1} = \Psi(p_h)$.
+Then $\Psi(p_h - 1) = p_{h + 1} - 1$, so the suffixes at rows $p_{h + 1} - 1$ and $p_{h + 1}$ are those at rows $p_h - 1$ and $p_h$ without their first character, which is the same, and $\mathrm{lcp}(p_{h + 1}) = \mathrm{lcp}(p_h) - 1$.
+Let $h$ be the largest index such that $p_h$ is a tag boundary.
+A row with lcp $0$ is a break, so $h \leq \mathrm{lcp}(p_0) \leq \lambda$.
+Either $p_h$ is a break, or $p_{h + 1}$ is not a tag boundary although $p_h$ is, which means that one of $\mathrm{SA}[p_h - 1]$ and $\mathrm{SA}[p_h]$ is the last position of a segment; each of the $d$ last positions is $\mathrm{SA}[q]$ for one $q$, and then $p_h \in \{q, q + 1\}$, so there are at most $2d$ such rows $p_h$.
+Since $p_0 = \mathrm{LF}^h(p_h)$, the pair $(p_h, h)$ determines $p_0$, so there are at most $(r + \sigma + 2d)(\lambda + 1)$ tag boundaries with lcp at most $\lambda$.
+Adding the $B_\lambda$ other tag boundaries, and 1 because $\rho$ is one more than the number of tag boundaries, gives the bound.
+\end{proof}
+
+$B_\lambda$ itself measures violations of contextual locality, so the content of the lemma is that all the other tag boundaries number $O((r + \sigma + d)(\lambda + 1))$, independently of $n$: $\rho$ is small when $r$ and $d$ are small and, for some modest $\lambda$, few suffixes adjacent in suffix-array order share a prefix longer than $\lambda$ but have different tags.
+In a reference with many genomes per species, we expect nearly every suffix to share a longer prefix with the corresponding suffixes of other genomes of its species than with any suffix of another species, so that species have contextual locality.
+On the homopolymer-compressed Zymo reference, $\rho = 449$ million, only 1.33 times $r$.
+If each genome is instead its own tag, the tag array is a document array, and corresponding suffixes of the genomes of a species, which are adjacent in suffix-array order and share long prefixes, have different tags, so $B_\lambda$ is large for any modest $\lambda$ and Lemma~\ref{lem:runs} gives no useful bound; in practice that tag array had so many runs that its construction ran out of memory.
+On SILVA, $\rho = 359$ million, 5.3 times $r$, presumably because 16S sequences of different genera often share long substrings.
+
+\subparagraph*{Counting.}
+To count the occurrences of a MEM in each taxon, we scan the runs that overlap the MEM's BWT interval and add up the lengths of the runs of each taxon, clipped to the interval.
+After a predecessor search for the first run, this takes time proportional to the number of runs in the interval rather than to the number of occurrences, and never locates an occurrence.
+When counts are not needed, Muthukrishnan's document listing algorithm~\cite{Mut02} lists the taxa in an interval in time proportional to their number, with a range-minimum structure~\cite{FH11} over the array that points from each run to the previous run with the same tag; as in Sadakane's method~\cite{Sad07} and as Olbrich and Ohlebusch do~\cite{OO26}, that array need not be stored.
+The usual alternative is to locate every occurrence with an r-index~\cite{GagieNavarroPrezza2020}, from the toehold with $\phi$ queries, and map each to its taxon with a predecessor search over the taxon starts.
+This also gives exact counts, but costs a $\phi$ query, with its cache misses, for every occurrence.
+On SILVA the difference is large, because genera contain many near-identical sequences: a MEM of at least 30 bases in one of our reads occurs 70 times on average, in 3.8 genera; half of these MEMs occur only once and 5\% occur more than 200 times, yet their BWT intervals contain few tag runs.
+With the same RLCSA and lookup table, classifying with an r-index takes 125\,$\mu$s per read, against 66\,$\mu$s with the tag array, for an index only 0.06\,GB smaller.
+
+\subparagraph*{Construction.}
+The tag array needs no suffix array.
+One pass of LF over the text gives the suffix-array samples at the BWT run boundaries, as for the r-index, and from them $\phi$ streams the suffix array from the last row to the first; each entry is mapped to its taxon with a predecessor search, and consecutive positions with the same taxon are merged into runs, which are written to disk as they are completed.
+The memory needed is therefore proportional to $r + d$, plus $\rho$ for reading the runs back.
+On SILVA this takes about 6 minutes and 3.3\,GB on the desktop, and on the homopolymer-compressed Zymo reference 7.2 hours and 8.9\,GB on the laptop (with a version of the construction that kept all the runs in memory).
+
+\subparagraph*{Grammar-compressing the runs.}
+\label{sec:grammar}
+Our default configuration uses only run-length compression, but the sequence of the runs' tags can be compressed further.
+LF maps the rows $i..j$ of a BWT run to consecutive rows $\mathrm{LF}(i)..\mathrm{LF}(j)$, whose suffixes are one character longer, so the tags at rows $\mathrm{LF}(i)..\mathrm{LF}(j)$ are a copy of those at rows $i..j$, except at the rows $\mathrm{LF}(q)$ such that $\mathrm{SA}[q]$ is the first position of a segment.
+The copying holds because the tag of a suffix does not change when the suffix is extended by one character within its segment.
+It fails for tag arrays in general: the BWT itself is a tag array, in which each suffix is tagged with the character preceding it, and it is run-length compressible, but LF does not map its runs to copies of themselves.
+
+\begin{observation}
+\label{obs:grammar}
+Let $T[0..n)$, ending with a unique terminator, be cut into $d$ segments, each with a tag, let $\mathcal{T}[i]$ be the tag of the segment containing $\mathrm{SA}[i]$, and let $r$ be the number of runs in the BWT of $T$.
+Then $\mathcal{T}$ has a bidirectional macro scheme with at most $r + 2d$ phrases, and therefore a string attractor of size at most $r + 2d$ and a grammar of size $O((r + d) \log (n / (r + d)))$.
+\end{observation}
+
+\begin{proof}
+Unless $\mathrm{SA}[q]$ is the first position of a segment, $\mathcal{T}[\mathrm{LF}(q)] = \mathcal{T}[q]$, since $\mathrm{SA}[\mathrm{LF}(q)] = \mathrm{SA}[q] - 1$ is in the same segment (taking positions cyclically, so that $\mathrm{SA}[\mathrm{LF}(q)] = n - 1$ when $\mathrm{SA}[q] = 0$).
+Let $\mathcal{T}[p]$ copy $\mathcal{T}[\Psi(p)]$ for every such row $p = \mathrm{LF}(q)$, and store $\mathcal{T}[p]$ explicitly at the other $d$ rows, at which $\mathrm{SA}[p]$ is the last position of a segment.
+LF maps the rows of each BWT run to consecutive rows, in order, so cutting $[0..n)$ at the ends of the images of the $r$ runs and around the $d$ explicit rows gives at most $r + 2d$ phrases, each a copy of a substring of $\mathcal{T}$ or a single explicit symbol.
+Following copies from any row $p$ moves to $\Psi(p)$, whose suffix starts one position later in $T$, so it reaches an explicit row before leaving the segment containing $\mathrm{SA}[p]$, and the scheme is a valid bidirectional macro scheme.
+The size $\gamma$ of the smallest string attractor of a string is at most the number of phrases of any bidirectional macro scheme for it, and the string has a grammar of size $O(\gamma \log (n/\gamma))$~\cite{KP18}; since $x \log (n/x)$ is increasing for $x \leq n/e$ and $\gamma \leq r + 2d$, the bound follows.
+\end{proof}
+
+We say that a property constant on few segments of $T$, such as documents, genomes and taxa, has \emph{textual locality}.
+Textual locality gives the macro scheme of Observation~\ref{obs:grammar}, with $O(r + d)$ phrases, while contextual locality gives few runs, by Lemma~\ref{lem:runs}.
+The characters themselves have contextual locality but not textual locality, so the BWT is run-length compressible, but LF does not map its runs to copies of themselves.
+Taxa have both, so their tag array has few runs and also a macro scheme with at most $r + 2d$ phrases, which is smaller when $\rho \gg r$; genomes, with many per species, have mainly textual locality.
+Cobas and Navarro~\cite{CN19} used the copies in the proof of Observation~\ref{obs:grammar} to grammar-compress the document array, as with the differential suffix array~\cite{GN07,GagieNavarroPrezza2020}.
+We instead run-length compress first, and grammar-compress only the sequence of the runs' taxa (their lengths come from the run starts), which has length $\rho$ rather than $n$; Observation~\ref{obs:grammar} does not directly bound this grammar.
+On SILVA we build the grammar with RePair~\cite{LM00}, in the second author's implementation distributed with BigRePair~\cite{GIM+19}, which avoids deep rules, and encode it as Gagie et al.\ do~\cite{GIM+20}; to count, we find the first run of the interval by a predecessor search on the final sequence, descend through the grammar, and decode the following runs.
+The runs' taxa then take 0.23\,GB instead of 0.63\,GB, and the index 1.04\,GB instead of 1.44\,GB, while classification takes 75.0\,$\mu$s per read instead of 66.0, with identical answers.
+
+\subsection{Time and space}
+\label{sec:tradeoffs}
+
+Our default index for SILVA takes 1.44\,GB: 0.57\,GB for the RLCSA, 0.86\,GB for the tag array (19.1 bits per run) and 18\,MB for the lookup table.
+Building it from the sequences takes minutes on the desktop: 347\,s for the BWT, with prefix-free parsing~\cite{BoucherEtAl2019} (peak memory 5.1\,GB), a few seconds for the RLCSA and the lookup table, and about 6 minutes for the tag array.
+With one thread it classifies a read in 66\,$\mu$s, excluding loading the index and reading the reads, and with 12 threads on 6 cores, sharing one copy of the index, 144\,800 reads per second.
+Table~\ref{tab:others} compares our index with Kraken~2 and Tagger, run on the same machine and reads, and with Cliffy's LCA query, run on our reads on the server.
+There our accuracy for the default configuration is on fewer reads and its time is measured differently, so these numbers differ from those above (Appendix~\ref{app:details}).
+On the server, our default index takes 1.42\,GB and 146\,$\mu$s per read and reaches 93.70\%, while Cliffy's undigested index takes 19.58\,GB and its LCA query takes 637\,$\mu$s and reaches 85.75\% (86.45\% with Cliffy's scoring); building it took almost three days, over 2\,TB of temporary disk space and more than 200\,GB of memory.
+On Cliffy's digested index, which takes 7.63\,GB, it reaches 84.15\% (85.53\%), against 92.08\% on the server for our digested index, which takes 0.49\,GB.
+With Cliffy's scoring, both are up to 4 points below what Cliffy's paper reports for its LCA query on its own reads (87.5 to 90.2\% and 86.3 to 88.5\%), as are the rz-index's results with Cliffy's matches on our reads (Appendix~\ref{sec:rz}), so our reads seem slightly harder; we have not run Cliffy's approximate listing, for which its paper reports 93.3 to 94.8\% and 92.8 to 93.4\%.
+Appendix~\ref{app:listing} gives the time--space--accuracy Pareto surface, with indexes down to 0.41\,GB, or 0.16\,GB over minimizer digests.
+
+\begin{table}[t]
+\centering
+\caption{SILVA: index size, time per read with one thread and reads per second with 12 threads (both excluding loading), and genus-level accuracy (mean over the four regions).
+The first, fourth and fifth rows are on the desktop, with accuracy on 5\,000 read pairs per region and time as total time over the number of reads (200\,000 pairs per region); our other rows use the mean of per-read timings (66.0\,$\mu$s for the default) and 200\,000 pairs.
+Tagger's three accuracies count pairs with disagreeing mates as wrong, random or correct.
+Cliffy's numbers are on our reads (5\,000 pairs per region) and on the server, where our default configuration takes 146\,$\mu$s per read with the same accuracy as here.}
+\label{tab:others}
+\resizebox{\textwidth}{!}{\begin{tabular}{lrrrc}
+\toprule
+classifier & space (GB) & time ($\mu$s) & reads/s, 12 threads & accuracy \\
+\midrule
+long MEMs, proportional credit & 1.44 & 53.1 & 144\,800 & 93.70\% \\
+\quad grammar-compressed runs & 1.04 & 75.0 & & \\
+\quad minimizer digests & 0.49 & 39.3 & & 92.48\% \\
+Kraken~2 & 0.15 & 14.3 & 366\,900 & 79.26\% \\
+Tagger & 0.82 & 70.4 & 82\,600 & 81.69 / 87.24 / 92.78\% \\
+Cliffy, undigested, LCA query & 19.58 & 636.6 & & 85.75\% \\
+Cliffy, digested, LCA query & 7.63 & 419.1 & & 84.15\% \\
+\bottomrule
+\end{tabular}}
+\end{table}

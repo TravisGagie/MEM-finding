@@ -1,0 +1,8 @@
+build/
+final/
+continuation/
+results/
+data/
+selftest/
+chr19/
+*.log

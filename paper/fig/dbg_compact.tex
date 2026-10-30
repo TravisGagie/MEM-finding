@@ -1,0 +1,31 @@
+\begin{tikzpicture}[x=0.62cm,y=0.62cm,>={Stealth[length=1.4mm]},v/.style={draw,rounded corners=1pt,inner sep=1.5pt,font=\scriptsize\ttfamily}]
+\node[v] (GTA) at (0,0) {GTA};
+\node[v] (TAAA) at (1.5,0.8) {TAAA};
+\node[v] (TAGT) at (1.5,-0.8) {TAGT};
+\node[v,fill=gray!20] (AACGCTC) at (5,1.6) {AACGCTC};
+\node[v] (TCGT) at (5.6,0.45) {TCGT};
+\node[v] (GGAA) at (4.4,0.45) {GGAA};
+\node[v,fill=gray!8] (GTC) at (3,-1.6) {GTC};
+\node[v,fill=gray!8] (TCAAG) at (5,-1.6) {TCAAG};
+\node[v,fill=gray!8] (TCCAG) at (5,-2.6) {TCCAG};
+\node[v,fill=gray!8] (AGG) at (7,-1.6) {AGG};
+\node[v] (TCTG) at (8.5,0.8) {TCTG};
+\node[v] (GGTG) at (8.5,-0.8) {GGTG};
+\node[v] (TGG) at (10,0) {TGG};
+\draw[->] (GTA) -- (TAAA);
+\draw[->] (GTA) -- (TAGT);
+\draw[->] (TAAA) -- (AACGCTC);
+\draw[->] (TAGT) -- (GTC);
+\draw[->] (AACGCTC) -- (TCGT);
+\draw[->] (AACGCTC) -- (TCTG);
+\draw[->] (TCGT) -- (GTC);
+\draw[->] (GTC) -- node[font=\tiny,fill=white,inner sep=0.5pt] {10} (TCAAG);
+\draw[->] (GTC) -- node[font=\tiny,fill=white,inner sep=0.5pt] {2} (TCCAG);
+\draw[->] (TCAAG) -- node[font=\tiny,fill=white,inner sep=0.5pt] {10} (AGG);
+\draw[->] (TCCAG) -- node[font=\tiny,fill=white,inner sep=0.5pt] {2} (AGG);
+\draw[->] (AGG) -- (GGAA);
+\draw[->] (AGG) -- (GGTG);
+\draw[->] (GGAA) -- (AACGCTC);
+\draw[->] (TCTG) -- (TGG);
+\draw[->] (GGTG) -- (TGG);
+\end{tikzpicture}

@@ -1,0 +1,54 @@
+% app-katka-digests.tex -- owner: KATKA task.
+% Extracted by the merging task (2026-10-30) from tax_cpm.tex, Appendix B.  Key map and renamings applied (see NOTES.md).
+\section{Minimizer digests}
+\label{sec:digest}
+
+Like Cliffy, our implementation can index minimizer digests~\cite{RHH+04,AhmedEtAl2023} of the sequences instead of the sequences themselves.
+We digest each sequence and its reverse complement as Cliffy does, with $k = 4$ and $w = 11$, but symmetrically, so that the digest of a reverse complement is the reverse complement of the digest: we use a canonical hash, select all minimizers tied for the minimum in a window, and collapse equal consecutive minimizers.
+Since 4 byte values are reserved for terminators and the separator, the 256 distinct minimizers fit in a byte only once the 6 rarest share one.
+The digested text has 262 million symbols and its BWT has 35.9 million runs.
+To classify a read, we digest it the same way, keeping only the minimizers selected by windows lying entirely inside each match.
+A window inside a match in the read is also a window inside the corresponding occurrence in the database, and selects the same minimizers there, so the digest of every DNA match occurs in the digested database.
+
+We keep the threshold $L$ in bases rather than in digest symbols, since consecutive digest symbols can stand for very different numbers of bases.
+A window of the read covers $w$ bases and selects a range of digest symbols, and these ranges move monotonically to the right as the window does.
+A DNA match $P[x..x + L)$ contains exactly the windows starting in $[x, x + L - w]$, so its digest is the range of symbols they select.
+BML searches backward for this range of symbols.
+If the search fails at symbol $j$, then every window start $x' \geq x$ whose first window selects a symbol no later than $j$ also fails, and we jump to the first window that selects only symbols after $j$.
+If the search succeeds, we extend the match to a maximal digested MEM and compute its span in bases: the longest DNA interval of the read all of whose windows select symbols within the MEM.
+This finds every digested MEM whose span is at least $L$ bases and is not contained in another digested MEM's span.
+We checked this against brute-force enumeration on 3\,000 reads for every $L$ from 15 to 50.
+The weight of a MEM is the length of its span.
+
+\begin{table}[t]
+\centering
+\caption{Classification over minimizer digests ($k = 4$, $w = 11$), with tags and proportional credit, against the default configuration and Cliffy's digested index.
+All use a lookup table ($k_t = 2$ digest symbols with digestion, $k_t = 10$ bases without).}
+\label{tab:digest}
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+ & space & \multicolumn{5}{c}{time per read ($\mu$s)} \\
+\cmidrule{3-7}
+configuration & (GB) & $L = 15$ & $L = 20$ & $L = 30$ & $L = 40$ & $L = 50$ \\
+\midrule
+\multicolumn{2}{l}{\emph{digests}: strict accuracy} & 92.47\% & 92.47\% & 92.48\% & 92.36\% & 92.05\% \\
+\quad explicit RLCSA, tags & 0.49 & 56.6 & 54.7 & 39.3 & 32.7 & 25.2 \\
+\quad Elias--Fano RLCSA, tags & 0.27 & 79.0 & 76.6 & 61.9 & 50.7 & 44.4 \\
+\quad RLBWT, tags sampled with $s_r = 4$ & 0.19 & & & 220.1 & 147.0 & 114.3 \\
+\addlinespace
+\multicolumn{2}{l}{\emph{undigested}: strict accuracy} & 93.74\% & 93.77\% & 93.77\% & 93.48\% & \\
+\quad default configuration & 1.44 & 88.6 & 79.2 & 66.0 & 57.3 & \\
+\midrule
+\multicolumn{7}{l}{\emph{Cliffy}~\cite{ABL25}, digests, approximate listing: 92.8--93.4\% with their scoring and reads} \\
+\quad & 4.27 & \multicolumn{5}{c}{77--82} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:digest} shows that digestion makes the index three times smaller (0.49 instead of 1.44\,GB with an explicit RLCSA and tags) and classification 1.7 times faster with $L = 30$ (39.3 instead of 66.0\,$\mu$s), at a cost of 1.3 points of accuracy (92.48 instead of 93.77\%).
+The digested tag array has 81.0 million runs, 2.26 times as many as the BWT, and takes 0.19\,GB (18.3 bits per run), plus 0.03\,GB for the range-minimum structure if listing.
+Over digests, an Elias--Fano RLCSA is only 1.6 times slower than an explicit one, so it gives a 0.27\,GB index that is still faster than the undigested default, and sampled tag arrays on the RLBWT give the smallest indexes we built, 0.16 to 0.19\,GB.
+Once the sequences are digested, building the index with an explicit RLCSA takes about 4 minutes: 132\,s for the BWT (peak memory 2.0\,GB), a few seconds for the RLCSA, and 79\,s for the tags.
+Cliffy's paper reports a digested index of 4.27\,GB, almost 9 times larger, about twice as slow per read on its server, with 92.8 to 93.4\% accuracy for approximate listing with its own scoring on its own reads.
+On our reads, Cliffy's LCA query on its digested index reaches 84.15\% strict accuracy (Table~\ref{tab:others}), against 92.08\% for our digested index on the same reads and server (92.48\% on 200\,000 read pairs per region).

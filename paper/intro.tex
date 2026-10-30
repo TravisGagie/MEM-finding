@@ -1,0 +1,66 @@
+% intro.tex -- owner: merging task.  Section owners: request changes through NOTES.md.
+\section{Introduction}
+\label{sec:intro}
+
+Maximal exact matches (MEMs) are the seeds of many aligners and pangenome tools~\cite{RossiEtAl2022,VarkiEtAl2025}, and long MEMs are good evidence of where a read comes from: in work in preparation, Cheng et al.~\cite{CALL} report that MEMs give better taxonomic classifications than any single choice of $k$ for $k$-mers.
+Indexes built on the run-length compressed Burrows--Wheeler transform (RLBWT) of a highly repetitive text, such as a pangenome or a database of related genomes, take space proportional to the number $r$ of runs in the BWT~\cite{Navarro2021} and find MEMs with backward search~\cite{FerraginaManzini2000}, with forward--backward search~\cite{Li2012} and with Boyer--Moore--Li (BML)~\cite{Gagie2024BML,Li2024}, which skips the parts of a pattern that cannot be in a long MEM.
+
+This paper describes three experiments in finding MEMs with such indexes.
+They use the same algorithms, but each has a different bottleneck, and a different structure removes it.
+In short, the bottlenecks are \emph{finding} the right matches, \emph{answering} each match, and \emph{crossing} long matches.
+We take the experiments in that order, which is also the order of the experiments they build on: those of SPUMONI~2~\cite{AhmedEtAl2023}, of Cliffy~\cite{ABL25}, and of our own work on chromosome~19.
+
+\begin{enumerate}
+\item \textbf{Finding the right matches: long noisy reads} (Section~\ref{sec:zymo}).
+We classify SPUMONI~2's Oxford Nanopore reads of the ZymoBIOMICS mock community to species, against whole reference genomes.
+Almost every long MEM occurs in one species, so how a match splits its credit among taxa hardly matters, but errors break long matches and low-complexity regions imitate them.
+We homopolymer-compress the reference and the reads, ignore MEMs of low complexity, and use each read's longest MEMs, found in one pass of BML with an adaptive threshold.
+With KeBaB's pseudo-MEMs~\cite{BrownEtAl2025KeBaB} searched from longest to shortest, stopping at the first one shorter than the current longest MEM, this finds exactly the same longest MEMs on all 581\,802 reads as without the filter, in 118 instead of 211 seconds, and assigns 99.6\% of the reads to their species.
+
+\item \textbf{Answering each match: short reads, many taxa} (Section~\ref{sec:silva}).
+We classify short 16S rRNA reads to genera with SILVA~\cite{QPY+13}, as in the Cliffy experiments.
+Here many long MEMs occur in several genera, so the split matters: credit proportional to the number of occurrences of the MEM in each taxon is the most accurate scheme we tried, by 1.0 to 6.8 percentage points.
+We count the occurrences in each taxon with a complete, run-length compressed tag array~\cite{BalazEtAl2024}, in time proportional to the number of tag runs in the MEM's BWT interval and without locating any occurrence.
+We bound the number of tag runs in terms of the BWT runs and of how often suffixes with long common prefixes have different tags (Lemma~\ref{lem:runs}), and show that tags constant on $d$ segments of the text have a macro scheme with at most $r + 2d$ phrases (Observation~\ref{obs:grammar}).
+On SILVA our index takes 1.44\,GB and classifies a read in 66\,$\mu$s with one thread at 93.8\% accuracy; on the same reads and server, it is 14 times smaller than Cliffy's undigested index, and 4.4 times faster and 8 points more accurate than Cliffy's LCA query on it.
+It is also more accurate than Kraken~2~\cite{WLL19} and Tagger~\cite{DAF+25} on the same machine and reads.
+
+\item \textbf{Crossing long matches: chromosome~19} (Section~\ref{sec:chr19}).
+We find the MEMs of two whole chromosome~19 haplotypes with respect to collections of 16 to 64 individuals of the Human Pangenome Reference Consortium~\cite{HPRC2025,LucasEtAl2026}.
+Almost every character lies in a long MEM, but backward search still takes one step per character.
+Shortcuts that cross unitigs, almost-unitigs and windows of a reference in one step make the search about 8 times faster, but two-level indexing with a parse at closed syncmers~\cite{Edgar2021} is faster still, and encoding the parse in blocks of phrases that are each the lexicographically smallest successor of the phrase before them lets the search cross a whole block in one step.
+Two-level indexing with block jumps finds the MEMs 28 to 49 times faster than plain backward search on the RLBWT and 3.8 to 6.1 times faster than the shortcuts; it is also 6.4 to 11.2 times faster than single-threaded ropebwt3~\cite{Li2024}, for about 3 times its space, and 2.8 to 5.0 times faster than Movi~2~\cite{ZakeriEtAl2026}, in at most about the same space.
+\end{enumerate}
+
+\subparagraph*{What is new.}
+%MERGE: added at Travis's request (2026-10-30) to separate new results from easy combinations
+Much of this paper combines existing techniques and structures, so we say which parts are new.
+\begin{itemize}
+\item In Section~\ref{sec:zymo}, every ingredient exists or is a small change to something that does: homopolymer compression is standard for nanopore reads, the low-complexity filter is a simple count of distinct 3-mers, BML with adaptive $L$ is from the appendix of the full version of the BML paper~\cite{Gag24arxiv} (with $L$ one more than the longest MEM found so far, so without ties), and Brown et al.~\cite{BrownEtAl2025KeBaB} already suggested searching KeBaB's pseudo-MEMs in decreasing order of length.
+What is new is the combination, and the experiment showing that it finds exactly the same longest MEMs as without the filter, faster, and classifies almost every read correctly.
+\item In Section~\ref{sec:silva}, the credit schemes are simple, and complete run-length compressed tag arrays~\cite{BalazEtAl2024}, counting by scanning tag runs, document listing~\cite{Mut02} and building the tag array from the BWT with $\phi$, as for the r-index~\cite{GagieNavarroPrezza2020}, are easy combinations of existing structures.
+What is new is the comparison of the credit schemes on the same matches, which shows that proportional credit is the most accurate; the bound on tag runs (Lemma~\ref{lem:runs}); Observation~\ref{obs:grammar}, which states as a macro-scheme bound the copies that Cobas and Navarro~\cite{CN19} used to grammar-compress document arrays; and the resulting index's comparison with Cliffy, Kraken~2 and Tagger.
+\item In Section~\ref{sec:chr19}, two-level indexing~\cite{BrownEtAlRLCSA,HongEtAl2024,DengEtAl2022}, closed syncmers~\cite{Edgar2021} and mapping between the levels with a bitvector over the rows~\cite{BrownEtAlRLCSA} exist, Eddie Ferro noticed that the parse at closed syncmers is prefix-free~\cite{FerroPC}, and the bound on character-level steps (Theorem~\ref{thm:twolevel}) follows easily from Edgar's window guarantee.
+What is new are the shortcuts (Section~\ref{sec:shortcuts}), generalised to windows of a reference, and, mainly, the blocks of continuations (Section~\ref{sec:blocks}): the proofs that ordering blocks by their first phrase keeps all three indexes in the same order (Lemma~\ref{lem:blockorder}) and that block steps can always be backed up to exact intervals (Lemmas~\ref{lem:blockstart} and~\ref{lem:backup}), and that any choice of continuation works with one bit per block symbol (Section~\ref{sec:blocks}); and the experiments.
+\end{itemize}
+
+The three structures do not transfer.
+On the Zymo reads the credit scheme hardly matters; on SILVA, KeBaB's filter saves little, because almost every $k$-mer of a short, accurate read occurs in the database; and on whole chromosomes, where KeBaB's fragments keep more than 99.5\% of the characters, its filter saves nothing (Section~\ref{sec:chr19-exp}).
+The indexes differ too: Sections~\ref{sec:zymo} and~\ref{sec:silva} use an RLCSA of both strands, and Section~\ref{sec:chr19} uses RLBWTs of the collection and of its reverse, with RLCSA-like indexes of the parse (Section~\ref{sec:prelim}).
+
+\subparagraph*{Related work.}
+Kraken~\cite{WS14} made taxonomic classification fast by precomputing, for every $k$-mer in the database, the lowest common ancestor (LCA) in the taxonomy of the genomes containing it, and Kraken~2~\cite{WLL19} made the database much smaller by storing minimizers in a compact probabilistic hash table.
+As databases grow, however, fewer $k$-mers are specific to a single taxon, so $k$-mer LCAs move up the taxonomy and species-level resolution is lost, both for whole genomes~\cite{NKPT18} and for the 16S rRNA gene and other marker genes~\cite{CLMP24}.
+More and more classifiers are built with machine learning instead, from models of $k$-mer frequencies~\cite{RSE+20,MAHK22,LKYH23,AHL+24} to deep networks trained on reads~\cite{LBL+20,MKK+22} and language models pretrained on genomes~\cite{JZLD21,DLT+25}; such models are easy to apply to new data, but their answers are hard to explain, whereas the answers of classifiers based on exact matches can be traced to specific matches.
+SPUMONI~2~\cite{AhmedEtAl2023}, Tagger~\cite{DAF+25} and Cliffy~\cite{ABL25} are such classifiers built on RLBWTs, and we compare their choices of matches and credit in Section~\ref{sec:schemes}.
+
+Move structures~\cite{NishimotoTabei2021} make each LF step a constant number of accesses to a table of runs; Movi~\cite{ZakeriEtAl2024} and Movi~2~\cite{ZakeriEtAl2026} implement them for pangenomes, with fast pseudo-matching lengths and MEM-finding.
+Ropebwt3~\cite{Li2024} finds MEMs and SMEMs with forward--backward search and with BML on an FMD-index of both strands.
+Indexes for $k$-mers built on compacted de Bruijn graphs can check the $k$-mers of a pattern just by comparing it with a unitig once they have found one~\cite{Pibiri2022}, which is the speedup Section~\ref{sec:chr19} imitates.
+The RLCSA~\cite{MakinenEtAl2010} stores the $\Psi$ function of a repetitive text in runs; Brown et al.'s paper on faster RLCSAs~\cite{BrownEtAlRLCSA} combines a two-level index with lexicographic phrase ranks and a sparse mapping bitvector, and speculates about using it for BML.
+Ferragina and Fischer~\cite{FerraginaFischer2007} observed that word-based suffix arrays need fewer random accesses than character-based ones; Deng et al.~\cite{DengEtAl2022} FM-index a grammar induced by suffix sorting for long patterns, and Hong et al.~\cite{HongEtAl2024} FM-index a prefix-free parse~\cite{BoucherEtAl2019} of DNA.
+The SIFT haplotype selection of Ferro et al.~\cite{FerroEtAl} also uses a syncmer parse.
+The U-index~\cite{AyadEtAl2025} indexes a string of minimizers to match long patterns, SPUMONI~2 indexes minimizer digests of a pangenome, and Gagie~\cite{Gagie2026pseudo} showed how parse indexing can discard short KeBaB fragments safely.
+Suffixient arrays~\cite{CenzatoEtAl2024} and suffix-tree path decompositions~\cite{BeckerEtAl2026} locate occurrences very efficiently, but do not directly maintain BWT intervals during backward search, which tag arrays need to report, for example, the taxa or graph locations of a match~\cite{BalazEtAl2024}.
+Tunnelling~\cite{Baier2018,AlankoEtAl2019,GogaBalaz2022} merges parallel paths in the BWT to compress it, and the col-BWT~\cite{BrownEtAl2026} labels runs along tunnels induced by multi-MUMs; shortcuts have a similar flavour but a different purpose.
+Section~\ref{sec:chr19} continues the RLBWT tricks of Brown et al.~\cite{BrownEtAl2022} and of preceding papers~\cite{OhlebuschEtAl2018,Manzini2016}.

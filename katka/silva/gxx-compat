@@ -1,0 +1,4 @@
+#!/bin/sh
+# g++ with fixes for old code under recent GCC (chosen by build_cliffy.sh, which checks that g++ supports them):
+# headers that forget <cstdint>, and sdsl-lite template bodies that no longer compile but are never used.
+exec g++ ${GXX_COMPAT_FLAGS--include cstdint} "$@"

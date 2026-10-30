@@ -1,0 +1,47 @@
+% app-chr19.tex -- owner: More RLBWT Tricks task.
+% Extracted by the merging task (2026-10-30) from paper.tex, Appendix A.  Renamings applied (see NOTES.md).
+\section{Omitted proofs from Section~\ref{sec:chr19}}
+\label{app:proofs}
+
+\begin{proof}[Proof of \Cref{lem:count}]
+Measure positions in units of $\ell$: the search starts at $x_0 =
+p/\ell$ and must reach $a = x_0 - m$. From $x > a$, the shortcut of
+length $2^t\ell$ with $t = \min(\nu(x), \tau, \lfloor \log_2(x - a)
+\rfloor)$ is available, where $\nu(x)$ is the exponent of the largest
+power of two dividing $x$: its string is matched by $P$, and the
+resulting interval is non-empty because $P[j - m\ell .. |P|)$ occurs in
+$T$. The search takes this shortcut or a longer one. A longer one
+crosses more than $x - a$ windows, so it passes $a$ and is the last
+shortcut needed; so it suffices to bound the number of shortcuts when
+the search always takes the stated one, which leads to $x - 2^t$. While
+$t = \nu(x)$ is smaller than the other two terms, subtracting
+$2^{\nu(x)}$ increases $\nu$, so these shortcuts have strictly
+increasing lengths, at most $2^{\lfloor \log_2 m \rfloor}\ell$: at most
+$\lceil \log_2(m+1) \rceil$ of them. While $t = \tau \le \nu(x)$, each
+shortcut crosses $2^\tau$ windows and keeps $\nu \ge \tau$: at most
+$\lfloor m / 2^\tau \rfloor$ of them. Once $t = \lfloor \log_2(x - a)
+\rfloor \le \nu(x)$, the remaining distance drops below $2^t$ while
+$\nu$ stays at least $t$, so later shortcuts have strictly decreasing
+lengths: at most $\lceil \log_2(m+1) \rceil$ of them. The phases occur
+in this order, which gives the bound.
+\end{proof}
+
+\begin{proof}[Proof of \Cref{lem:space}]
+$B$ has at most $\eta + 1$ runs of 1s, and we store their starts and the
+number of 1s before each in two Elias--Fano lists, in $O(\eta
+\log(n/\eta))$ bits since $m \le n$. The BWT of $\Pa$ is stored as two
+Elias--Fano lists over its $r_\Pa$ runs, one of their starts offset by
+symbol, in a universe of size $(\sigma + 1)(m + 1)$, and one of their
+positions in the first column, in $O(r_\Pa \log(\sigma m / r_\Pa))$
+bits; the BWT of $\Delta$, with $b + 1$ rows and $s' + 1$ symbols,
+likewise in $O(r_\Delta \log(s' b / r_\Delta))$ bits. $BS$ marks $b + 1$
+of $m + 1$ rows, in $O(b \log(m/b))$ bits as an Elias--Fano list, and we
+use its run-length coding only when that is smaller. $\succp$ and the
+continuation bits take $O(\sigma \log \sigma)$ bits. The symbols are
+stored as an Elias--Fano list of the first symbol of each $\delta$, in
+$O(\sigma + \sigma \log(s'/\sigma)) \subseteq O(\sigma + s')$ bits, and
+their $j$'s, of at most $\lceil \log_2 m \rceil$ bits each. The
+dictionary stores, for each phrase, the low $64 - h$ bits of its hash
+and its ids in $T$ and in $T'$, which has at most $\sigma + 2$ distinct
+phrases, plus the first slot of each bucket in $O(1)$ words.
+\end{proof}

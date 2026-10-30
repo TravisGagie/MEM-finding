@@ -1,0 +1,86 @@
+% main.tex -- owner: merging task.  Section owners: request changes through NOTES.md.
+% Build: pdflatex main; bibtex main; pdflatex main; pdflatex main
+\PassOptionsToPackage{expansion=false}{microtype}
+\documentclass[a4paper,UKenglish,cleveref,autoref,thm-restate]{lipics-v2021}
+
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{xurl}
+\usepackage{tikz}
+\usetikzlibrary{positioning,decorations.pathreplacing,arrows.meta}
+\hideLIPIcs
+
+% Macros from KATKA
+\newcommand{\TODO}[1]{\textcolor{red}{[TODO: #1]}}
+% Macros from More RLBWT Tricks
+\newcommand{\intv}{I}
+\newcommand{\Rref}{R}
+\newcommand{\pend}[1]{\textcolor{red}{#1}}
+\newcommand{\succp}{\mathit{succ}}
+\newcommand{\Pa}{\Pi}
+
+\title{Three Examples of MEM-Finding}
+\titlerunning{Three Examples of MEM-Finding}
+
+\author{Travis Gagie}{CeBiB -- Center for Biotechnology and Bioengineering, Chile}{travis.gagie@gmail.com}{https://orcid.org/0000-0003-3689-327X}{}
+\author{Gonzalo Navarro}{Department of Computer Science, University of Chile, Santiago, Chile \and CeBiB -- Center for Biotechnology and Bioengineering, Chile}{gnavarro@dcc.uchile.cl}{https://orcid.org/0000-0002-2286-741X}{}
+
+\authorrunning{T. Gagie and G. Navarro}
+\Copyright{Travis Gagie and Gonzalo Navarro}
+
+\ccsdesc[500]{Theory of computation~Data structures design and analysis}
+\ccsdesc[500]{Theory of computation~Pattern matching}
+\ccsdesc[300]{Applied computing~Bioinformatics}
+\keywords{Maximal exact matches, Boyer--Moore--Li, run-length compressed Burrows--Wheeler transform, RLCSA, tag arrays, taxonomic classification, two-level indexing, syncmers, pangenomics}
+
+\supplement{All code and scripts: \url{https://github.com/TravisGagie/MEM-finding} (Sections~\ref{sec:zymo} and~\ref{sec:silva} in \texttt{katka/}, Section~\ref{sec:chr19} in \texttt{chr19/}).}
+
+\acknowledgements{Many thanks to Ben Langmead for recommending classification with MEMs, and for asking, several years ago, whether BWT-based indexes could get the kind of sequential-access speed that $k$-mer indexes built on compacted de Bruijn graphs get once they reach a unitig; and to Omar Ahmed, Victor Alfaro and Christina Boucher.  The first author thanks Dr.\ Curtis Marcoux for leading the team that treated him for the past two years, Dr.\ Amy Trottier for convincing him that bioinformatics is actually useful, and the staff of the 4th and 8th floors of the Victoria General Hospital in Halifax.  The ideas in this paper are the authors'; the code, the experiments and the text were developed by Claude Opus 5.5, an AI model by Anthropic, under the authors' direction.}
+
+\relatedversion{}
+
+\EventEditors{John Q. Open and Joan R. Access}
+\EventNoEds{2}
+\EventLongTitle{42nd Conference on Very Important Topics (CVIT 2016)}
+\EventShortTitle{CVIT 2016}
+\EventAcronym{CVIT}
+\EventYear{2016}
+\EventDate{December 24--27, 2016}
+\EventLocation{Little Whinging, United Kingdom}
+\EventLogo{}
+\SeriesVolume{42}
+\ArticleNo{23}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Finding maximal exact matches (MEMs) with indexes based on the run-length compressed Burrows--Wheeler transform is a common core of read classification and pangenome search, but where the time goes depends on the data.
+We describe three experiments, each with a different bottleneck and a different structure that removes it.
+Most of these structures are known or easy combinations of known ones; what is new is mainly a comparison of credit schemes, a bound on the runs of tag arrays, and an encoding of a parse into blocks that lets two-level indexing cross long matches faster.
+On long, noisy nanopore reads from whole genomes, the bottleneck is \emph{finding} the right matches: with homopolymer compression, a low-complexity filter, and each read's longest MEMs, found in one pass of Boyer--Moore--Li (BML) with an adaptive threshold and KeBaB's $k$-mer filter searched longest first, we assign 99.6\% of the reads to their species with no length threshold.
+On short 16S rRNA reads classified to genera with SILVA, many MEMs occur in several genera and the bottleneck is \emph{answering} each MEM: credit proportional to the number of occurrences in each taxon is the most accurate split, by 1.0 to 6.8 percentage points, and a complete, run-length compressed tag array counts the occurrences in time proportional to the number of tag runs in the MEM's BWT interval, without locating any occurrence.
+We bound the number of tag runs, and show that tags constant on $d$ segments of the text have a macro scheme with at most $r + 2d$ phrases.
+Our index takes 1.44\,GB and classifies a read in 66\,$\mu$s at 93.8\% accuracy; on the same reads and server, it is 14 times smaller than Cliffy's undigested index, and 4.4 times faster and 8 points more accurate than Cliffy's LCA query on it.
+On whole human chromosome~19 haplotypes against collections of 16 to 64 others, the bottleneck is \emph{crossing} long matches: two-level indexing with a closed-syncmer parse, encoded in blocks of phrases that are each the lexicographically smallest successor of the one before, crosses a whole block in one step and finds the MEMs 28 to 49 times faster than plain backward search, 6.4 to 11.2 times faster than single-threaded ropebwt3, for about 3 times its space, and 2.8 to 5.0 times faster than Movi~2, in at most about the same space.
+\end{abstract}
+\clearpage
+
+\input{intro}
+\input{prelim}
+\input{zymo}
+\input{silva}
+\input{chr19}
+\input{conclusions}
+
+\bibliographystyle{plainurl}
+\bibliography{refs}
+
+\appendix
+\input{app-katka-details}
+\input{app-katka-digests}
+\input{app-katka-alternatives}
+\input{app-chr19}
+
+\end{document}

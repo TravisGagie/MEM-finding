@@ -1,0 +1,68 @@
+% zymo.tex -- owner: KATKA task.
+% Extracted by the merging task (2026-10-30) from tax_cpm.tex: the Zymo part of Section 3,
+% "Which matches: Zymo" in Section 4, "The index", "Long, noisy reads" and "Longest MEMs" in Section 5,
+% and Zymo in Section 7.  Key map and renamings applied (see NOTES.md).  Lines marked %MERGE were added
+% or rewritten by the merging task; please check them.
+\section{Long noisy reads: finding the right matches}
+\label{sec:zymo}
+\label{sec:regimes}
+\label{sec:setup}
+
+%MERGE
+Our first experiment classifies long, noisy reads from whole bacterial genomes to species.
+Almost every long MEM occurs in one species, so how a MEM splits its credit among the taxa containing it (Section~\ref{sec:schemes}) hardly matters; what matters is finding the right matches, which errors break and low-complexity regions imitate.
+
+\subparagraph*{Data.}
+SPUMONI~2's experiments~\cite{AhmedEtAl2023} use ONT reads of a ZymoBIOMICS \emph{mock community}, a laboratory mixture of known bacteria and yeasts, with a reference of 14\,280 RefSeq sequences of seven of its bacterial species, from 267 for \emph{B.~subtilis} to 7\,914 for \emph{E.~coli}, and minimap2 alignments to label each read with a species or as yeast.
+N.~Brown made the reference, the reads and their labels available.\footnote{\url{https://zenodo.org/records/23251764}}
+There are 581\,802 bacterial reads with a species label, which we classify whole.
+SPUMONI~2's Table~2 instead takes the first 180 to 720 bases of each of these reads and of 10\,245 yeast reads, and asks whether each prefix comes from the bacterial reference; the \emph{sensitivity} is the fraction of bacterial reads that are accepted, and the \emph{specificity} the fraction of yeast reads that are rejected.
+Here a taxon contains many complete genomes, which are long and close to each other, the reads are long but have frequent errors, especially in homopolymers, and some reference sequences contain long low-complexity regions, such as the short repeats at the ends of yeast chromosomes (telomeres).
+%MERGE: machine sentence split from KATKA's "Machines" paragraph
+We ran this experiment on a two-year-old laptop (Intel Core i5-1335U, 12 threads, 14\,GB of RAM available); our numbers for SPUMONI~2 and minimap2 are from their papers.
+
+\subparagraph*{The index.}
+\label{sec:index}
+For $i = 1, \ldots, d$, let $G_i$ be the concatenation of the reference sequences of taxon $i$, separated by a character \texttt{X} that matches nothing, with the taxa numbered in the left-to-right order of the leaves of the taxonomy.
+We index the text $T = G_1 \mathtt{X}\, \mathrm{rc}(G_1) \mathtt{X} \cdots G_d \mathtt{X}\, \mathrm{rc}(G_d) \mathtt{\$}$ of length $n$, where $\mathrm{rc}$ denotes the reverse complement and \texttt{\$} is the terminator; no match crosses a separator.
+We call $G_i \mathtt{X}\, \mathrm{rc}(G_i) \mathtt{X}$ the \emph{segment} of taxon $i$ (for $i = d$, the last character is the terminator).
+The \emph{tag array} $\mathcal{T}[0..n)$ gives, for each row $i$, the taxon $\mathcal{T}[i]$ of the segment containing $\mathrm{SA}[i]$ (Section~\ref{sec:tags}).
+We store the BWT of $T$ as an explicit RLCSA (Section~\ref{sec:prelim}).
+As Bowtie~2~\cite{LS12} and Cliffy do, we also store the BWT interval of every string of length $k_t = 10$, so that a search starts with one table lookup; if the string does not occur, we fall back to stepping base by base, so we still know exactly where a match fails.
+Here we tag each suffix of $T$ with its species.
+Tagging each suffix with its genome instead, which would make $T$ a collection of documents in the usual sense, gives a tag array with too many runs (Section~\ref{sec:tags}).
+We homopolymer-compress the reference and the reads (below), after which $T$ has $n = 39.3$ billion characters and its BWT has $r = 338$ million runs, against $n = 53.7$ billion and $r = 437$ million without compression.
+We count a read as correct if its species alone has the largest weight.
+Our implementation, KATKA, is in the directory \texttt{katka} of \url{https://github.com/TravisGagie/MEM-finding}.
+
+\subparagraph*{Long, noisy reads.}
+\label{sec:bml}
+ONT reads have many errors in \emph{homopolymers}, runs of a repeated base, and these errors break long matches.
+We therefore \emph{homopolymer-compress} the reference and each read, replacing every run of equal bases by a single base, and measure $L$ in compressed characters ($L = 30$ is about 41 bases on the Zymo reads); spans are mapped back to the read's coordinates for scoring.
+Homopolymer compression also turns some low-complexity sequences into short periodic ones: yeast telomeric repeats become nearly $(\mathtt{CA})^*$, and AT-rich regions of mitochondrial DNA nearly $(\mathtt{TA})^*$.
+Long MEMs in such regions occur in many places, and mostly in the reference genomes of a few species, so they pull reads towards those species.
+We therefore ignore every MEM with fewer than $\theta$ distinct 3-mers, computed on the compressed sequence; we use $\theta = 14$, out of the 36 3-mers without repeated consecutive bases.
+On the 720-base Zymo prefixes, this raises the specificity of the test of SPUMONI~2's Table~2 from 89.18\% to 97.90\% at the cost of 0.03 points of sensitivity; without homopolymer compression (and $\theta = 16$ of 64), the test gives 97.24\% and 97.98\%, so compression mainly makes the index smaller ($r = 338$ instead of 437 million).
+
+\subparagraph*{Longest MEMs.}
+%MERGE: the description of BML with adaptive L moved to the preliminaries
+We find the longest MEMs of each read with BML with adaptive $L$ (Section~\ref{sec:prelim}).
+Searching only the longest pseudo-MEMs of KeBaB (Section~\ref{sec:prelim}), as in KeBaB's pipeline, can miss the longest MEM, since a long pseudo-MEM need not contain one; instead, as Brown et al.\ suggest~\cite{BrownEtAl2025KeBaB}, we search the pseudo-MEMs from longest to shortest and stop at the first one shorter than the current $L$, which loses nothing. %MERGE: credit to KeBaB for the idea (KATKA Appendix C cites it)
+On the 581\,802 whole Zymo reads, this finds exactly the same longest MEMs as without the filter, which takes 0.135\,GB, and classification takes 118\,s with 12 threads on the laptop, against 211\,s without the filter and about 780\,s with $L = 30$; on SILVA, whose short, accurate reads have almost all their $k$-mers in the database, the filter saved little time (Appendix~\ref{app:alternatives}).
+%MERGE: caveat agreed by both tasks (brief, "Things not to claim")
+This speed-up comes from the filter and the longest-first stopping rule; we have not compared our MEM-finding alone with Tagger, ropebwt3 or Movi~2 on these reads.
+
+\subparagraph*{Which matches.}
+\label{sec:zymo-accuracy}
+On the Zymo reads, $L = 30$ homopolymer-compressed characters (about 41 bases) is the best fixed threshold (99.43\% with proportional credit), since ONT reads have few error-free stretches much longer.
+Even so, 0.4\% of the reads have no MEM that long and stay unclassified.
+Using only the longest MEMs of each read, measured in compressed characters, every read is classified, and proportional credit reaches 99.61\%, the best of all our configurations; on the 720-base prefixes, species accuracy is 97.88\% with proportional credit and 97.44\% with even credit.
+How the credit is split hardly matters: the 89.6 million long MEMs of the whole reads occur in 1.01 species on average, and all the schemes of Table~\ref{tab:credit} are within 0.16 percentage points (\emph{points}, from now on) of each other: the sample reaches 99.58\%, even credit and the range 99.54\%, and proportional credit 99.43\%, and normalising each count by the number of reference sequences of its species, or by their total length, gives 99.42\% and 99.43\%.
+
+In the prefix test of SPUMONI~2's Table~2 with the first 720 bases of each read, we have 97.24\% sensitivity and 97.98\% specificity without homopolymer compression (96.88\% and 97.90\% with it), against 95.32\% and 97.06\% for SPUMONI~2 with minimizer digests, 97.62\% and 97.38\% for SPUMONI~2 without them, and 97.90\% and 97.85\% for minimap2.
+With the longest MEMs, thresholding their length gives a whole sensitivity--specificity curve from one run: with homopolymer compression, 97.32\% and 96.33\% at 28 compressed characters, and 96.88\% and 97.90\% at 30.
+The longest MEMs of yeast prefixes have a median of 23 compressed characters, about $\log_4$ of $n$ times the prefix length, as for random strings, so the threshold can be set a few characters above that rather than tuned.
+
+\subparagraph*{Time and space.}
+For the homopolymer-compressed Zymo reference, the tag array takes 1.47\,GB, an RLBWT 1.00\,GB and an explicit 64-bit RLCSA 5.56\,GB; with the RLCSA and the longest MEMs we classify 4\,900 whole reads per second with 12 threads on the laptop (peak memory 8.0\,GB).
+The prefix test needs no tags, and with the RLBWT alone takes 109\,s for the 720-base prefixes, against the 194\,s and 0.74 to 1.54\,GB that SPUMONI~2 reports on its machine.

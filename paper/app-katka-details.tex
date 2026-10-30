@@ -1,0 +1,155 @@
+% app-katka-details.tex -- owner: KATKA task.
+% Extracted by the merging task (2026-10-30) from tax_cpm.tex, Appendix A.  Key map and renamings applied (see NOTES.md).
+\section{Experimental details}
+\label{app:details}
+
+This appendix lists what we believe is needed to reproduce our results with our implementation, KATKA, which is in the directory \texttt{katka} of \url{https://github.com/TravisGagie/MEM-finding}.
+All parameters not mentioned are defaults.
+On SILVA, the \emph{default configuration} finds MEMs of at least $L = 30$ bases with BML on an explicit RLCSA with a lookup table of 10-mers, and counts their occurrences with a run-length compressed tag array, for proportional credit.
+
+\subparagraph*{Software and data.}
+Cliffy's experiment scripts (\url{https://github.com/oma219/cliffy-experiments}, commit \texttt{566f647}), its read simulator MicrobeMixer (\url{https://github.com/oma219/MicrobeMixer}, \texttt{6409f5d}) with ART 2.5.8~\cite{HLMM12} and seqtk 1.4; Big-BWT (\url{https://github.com/alshai/Big-BWT}, \texttt{5b00650}); sdsl-lite (\texttt{c32874c}) with libdivsufsort.
+Our own C++17 code was compiled with g++ 15.2 and \texttt{-O3 -march=native -DNDEBUG}, and the scoring scripts use Python 3.14.
+The reference is SILVA 138.1 SSU Ref NR99 (\texttt{SILVA\_138.1\_SSURef\_NR99\_tax\_silva.fasta}, with \texttt{tax\_slv\_ssu\_138.1.txt} and \texttt{.tre}).
+All times were measured with one thread on an Intel Core i7-8700 (3.2\,GHz, 6 cores) with 16\,GB of RAM under Linux.
+
+\subparagraph*{Running the code.}
+From that directory, \texttt{demo\_quick.sh} fetches and builds the dependencies at the commits above, downloads SILVA, builds the reference and the default index (\texttt{silva/build\_katka.sh}), and classifies 5\,000 read pairs per region that are included in the repository, with one thread and with all cores.
+\texttt{demo\_full.sh} builds every index in this paper (\texttt{ALL=1 silva/build\_katka.sh}), downloads the read pairs we used (every 50th pair of our simulation, 200\,000 per region, from a release of the repository) and runs every experiment, each with its own script in \texttt{silva/}, and \texttt{pareto\_ft.py} computes the Pareto surface.
+To classify reads with the default configuration and 8 threads, the command is \texttt{RZ\_COUNTS=1 rz-classify -j 8 -L 30 -l -C bac.csa -T bac.s1.tag -F 10 bac.rz reads.fq out.listings}.
+With a digested index, add \texttt{-B bac.map} and use \texttt{-F 2}.
+The output has Cliffy's listing format, extended with the number of occurrences in each genus, so our \texttt{rz\_score2.py}, or Cliffy's scripts without the counts, can score it.
+Finally, \texttt{silva/run\_cliffy.sh} and \texttt{silva/run\_katka.sh} run Cliffy and our implementation on the same reads on one machine, first with one thread each and then with the same number of threads each, check that the parallel outputs equal the single-thread ones, and score both.
+
+\subparagraph*{Reference text.}
+We converted the FASTA to one line per sequence (\texttt{seqtk seq -U}) and ran Cliffy's \texttt{write\_silva\_genera.py} with the tree and rank files and \texttt{-n 10000}, which writes one file per genus, numbered in the left-to-right order of the SILVA tree (9\,118 files), and \texttt{doc\_to\_traversal.txt}.
+As in Cliffy's pipeline, each file is reverse-complemented with \texttt{seqtk seq -r}, which also turns U into T.
+We call genus $i$ document $i$.
+In the text $T$ of Section~\ref{sec:index}, $G_i$ is the concatenation of the sequences of genus $i$ separated by \texttt{X}, and any character other than A, C, G, T (in either case) becomes \texttt{X}.
+A text position is mapped to its document by a predecessor search over the document starts.
+For Cliffy's scoring script we also need \texttt{trav\_to\_length.txt}, which gives for each genus its traversal string and the total length of its sequences.
+
+\subparagraph*{Reads.}
+For each of V1--V2, V3--V4, V4 and V4--V5 we ran the \texttt{simulate} command of MicrobeMixer's \texttt{sim\_16s\_reads.py} with the region's primer file, the SILVA FASTA and taxonomy, 10 million reads, and the aquatic abundance profile shipped with MicrobeMixer (\texttt{data/aquatic.tsv}, in which we replaced \texttt{Candidatus\_} by \texttt{Candidatus} followed by a space, to match SILVA 138.1).
+This gives 10 million pairs of 250-base reads and a truth file \texttt{*\_seqtax.txt} per region.
+The read files are grouped by genus, so we subsample regularly: for accuracy, pairs $0, 50, 100, \ldots$ (200\,000 pairs per region); for time, mate-1 reads $0, 5000, 10000, \ldots$ (2\,000 reads per region), which are among the former.
+Each mate is classified on its own, as given (both strands are in the index).
+
+\subparagraph*{Lookup tables.}
+For each string of length $k_t$ over the alphabet (A, C, G, T, or the digest bytes) the table stores the BWT interval after searching for it, and for the sr-index also the toehold.
+It is built when the classifier starts (\texttt{-F} $k_t$), in under a second.
+A search for a string of length at least $k_t$ starts with a lookup of its last $k_t$ symbols.
+If they do not occur, the search proceeds symbol by symbol from scratch, so that BML learns exactly where it fails.
+Every configuration gives the same answers with and without a table.
+
+\subparagraph*{Digests.}
+Number A, C, G, T as 0--3 and let a $k$-mer's code be its $2k$-bit integer.
+Its hash is the splitmix64 finalizer applied to the smaller of its code and its reverse complement's code.
+In each maximal A/C/G/T run, every window of $w$ consecutive bases ($w - k + 1$ consecutive $k$-mers) selects \emph{all} its $k$-mers of minimum hash.
+The selected $k$-mers, in text order and in their own orientation, form the digest of the run, after collapsing equal consecutive symbols.
+Digests of consecutive runs are joined by \texttt{X}.
+With $k = 4$ and $w = 11$, every one of the 256 codes occurs, but only 252 bytes are free (0--2 are reserved for terminators and \texttt{X} is the separator).
+The rarest codes in the reference, taken in reverse-complement pairs until the rest fit (6 codes), therefore share one byte, and the others get bytes $3, 4, \ldots$ (skipping \texttt{X}) in increasing order of code.
+Reverse complementing a digest reverses it and maps each byte to the byte of the reverse-complemented $k$-mer.
+We digest $G_i$ and build $T$ from the digests as above.
+
+\subparagraph*{Indexes.}
+The BWT of $T$ (with one terminator) is built with Big-BWT.
+The RLBWT stores the run heads in a Huffman-shaped wavelet tree and the run starts in Elias--Fano coded bitvectors (one overall and one per character).
+The RLCSA stores, for each character $c$, the rows of the starts of the runs of $c$ and the cumulative lengths of those runs, either as plain 32-bit arrays or with Elias--Fano coding.
+A backward step by $c$ is a predecessor search in the list of $c$, and gives the same intervals as the RLBWT.
+The tag array is built without a suffix array: one pass of LF over the text gives the suffix-array samples at the BWT run boundaries, as for the r-index, and from them $\phi$ streams the suffix array from the last BWT position to the first.
+Each entry is mapped to its document by a predecessor search over the document starts, and consecutive positions with the same document are merged into runs (the terminator's position gets the last document), so the memory needed is proportional to the number of BWT runs plus the number of tag runs.
+The r-index~\cite{GagieNavarroPrezza2020} stores the suffix-array samples at the run boundaries and supports $\phi$ with a predecessor structure on them.
+Our sr-index removes samples as in Cobas et al.~\cite{CGN21,CGN25} with parameter $s_r$, and $s_r = 0$ means no subsampling.
+Reported sizes are file sizes in units of $10^9$ bytes.
+A configuration's space is the sum of the structures it uses: the RLBWT or RLCSA used for backward search; the tag array (plus the RLBWT, for LF, if it is sampled and the search uses an RLCSA); the sr-index samples (plus the RLBWT, for reading run heads, if the search uses an RLCSA); and the lookup table.
+
+\subparagraph*{BML without digests.}
+Let $P[0..m)$ be a maximal A/C/G/T run of the read, skipped if $m < L$; set $x = 0$ and, while $x + L \le m$:
+search backward for $P[x..x + L)$ from its right end; if the step for $P[j - 1]$ fails, set $x = j$ and repeat.
+Otherwise continue backward from $x$ to the leftmost $a$ such that $P[a..x + L)$ occurs, then search forward from $a$ (backward on the reverse complement) to the largest $e$ such that $P[a..e)$ occurs.
+Report the MEM $P[a..e)$ (the genera of its occurrences are those of its reverse complement's, whose interval the forward search gives), and set $x = e - L + 1$.
+
+\subparagraph*{BML with digests.}
+For a maximal A/C/G/T run $P[0..m)$ of the read with $m \ge \max(L, w)$, digest it as above, and for each window $y$ (covering bases $y..y + w - 1$) let $\mathit{lo}[y]$ and $\mathit{hi}[y]$ be the positions in the digest $\hat{P}$ of the first and last symbols it selects; both are non-decreasing in $y$.
+Set $x = 0$ and, while $x + L \le m$: search backward for $\hat{P}[\mathit{lo}[x]..\mathit{hi}[x + L - w]]$; if the step for $\hat{P}[j - 1]$ fails, set $x$ to the smallest $y$ with $\mathit{lo}[y] \ge j$ (stop if there is none) and repeat.
+Otherwise extend backward to the leftmost $a'$ and then forward to the largest $e'$ such that $\hat{P}[a'..e')$ occurs.
+The MEM's span in the read is the interval of bases $[\mathit{left}, \mathit{right}]$, where $\mathit{left}$ is the smallest $y$ with $\mathit{lo}[y] \ge a'$, and $\mathit{right} = y_R + w - 2$ for the smallest $y_R$ with $\mathit{hi}[y_R] \ge e'$ ($\mathit{right} = m - 1$ if there is none).
+Record the MEM with its span, and set $x = \max(x + 1, y_R - (L - w))$.
+Finally, discard every recorded MEM whose span is contained in another's, and report the rest with their spans.
+
+\subparagraph*{Answers and scoring.}
+The listing answer for a MEM $M$ is the set $D$ of documents containing it, with the number $c_g$ of occurrences in each ($\texttt{RZ\_COUNTS=1}$).
+With proportional credit, each $g \in D$ gets weight $|M| c_g / \sum_{h \in D} c_h$, and with even credit $|M|/|D|$.
+With the range scheme the answer is the pair $\{g_\ell, g_r\}$ of the smallest and largest documents containing $M$, and each document from $g_\ell$ to $g_r$ gets weight $|M|/(g_r - g_\ell + 1)$.
+This is Cliffy's LCA scoring (``method0'' in its scripts), since documents are in tree order.
+Here $|M|$ is the length of $M$ in bases (of its span, with digests).
+Weights from both mates are summed per genus (through \texttt{doc\_to\_traversal.txt}), with Cliffy's \texttt{DocProfReadSet} class handling the truth files.
+A pair whose true genus is missing or ambiguous in the truth file counts as correct, as in Cliffy's script, under both of our measures.
+Otherwise a pair is correct under Cliffy's rule if its true genus has the maximum weight, possibly tied, or if it has no weight at all and its true genus is not ``uncultured''.
+It is \emph{strictly} correct if its true genus alone has the maximum weight.
+We checked that our re-implementation of the scoring gives the same numbers as Cliffy's \texttt{classify\_silva\_readset.py} on a sample of 1\,500 pairs.
+
+\subparagraph*{Cliffy.}
+The second author built Cliffy's undigested and digested indexes with its authors' settings, and ran them and our default configuration on our 5\,000 read pairs per region, with \texttt{silva/run\_cliffy.sh} and \texttt{silva/run\_katka.sh}, on a server with two Intel Xeon E5-2407 v2 processors (8 cores in all, 2.4\,GHz) and 256\,GB of RAM.
+Cliffy's two-pass construction of the undigested index writes about 2.3\,TB of temporary files (Cliffy's Table~1), more than the server's home disk holds: a first attempt failed after 40 hours, when the disk filled, having used 240\,GB of memory, and the build succeeded in 69 hours with the temporary files on a larger disk.
+Classifying with it took 37\,GB of memory.
+Times per read are with one thread or process, excluding loading the index (50\,s for Cliffy's undigested index), and accuracies are for Cliffy's LCA query (``method0''), scored as for our implementation.
+
+\subparagraph*{Other classifiers.}
+We ran Kraken~2~\cite{WLL19} and Tagger~\cite{DAF+25} on the same reads and the same machine as our implementation (\texttt{silva/run\_kraken2.sh} and \texttt{silva/run\_tagger.sh}).
+We built Kraken~2's database with its own SILVA script (\texttt{kraken2-build --special silva}, default $k = 35$ and minimizer length 31), as Cliffy's authors did.
+It downloads the same release, SILVA 138.1 SSU NR99, but indexes all of its sequences, including those not annotated down to the genus level, with SILVA's taxonomy.
+Kraken~2 classifies the two mates of a pair together (\texttt{--paired}), and we scored its classifications with the part of Cliffy's script for Kraken~2, under which a pair is correct at the genus level only if Kraken~2 assigns it to its true genus.
+Pairs assigned to a higher taxon, to the root or to nothing count as wrong (Cliffy's rule for pairs with no votes applies only to its own methods).
+Counting also pairs assigned to an ancestor of their true genus below the domain, which that script calls vague positives, Kraken~2 reaches 84.3\%.
+Tagger's authors instead built Kraken~2 with a flat hierarchy, in which a read is assigned to a genus, to the root or to nothing, so our numbers for Kraken~2 are not comparable with theirs.
+For Tagger, we built an index of the same 402\,378 sequences as ours, with each sequence's genus as its tag and one strand only (Tagger handles reverse complements when classifying), and used its default parameters ($L = 25$, a 10-mer lookup table).
+With $L = 30$, as for our default configuration, Tagger was no more accurate (81.05\%, 86.88\% and 92.72\% under the three rules), so we report its defaults.
+Tagger assigns each read a single genus, so we classified the two mates separately and let each give its length to its genus, as we do for MEMs.
+A pair whose mates are assigned different genera is then a tie, which is wrong under the strict measure, and a pair with one mate unclassified gets the other's genus.
+(Tagger's authors classified single reads.)
+For both tools, the times are with one thread and exclude loading the index: Kraken~2 reports its own classification time, and for Tagger we subtracted the running time of an invocation on a single read, which is dominated by loading the index.
+Tagger breaks ties between genera at random, with a separate random number generator in each thread, so its outputs with one thread and with 12 differ slightly, and we scored the single-thread outputs.
+If a pair's mates are assigned different genera, breaking the tie at random gives the true genus with probability 1/2 when one of them is right, so the expected accuracy is the mean of the accuracies with such pairs counted as wrong and as correct.
+We measured speed separately, with \texttt{silva/run\_scale.sh}, on 200\,000 read pairs per region with 1, 6 and 12 threads, because on 5\,000 pairs a run with 12 threads takes well under a second and start-up dominates: on 5\,000 pairs, Kraken~2 was no faster with 12 threads than with one.
+With 6 and 12 threads, our implementation was 5.3 and 7.7 times faster than with one, Kraken~2 4.3 and 5.2 times, and Tagger 4.5 and 5.8 times.
+Our time per read in Table~\ref{tab:others}, 53.1\,$\mu$s, is its total classification time divided by the number of reads.
+The 66.0\,$\mu$s elsewhere in the paper, which we use to compare our configurations, is measured differently, as the mean of per-read timings on 2\,000 reads per region, and we have not investigated the difference.
+On the 5\,000 read pairs per region, the default configuration has strict accuracy 93.70\%, against 93.77\% on the 200\,000 pairs per region of Section~\ref{sec:accuracy}.
+
+\subparagraph*{Credit schemes.}
+The SILVA column of Table~\ref{tab:credit} scores one set of listings, made with \nolinkurl{RZ_COUNTS=1} and $L = 30$ for every 50th read pair, under each scheme with \nolinkurl{silva/rz_score_schemes.py}: \texttt{freq} is proportional credit, \texttt{list} is even credit, \texttt{norm} divides each count by twice the number of sequences of the genus, \texttt{one} gives the whole credit to one genus drawn with probability proportional to its count, \texttt{cliffs} gives each genus containing the MEM a uniformly random value and splits the credit evenly over the left-to-right and right-to-left maxima of these values in genus order, and \texttt{lca} spreads it over the range.
+Random choices use a fixed seed.
+The range row is from the rz-index run of Appendix~\ref{sec:rz}, which gives the same answers as \texttt{lca}.
+The Zymo column scores the whole-read listings in the same way with \nolinkurl{tools/credit_schemes.py}, at the species level and per read, and with \nolinkurl{tools/norm_credit.py}, which divides each count by the number of reference sequences of its species, or by their total length.
+In every case a read or read pair is correct only if its true taxon alone has the largest weight.
+
+\subparagraph*{Zymo.}
+We used the files that N.~Brown deposited on Zenodo (record 23251764): \nolinkurl{microbial_ref.fa.gz}, 14\,280 RefSeq sequences of seven bacterial species; \nolinkurl{microbial_reads.fa.gz}, 581\,802 ONT reads with their species from minimap2 alignments (\nolinkurl{microbial_reads.fa.class} and \nolinkurl{class.txt}); and \nolinkurl{yeast_reads.fa.gz}, 10\,245 yeast reads from the same run.
+We tagged each sequence with its species, wrote one file per species, and split it into files of at most 1\,GB, keeping the sequences in their original order, so that every file is a dataset of a single species.
+\texttt{rz-prep -d -s} (with \texttt{-U} for homopolymer compression) builds the text with both strands; Big-BWT builds the BWT of each dataset, single-threaded, and pfp-merge~\cite{BoucherEtAl2019} merges them; \texttt{rz-build} builds the r-index samples, \texttt{rz-tagbuild -S} the species tag array, and \texttt{rz-csabuild} the explicit RLCSA.
+With homopolymer compression, $T$ has 39.28 billion characters, 73\% of the 53.74 billion without it, the BWT has 338.1 million runs (436.6 million without compression) and the tag array 448.7 million runs.
+On the laptop, the largest Big-BWT run (\emph{E.~coli}, 18.2\,Gbp after compression) took 982\,s and 7.75\,GB, the merge 1\,240\,s and 7.3\,GB, the r-index samples 6\,436\,s and 6.0\,GB, and the tag array 26\,052\,s and 8.9\,GB, with the version of the construction that keeps all the runs in memory.
+We classify with \nolinkurl{RZ_COUNTS=1 rz-classify -U -L 30 -D 14 -j 12}, which reads FASTA or FASTQ; $L$ and the filter's threshold apply to the compressed read, and reported spans are mapped back to the original read.
+Without homopolymer compression we omit \nolinkurl{-U} in both programs and use \nolinkurl{-D 16}.
+For the longest MEMs we add \nolinkurl{-X} with \nolinkurl{-L 1}, or with \nolinkurl{-L 20 -K zy.k20.kbf} for the KeBaB filter, built with \nolinkurl{rz-kbbuild} ($k = 20$, target false-positive rate 0.1) in 2\,736\,s and 0.15\,GB; \nolinkurl{tools/maxmem_roc.py} scores each read by the compressed length of its longest MEM, computed from the read, and prints the sensitivity, specificity and species accuracy for each threshold.
+For SPUMONI~2's Table~2 we took the first 180, 360, 540 and 720 bases of each bacterial and yeast read: a prefix is accepted if it has at least one MEM of length at least $L$ that passes the filter, so the sensitivity is the fraction of bacterial prefixes accepted and the specificity the fraction of yeast prefixes rejected.
+The species accuracy of the prefixes is with proportional credit.
+
+\subparagraph*{Timing.}
+Times are wall-clock per read, measured inside the classifier, with the index already loaded and the reads already read from disk.
+They include digesting the read, finding the matches and answering them.
+We report the mean over the four regions of the mean over the 2\,000 reads, all measured in a single run of \texttt{run\_pareto\_ft.sh} (with \texttt{COUNTS=1}), which also checks that every configuration gives the same answers with and without a lookup table.
+For every configuration, we checked that all backends and sampling rates give identical outputs.
+
+\subparagraph*{Parallelism and further systems optimisations.}
+With \texttt{rz-classify -j}~$p$, $p$ threads share one copy of the index: each takes chunks of 256 reads from the input, and the answers are written back in input order, so the output is identical to that of a single thread (we checked this for every listing method, with and without lookup tables and digests).
+The index structures are read-only during classification, and the scratch space for document listing, counting and locating, and the statistics counters, are kept per thread.
+Alternatively, \texttt{silva/run\_split.sh}~$p$ splits the read file into $p$ contiguous slices, classifies them with $p$ processes and concatenates the outputs.
+This needs no threads but loads $p$ copies of the index.
+Beyond parallelism, we have not tuned our code at the systems level.
+Backward search and LF-mapping are dominated by cache misses that depend on each other, so the natural next steps are interleaving the searches for several reads and prefetching their next memory accesses, to hide the latency of each miss behind work on other reads; huge pages, to reduce TLB misses on indexes of a few gigabytes; and memory-mapping the indexes, so that processes share them and start immediately.
+Graphics processors suit data-parallel work better than pointer chasing, but they can also hide latency by running very many searches at once, so they might pay off for large batches of reads.
+

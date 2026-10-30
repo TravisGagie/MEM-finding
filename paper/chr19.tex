@@ -1,0 +1,661 @@
+% chr19.tex -- owner: More RLBWT Tricks task.
+% Extracted by the merging task (2026-10-30) from paper.tex: Sections 3-7 (Section 5 shrunk to two
+% sentences, Table 2 shortened to its 1% rows), with the unitig example and Figure 1 from the
+% introduction.  Renamings applied (see NOTES.md).  Lines marked %MERGE were added or rewritten by the
+% merging task; please check them.
+\section{Long matches: crossing them quickly}
+\label{sec:chr19}
+
+%MERGE
+Our third experiment finds the MEMs of whole chromosome~19 haplotypes
+with respect to collections of 16 to 64 other chromosome~19s
+(\Cref{sec:chr19-exp}). Almost every character of such a pattern lies
+in a long MEM, so the matches are easy to find and we do not classify
+them; the bottleneck is crossing them, since backward search takes one
+step per character even when the pattern matches material that occurs
+many times in the collection. In this section $T = S_1 \# S_2 \# \cdots \#
+S_d \# \$$ is a collection of $d$ genomes over
+$\{\texttt{A},\texttt{C},\texttt{G},\texttt{N},\texttt{T}\}$, with $\$
+< \# < \texttt{A} < \texttt{C} < \texttt{G} < \texttt{N} <
+\texttt{T}$, on the forward strand only, and we index $T$ and the
+reversed collection $T'$ (\Cref{sec:prelim}), each with an RLBWT.
+
+Repetitiveness is not only a challenge for indexes built on RLBWTs but also an
+opportunity. One reason the $r$-index was surprising is that it locates
+the occurrences of a pattern not only in space proportional to $r$ but
+also in predecessor time, $O(\log \log_w (n/r))$ per occurrence on a
+word RAM with $w$-bit words~\cite{GagieNavarroPrezza2020}, and Nishimoto
+and Tabei~\cite{NishimotoTabei2021} reduced this to constant time per
+occurrence, still in $O(r)$ words, and backward search to constant time
+per step when the alphabet has polylogarithmic size. FM-indexes and
+compressed suffix arrays that use $O(n \log \sigma)$ bits access the
+suffix array in $O((\log_\sigma n)^\epsilon)$ time, for a constant
+$\epsilon > 0$~\cite{FerraginaManzini2000,GrossiVitter2005}, and Kempa and
+Kociumaka~\cite{KempaKociumaka2026} recently proved that, for binary
+texts in general, constant-time access requires $\Omega(n \log^\epsilon
+n)$ bits for some $\epsilon > 0$. On a text that is not repetitive,
+$O(r)$ words are $\Theta(n \log n)$ bits, so the comparison makes sense
+only because the text is repetitive. Nishimoto and Tabei obtained their
+bounds with move structures, which replace the rank queries of backward
+search by lookups in a table with one entry per run: for a text that is
+not repetitive the table would be huge, but for a pangenome it is
+small, and in practice much faster than rank
+queries~\cite{ZakeriEtAl2024}. Because pangenomes compress so well, we
+have room to store structures that would make no sense for a single
+reference, and the door is open to doing things with RLBWTs that we
+could not do with BWTs. This paper takes another step in that
+direction.
+
+Ben Langmead asked us whether BWT-based indexes could get the kind of
+speedup that unitigs give $k$-mer indexes. \Cref{fig:dbg} shows a collection of twelve strings
+and its de Bruijn graph for $k = 3$, uncompacted and compacted. Every
+string contains the unitig \texttt{AACGCTC}, and ten of them contain
+the string \texttt{GTCAAGG}, which would be a unitig if two strings did
+not have \texttt{GTCCAGG} instead; we call such a string an
+\emph{almost-unitig}. The unitig and the almost-unitig appear in
+different orders in different strings, so neither can be extended.
+Every occurrence of a unitig's last $k$-mer is preceded by the rest of
+the unitig, unless a string starts inside the unitig; in the BWT this means
+that the interval of the last $k$-mer is mapped one-to-one, in order,
+onto the interval of the whole unitig, so a backward search that reaches
+the last $k$-mer of \texttt{AACGCTC} and then reads \texttt{AACG} in the
+pattern can cross those four characters in one step. For an
+almost-unitig, some rows drop out on the way, and a bitvector over the
+interval of the last $k$-mer says which.
+
+\begin{figure}[t]
+  \centering
+  \small
+  \begin{tabular}{@{}l r@{}}
+    \texttt{GTA\,AACGCTC\,GTCAAGG\,TGG} & $\times 5$ \\
+    \texttt{GTA\,AACGCTC\,GTCCAGG\,TGG} & $\times 1$ \\
+    \texttt{GTA\,GTCAAGG\,AACGCTC\,TGG} & $\times 5$ \\
+    \texttt{GTA\,GTCCAGG\,AACGCTC\,TGG} & $\times 1$
+  \end{tabular}
+
+  \medskip
+  \input{fig/dbg_full}
+
+  \medskip
+  \input{fig/dbg_compact}
+  \caption{Twelve strings (top; spaces added for readability) and their
+    de Bruijn graph for $k = 3$, uncompacted (middle; branching
+    $k$-mers shaded) and compacted (bottom). \texttt{AACGCTC} is a
+    unitig. \texttt{GTCAAGG} is an almost-unitig: ten strings contain
+    it, and two have \texttt{GTCCAGG} instead (edge labels count the
+    strings).}
+  \label{fig:dbg}
+\end{figure}
+
+%MERGE: condensed from the introduction of More RLBWT Tricks
+We built these \emph{shortcuts} (\Cref{sec:shortcuts}), generalised to
+windows of a reference sequence, and used them to speed up
+forward--backward search and BML over the RLBWTs of $T$ and $T'$. They
+are beaten, however, by \emph{two-level
+indexing}~\cite{BrownEtAlRLCSA,HongEtAl2024,DengEtAl2022}, which also
+indexes a parse of the collection (\Cref{sec:twolevel}). Our main
+contribution here (\Cref{sec:blocks}) is an encoding of the parse into
+blocks of phrases that are each the lexicographically smallest
+successor of the phrase before them, which lets the search cross a
+whole block in one step while all three indexes stay in the same order.
+
+\subsection{Shortcuts}
+\label{sec:shortcuts}
+
+The following observation lets a backward search notice that it has
+matched a string $\beta$ from a precomputed set.
+
+\begin{lemma}
+\label{lem:detect}
+If $|\beta| \le |X|$ and $\intv(X)$ is non-empty, then $\intv(X)
+\subseteq \intv(\beta)$ if and only if $\beta$ is a prefix of $X$.
+\end{lemma}
+
+\begin{proof}
+If $\beta$ is a prefix of $X$, every suffix starting with $X$ starts
+with $\beta$. Otherwise the prefix $\beta'$ of $X$ of length $|\beta|$
+differs from $\beta$, so $\intv(X) \subseteq \intv(\beta')$, which is
+disjoint from $\intv(\beta)$.
+\end{proof}
+
+Let $\beta$ be the last $k$-mer of a unitig or almost-unitig $\alpha
+\beta$. We store $\intv(\beta)$, the first row $f$ of $\intv(\alpha
+\beta)$ and a bitvector $M$ over $\intv(\beta)$ marking the rows whose
+suffixes are preceded by $\alpha$ (for a unitig, all of them, and $M$
+need not be stored). When the current match $X$ has $\intv(X) =
+[\mathrm{lo}, \mathrm{hi}] \subseteq \intv(\beta)$ and the pattern has
+$\alpha$ immediately to the left of $X$, which we check by comparing
+characters, the search jumps to
+\[
+\intv(\alpha X) = [f + \mathrm{rank}_1(M, \mathrm{lo}),\ f +
+\mathrm{rank}_1(M, \mathrm{hi} + 1) - 1],
+\]
+where ranks are relative to the start of $\intv(\beta)$: by the order
+preservation of LF, the marked rows of $\intv(\beta)$ are mapped in
+order onto $\intv(\alpha\beta)$, and those inside $\intv(X)$ onto
+$\intv(\alpha X)$. If the result is empty, the search takes ordinary
+steps. Since the jump is taken only after $\alpha$ has been confirmed in
+the pattern, the search returns the same result as plain backward
+search, and it can also return the list of shortcuts it took. This list
+is a path through the de Bruijn graph, or, with the windows below,
+through a pangenome graph whose vertices are the windows, so a BWT-based
+index can report the path of a match along with its interval; we find
+this of more practical than theoretical interest, and do not develop
+it further here.
+
+In a pangenome, the strings that commonly precede a window are
+naturally chosen from a reference $\Rref$ in the collection, such as
+CHM13~\cite{NurkEtAl2022}. In the example of \Cref{fig:dbg}, with the
+first string as $\Rref$ and windows of length $\ell = 4$ starting at
+multiples of $4$, a search that has matched the window
+\texttt{GTGG} at position $16$ can check whether the pattern has
+\texttt{CAAG} to its left and, if so, cross it in one step; of the six
+rows of $\intv(\texttt{GTGG})$, the one from the string with
+\texttt{GTCCAGG} drops out. We stored, for each window $\beta_p = \Rref[p..p
++ \ell)$ whose interval is disjoint from those of the other windows,
+shortcuts across the $2^t \ell$ characters $\Rref[p - 2^t \ell .. p)$
+for $0 \le t \le \tau$ with $2^t \ell$ dividing $p$; a shortcut ends at
+the start of another window, so shortcuts chain. At a window, the
+search tries the longest shortcut whose string the pattern matches, and
+then shorter ones.
+
+\begin{lemma}
+\label{lem:count}
+Suppose $P[j - m\ell .. j + \ell) = \Rref[p - m\ell .. p + \ell)$,
+the current match $P[j..|P|)$ has its interval inside that of
+$\beta_p$, $P[j - m\ell .. |P|)$ occurs in $T$, and none of the windows
+at $p - (m-1)\ell, \ldots, p$ was dropped because it collides with
+another. Then the search reaches or passes position $j - m\ell$ of $P$
+with at most $2\lceil \log_2(m+1) \rceil + \lfloor m / 2^\tau \rfloor$
+shortcuts.
+\end{lemma}
+
+The proof is in \Cref{app:proofs}.
+
+The rows of
+$\intv(\beta_p)$ preceded by a longer string are a subset of those
+preceded by a shorter one, so instead of one bitvector per length we
+store, for each row, the number of lengths it survives, in a wavelet
+tree; with $\tau = 0$ this is a single bitvector, as for an
+almost-unitig. With the RLBWTs of $T$ and $T'$, and windows at the same
+boundaries of $\Rref$ in both, forward and backward searches take
+shortcuts in both directions.
+
+On the chromosome~19 data of \Cref{sec:chr19-exp}, with $\ell = 25$
+and $\tau = 6$, shortcuts reduce the backward steps per pattern
+character from about $3.7$ to $0.45$ and make BML with $L = 1000$
+$7.8$ times faster, for $1.7$ times the space of the two
+RLBWTs; other values of $\ell$ and $\tau$ were slower (shorter windows
+collide more often, and longer ones are crossed less often). This
+speedup stays about the same as the collection grows from 16 to 64
+individuals, but the space grows to $2.5$ times that of the
+RLBWTs, mostly for the per-row symbols (\Cref{tab:main}).
+
+\subsection{Two-level indexing with a syncmer parse}
+\label{sec:twolevel}
+
+Two-level indexing beats shortcuts on our data, so we describe it in
+detail. Fix $k > s$. A $k$-mer over
+$\{\texttt{A},\texttt{C},\texttt{G},\texttt{T}\}$ is a \emph{closed
+syncmer}~\cite{Edgar2021} if its smallest $s$-mer, under an order $g$ on
+$s$-mers, is its first or its last (ties included). We take $g(\gamma)$
+to be a hash of the smaller of the 2-bit codes of $\gamma$ and of its
+reverse $\gamma^{\mathrm{rev}}$, so $g(\gamma) =
+g(\gamma^{\mathrm{rev}})$, and a $k$-mer is a closed syncmer if and only
+if its reverse is. We use $k = 51$ and $s = 12$.
+
+\begin{lemma}[Edgar~\cite{Edgar2021}]
+\label{lem:window}
+Among any $k - s$ consecutive $k$-mers of a string over
+$\{\texttt{A},\texttt{C},\texttt{G},\texttt{T}\}$ there is a closed
+syncmer.
+\end{lemma}
+
+\begin{proof}
+The $k$-mers starting at positions $0, \ldots, k - s - 1$ of a string
+$Y$ of length $2k - s - 1$ contain the $2k - 2s$ $s$-mers starting at
+positions $0, \ldots, 2k - 2s - 1$. Let $q$ be the start of a smallest
+of them. If $q \le k - s - 1$, it is the first $s$-mer of the $k$-mer
+starting at $q$; otherwise it is the last $s$-mer of the $k$-mer
+starting at $q + s - k \in [0, k - s - 1]$. In both cases it is
+smallest in that $k$-mer.
+\end{proof}
+
+\paragraph*{The parse.}
+Let $T^*$ be $T$ or $T'$. The \emph{boundaries} of $T^*$ are $b_0 = 0$ and
+the starting positions of the closed syncmers in $T^*$, $b_0 < b_1 <
+\cdots < b_{m-1}$. The phrases are $T^*[b_i .. b_{i+1} + k)$ for $i < m -
+1$ and $T^*[b_{m-1} .. n)$, so consecutive phrases overlap by $k$
+characters. We number the distinct phrases $1, \ldots, \sigma$ in the
+lexicographic order of their strings, and the \emph{parse} $\Pa$ of
+$T^*$ is the sequence of their ids, followed by a sentinel $0$. Within a
+stretch of $T^*$ over $\{\texttt{A},\texttt{C},\texttt{G},\texttt{T}\}$,
+\Cref{lem:window} bounds the length of a phrase by $2k - s$. By
+the symmetry of $g$, the boundaries of $T'$ mirror those of $T$, and
+the phrases of $T'$ are the reverses of those of $T$, except at the
+ends; so one dictionary serves both directions.
+
+Eddie Ferro noted that the parse at closed syncmers is
+prefix-free~\cite{FerroPC}; we include a proof for completeness.
+
+\begin{lemma}
+\label{lem:order}
+No phrase is a proper prefix of another, and for boundaries $b_i \ne
+b_j$, $T^*[b_i .. n) < T^*[b_j .. n)$ if and only if $\Pa[i .. m] <
+\Pa[j .. m]$.
+\end{lemma}
+
+\begin{proof}
+A phrase contains no syncmer start strictly between its first character
+and its last $k$ characters, while the last $k$-mer of every phrase
+other than the last is a closed syncmer, and whether a $k$-mer is a
+closed syncmer does not depend on its context. So if a phrase other than the last were a proper prefix of another
+phrase, the last $k$-mer of the shorter phrase would be a syncmer
+starting strictly inside the longer one;
+and the last phrase ends with \$, which occurs nowhere else. Now let $h$
+be the first index with $\Pa[i + h] \ne \Pa[j + h]$, which exists since
+the sentinel occurs once. The phrases at $i, \ldots, i + h - 1$ and $j,
+\ldots, j + h - 1$ are equal, so $T^*[b_i .. b_{i+h} + k) = T^*[b_j ..
+b_{j+h} + k)$ and $b_{i+h} - b_i = b_{j+h} - b_j$. The phrases at $i +
+h$ and $j + h$ are different and neither is a prefix of the other, so
+they differ at some offset smaller than both lengths, and $T^*[b_i..n)$
+and $T^*[b_j..n)$ compare as these two phrases do.
+\end{proof}
+
+\paragraph*{Mapping between the two levels.}
+Let $B$ be the bitvector over the rows of the RLBWT of $T^*$ with $B[i] =
+1$ if and only if $\mathrm{SA}[i]$ is a boundary. Every occurrence of a
+closed syncmer is a boundary, so $B$ is the union of the intervals of
+the distinct closed syncmers in $T^*$ plus the row of position $0$, and it
+has at most that many runs of 1s; we store it run-length coded. By
+\Cref{lem:order}, the $u$th 1 in $B$ (counting from $0$) is the row of
+the parse with rank $u + 1$, row $0$ being that of the sentinel.
+
+\begin{lemma}
+\label{lem:bounce}
+Let $q < q'$ be consecutive starts of closed syncmers in a pattern
+$P[0..e)$, with $q' + k \le e$. The occurrences of $P[q..e)$ in $T^*$ are
+exactly the boundaries $b_t$ such that the phrase at $t$ is $P[q .. q'
++ k)$ and $P[q'..e)$ occurs at $b_{t+1}$. Moreover, for any string $Y$
+that starts with a closed syncmer, the rows of $\intv(Y)$ are all
+marked in $B$, and the corresponding rows of the parse are
+$[\mathrm{rank}_1(B, \mathrm{lo}) + 1, \mathrm{rank}_1(B, \mathrm{hi} +
+1)]$ for $\intv(Y) = [\mathrm{lo}, \mathrm{hi}]$.
+\end{lemma}
+
+\begin{proof}
+An occurrence of $P[q..e)$ at position $a$ of $T^*$ starts with a closed
+syncmer, so $a$ is a boundary $b_t$. The $k$-mers of $T^*$ starting at
+$a + 1, \ldots, a + q' - q$ lie inside the occurrence, so they are
+closed syncmers exactly when the corresponding $k$-mers of $P$ are:
+only the last is. Hence $b_{t+1} = a + q' - q$ and the phrase at $t$ is
+$P[q..q' + k)$. The converse is immediate. The second claim holds
+because every occurrence of $Y$ starts at a boundary, and by
+\Cref{lem:order} the order of rows marked in $B$ is that of the parse.
+\end{proof}
+
+\paragraph*{Searching.}
+To find the longest suffix of $P[x..e)$ that occurs in $T^*$, and its
+interval, we find the starts of the closed syncmers in $P$ and look up
+the ids of the phrases $P[q .. q' + k)$ between consecutive starts in a
+dictionary of the phrases of $T$; the same lookup gives the id of the
+reversed phrase in $T'$, so the pattern is parsed once for both
+directions. The search takes backward steps on the RLBWT from $e$ to
+the last syncmer start $q$ with $q + k \le e$, maps the interval to the
+parse by \Cref{lem:bounce}, takes one backward step on the BWT of the
+parse for each phrase of the pattern to the left, and, when a phrase is
+not in the dictionary or a step on the parse fails, maps back with
+select queries on $B$ and continues with backward steps on the RLBWT.
+
+\begin{theorem}
+\label{thm:twolevel}
+If the dictionary lookups are correct, this search returns the same
+longest suffix and interval as backward search. If $P[x..e)$ is over
+$\{\texttt{A},\texttt{C},\texttt{G},\texttt{T}\}$, it takes at most $3k
+- 2s - 1$ backward steps on the RLBWT, plus one step on the parse per
+phrase of the pattern crossed and one that may fail.
+\end{theorem}
+
+\begin{proof}
+Correctness follows from \Cref{lem:bounce} by induction over the
+phrases. By \Cref{lem:window}, if $e - x \ge 2k - s - 1$ then one of the
+last $k - s$ $k$-mers of $P[x..e)$ is a closed syncmer, so the search
+reaches the parse after at most $2k - s - 1$ steps; otherwise it takes
+at most $2k - s - 2$ steps in total. At the left end, either the search
+is within $k - s - 1$ characters of $x$, by \Cref{lem:window}, or the
+phrase $P[q .. q' + k)$ to the left of the current syncmer start $q'$
+does not precede it in any occurrence, in which case $P[q..e)$ does not
+occur by \Cref{lem:bounce} and the backward steps from $q'$ fail before
+reaching $q$, after fewer than $q' - q \le k - s$ steps.
+\end{proof}
+
+Each step on the parse, like each step on the block sequence of
+\Cref{sec:blocks}, is a predecessor query in one Elias--Fano list of
+the runs of its BWT, grouped by symbol (\Cref{sec:prelim}); with
+$r_\Pa$ runs in the BWT of the parse, it takes $O(1 + \log(\sigma m /
+r_\Pa))$ time, and it touches only the runs of one symbol.
+
+The dictionary stores the 64-bit hashes of the phrases of $T$, sorted
+and split into buckets by their leading bits, with the phrases' ids in
+$T$ and $T'$; it checks the whole hash, and we check at construction
+time that the phrases of $T$ have distinct hashes. A phrase of the
+pattern that is not a phrase of $T$ is then mistaken for one only if
+its hash collides with one of $\sigma$ stored values, so if the hash
+function behaves like a random function, the lookups are correct with
+high probability; we have never observed an error. On our data
+this dictionary takes $46$\,MiB for both directions, against
+$96$\,MiB per direction for a hash table with the phrase ids, and
+looking up all the phrases of the patterns, with prefetching, takes
+about $1.1$ seconds, which our timings include. Splitting the patterns at runs of \texttt{N}
+matters for the bound: the current parse does not split phrases at
+\texttt{N}, so a phrase can be as long as a run of \texttt{N} in the
+collection.
+
+\subsection{Blocks}
+\label{sec:blocks}
+
+\paragraph*{Encodings of the parse.}
+\label{sec:encodings}
+%MERGE: More RLBWT Tricks' Section 5, shrunk to two sentences as agreed
+After two-level indexing a search takes one step per phrase, and most
+phrases of a pattern are predictable from the phrase before them, as
+the characters of a unitig are. We first tried replacing each phrase by
+its rank by frequency among the phrases that follow the phrase before
+it~\cite{GagieHybrid2026}, but then the encoded suffixes are not in the
+order of the suffixes of the parse, so the search cannot bounce between
+the levels with $B$; the blocks below keep the first phrase of each
+block explicit, which keeps all the indexes in the same order.
+
+For a phrase id $x$, let $\succp(x)$ be the smallest id $y$ such that
+$x y$ occurs in $\Pa$. Position $i > 0$ of $\Pa$ is a
+\emph{continuation} if $\Pa[i] = \succp(\Pa[i-1])$. A \emph{block} is a
+maximal substring $\Pa[a .. a + j]$ such that $a$ is not a continuation
+and $a + 1, \ldots, a + j$ are; since $\succp$ is a function, the block
+is determined by its \emph{symbol} $(\Pa[a], j)$, and is $\delta, \succp(\delta),
+\ldots, \succp^j(\delta)$ for $\delta = \Pa[a]$. The \emph{block sequence}
+$\Delta$ lists the symbols of the blocks of $\Pa$ in order, followed by
+a sentinel. We order symbols by $\delta$ ascending and then by $j$
+descending.
+
+\begin{lemma}
+\label{lem:blockorder}
+For block starts $a \ne a'$ of $\Pa$, $\Pa[a..m] < \Pa[a'..m]$ if and
+only if the suffix of $\Delta$ starting at the block of $a$ is smaller
+than the one starting at the block of $a'$.
+\end{lemma}
+
+\begin{proof}
+Equal symbols are equal strings of phrases followed by block starts,
+so consider the first blocks that differ, $(\delta, j)$ at $a$ and $(\delta', j')$
+at $a'$. If $\delta \ne \delta'$, both orders are decided by $\delta$ and $\delta'$.
+Otherwise, by symmetry, let $j > j'$. The two suffixes agree on $j' + 1$
+phrases, and the first continues with $\succp^{j'+1}(\delta)$. The block at
+$a'$ is not the last block of $\Pa$, since the last phrase of $\Pa$
+occurs only once and would then also be in the block at $a$; so the
+second suffix continues with the first phrase $y$ of its next block,
+which follows $\succp^{j'}(\delta)$ in $\Pa$ but is not a continuation, so $y
+> \succp^{j'+1}(\delta)$ by the definition of $\succp$. So the first suffix is smaller, as its symbol is.
+\end{proof}
+
+So if $BS$ marks the rows of the parse whose suffixes start at block
+starts, including the row of the sentinel, the $u$th marked row
+(counting from $0$) corresponds to row $u$ of the BWT of $\Delta$, and a \emph{block step} on that BWT, with a symbol $(\delta, j)$,
+prepends a whole block to the parse suffixes at block starts. We store
+$\succp$, $BS$ (run-length coded when that is smaller, which on our
+data it is by a factor of $9$ to $20$), the BWT of $\Delta$, the
+symbols grouped by $\delta$ with their $j$'s in decreasing order, and one bit
+per phrase saying whether it is a continuation anywhere in $\Pa$.
+
+\begin{lemma}
+\label{lem:space}
+Let $\eta$ be the number of distinct closed syncmers in $T^*$, $\sigma$
+the number of distinct phrases, $m$ the number of phrases, $r_\Pa$ and
+$r_\Delta$ the numbers of runs in the BWTs of $\Pa$ and $\Delta$, $b$
+the number of blocks and $s'$ the number of distinct block symbols.
+Besides the RLBWT of $T^*$ and the dictionary, the parse index of $T^*$,
+with blocks, takes
+\[
+O\bigl(\eta \log(n/\eta) + r_\Pa \log(\sigma m / r_\Pa) + r_\Delta
+\log(s' b / r_\Delta) + b \log(m/b) + \sigma \log \sigma + s' \log m\bigr)
+\]
+bits. The dictionary, shared by $T$ and $T'$, takes $\sigma (64 - h + 2
+\lceil \log_2 (\sigma + 3) \rceil) + O(\sigma)$ bits, where $2^h$, the
+number of its buckets, is about $\sigma / 8$.
+\end{lemma}
+
+The proof is in \Cref{app:proofs}.
+
+Nothing here depends on $n$ except through $\eta$, and $\eta$,
+$\sigma$ and the numbers of runs grow slowly as haplotypes are added
+(\Cref{sec:chr19-exp}). With 16 individuals, the parse indexes of $T$
+and $T'$ take $102.5$\,MiB without blocks and $139.6$\,MiB with them,
+of which the dictionary takes $46$\,MiB.
+
+A pattern is split into blocks in the same way, using $\succp$ of the
+collection. The key observation is that a block boundary in the
+pattern is a block boundary in every occurrence that extends one
+phrase to its left.
+
+\begin{lemma}
+\label{lem:blockstart}
+If phrase $i$ of the pattern is not a continuation of phrase $i - 1$,
+then in every occurrence in $\Pa$ of the pattern's phrases $i - 1, i,
+\ldots$, the position of phrase $i$ is a block start.
+\end{lemma}
+
+\begin{proof}
+The phrase before it in $\Pa$ is the pattern's phrase $i - 1$, and the
+pattern's phrase $i$ is not $\succp$ of it.
+\end{proof}
+
+The search with block jumps proceeds as in \Cref{sec:twolevel}, except
+that when the current parse interval is exact for the pattern's
+phrases from $i$ on, and $i$ is a block start of the pattern whose
+phrase is complete, it restricts the interval to block starts with two
+rank queries on $BS$ and takes block steps, one per block of the
+pattern, for as long as they succeed. In an occurrence of the pattern's
+phrases from $i$ on that starts at a block start of $\Pa$, the block
+boundaries of $\Pa$ are those of the pattern, since $\succp$ is a
+function and by \Cref{lem:blockstart}; so, by induction, each interval
+after a block step consists exactly of the occurrences of the pattern's
+phrases from the current position on that start at block starts of
+$\Pa$, and by \Cref{lem:blockstart} it contains every occurrence that
+extends one more phrase to the left. The interval after the last block
+step, however, may miss occurrences whose first phrase is a
+continuation in $\Pa$. We fix this with the following rule.
+
+\begin{lemma}
+\label{lem:backup}
+Suppose a sequence of $h \ge 1$ block steps ends at the pattern's
+phrase $i$, the last of them crossing phrases $i, \ldots, i'$. If the
+phrase $i$ of the pattern is never a continuation in $\Pa$, the parse
+rows between the first and the last row of the final interval form
+the exact parse interval for phrases $i, i+1, \ldots$. Otherwise,
+taking parse steps for phrases $i', \ldots, i$ from the parse rows
+between the first and the last row of the interval before the last
+block step gives exact intervals.
+\end{lemma}
+
+\begin{proof}
+In the first case, every occurrence starts at a block start, so the
+final interval contains all of them, and the parse rows between its
+first and last rows are all occurrences, by contiguity. In the second
+case, let $J$ be the interval before the last block step, for the
+pattern's phrases from $i' + 1$ on; it contains every occurrence
+preceded by phrase $i'$, and the parse rows between its first and last
+rows are occurrences of phrases $i' + 1, \ldots$. The rows of the true
+interval outside that range are not preceded by phrase $i'$, by
+\Cref{lem:blockstart}, so the parse step for $i'$ is exact, and so are
+the following parse steps.
+\end{proof}
+
+After backing up, the search takes no block steps until it has crossed
+phrase $i$ again. Each phrase is crossed by at most one block step and
+one parse step, and each sequence of block steps ends with at most one
+failed step, so \Cref{thm:twolevel} holds with at most two steps per
+phrase on the parse and on $\Delta$. On our data, with 16 individuals, block jumps reduce the steps on
+the parse from $23.3$ million to $3.1$ million, plus $2.5$ million block
+steps, for BML with $L = 1000$.
+
+\paragraph*{Other continuations.}
+Blocks play the role of unitigs in the parse, except that a block
+follows the smallest successor of each phrase rather than its only one.
+The smallest successor is not the only choice that keeps the indexes in
+the same order. Let $\chi$ assign each phrase $x$ one of the phrases that
+follow it in $\Pa$, call position $i$ a continuation if $\Pa[i] =
+\chi(\Pa[i-1])$, and give each symbol a third component, a bit saying
+whether the first phrase of the next block is smaller or larger than $\chi$
+of the block's last phrase. If symbols with the same $\delta$ are ordered
+with the smaller ones first, by $j$ ascending, and then the larger
+ones, by $j$ descending, the proof of \Cref{lem:blockorder} goes
+through, and \Cref{lem:blockstart,lem:backup} do not depend on the
+choice of $\chi$. With the smallest successor every bit says ``larger'', so
+no bits are stored. Choosing the most frequent successor maximises the
+number of continuations, and its blocks may shrink less as haplotypes
+are added, since the most frequent successor of a phrase changes less
+than its smallest one. We have implemented this choice and checked that
+the search remains exact. On chromosome~19 with 16 individuals, it makes
+blocks $3.3$ times longer, $31.4$ phrases on average instead of $9.5$,
+and its blocks hardly shrink as haplotypes are added: $30.9$ phrases
+with 32 individuals and $30.5$ with 64, against $8.3$ and $7.1$ with
+the smallest successor. It does not yet pay off, however: a search also
+takes parse steps for up to about a block at each end and when it backs
+up, so with 16 individuals it takes $7.7$ million parse steps and $0.6$
+million block steps for BML with $L = 1000$, instead of $3.1$ and $2.5$
+million, and it is $5$ to $6\%$ slower.
+
+\subsection{Experiments}
+\label{sec:chr19-exp}
+
+\paragraph*{Data.}
+From the assemblies of release~2 of the Human Pangenome Reference
+Consortium~\cite{HPRC2025,LucasEtAl2026} we took chromosome~19. The
+collections consist of the reference CHM13~\cite{NurkEtAl2022}, of
+$61.7$ million bases, and both haplotypes of the first 16, 32 or 64
+individuals, by sample identifier, whose haplotypes each have
+chromosome~19 as a single sequence of at least 90\% of the length of
+CHM13; with 16 individuals there are 33 sequences and $n =
+2{,}032{,}742{,}766$ characters. The patterns are haplotype~1 of the
+next two such individuals, HG00423 and HG00438, of $61.7$ and $61.0$
+million bases, split at runs of \texttt{N} into $4$ patterns of
+$122.4$ million characters in all. All
+sequences were already in the orientation of CHM13.
+
+\paragraph*{Implementation and setup.}
+The wavelet tree of our RLBWT uses rank9-style
+bitvectors~\cite{Vigna2008}. We
+built the RLBWTs with Big-BWT~\cite{BoucherEtAl2019}, and the parse
+indexes from the collection and the RLBWTs in a streaming pass.
+%MERGE: code citation moved here from the conclusions
+Our code for this section is available at
+\url{https://github.com/TravisGagie/MEM-finding}, in the directory \texttt{chr19}. All experiments ran
+on a desktop with an Intel Core i7-8700 CPU (3.2\,GHz, 6 cores) and 16\,GiB of RAM, under Ubuntu 26.04, with
+the searches pinned to one core and a single thread for every tool; we
+report the median of five runs. All the methods we compare could be run
+in parallel in the same way, by searching different patterns, or
+different parts of a pattern, in different threads. Every configuration of ours gave the
+same MEMs, with the same intervals, as plain search. For ropebwt3, which
+indexes both strands and reports a MEM if it or its reverse complement
+matches, we checked that all differences are reverse-strand matches:
+with 16 individuals and $L = 100$, for example, ropebwt3 reports 234
+MEMs that occur only on the reverse strand, and our 140 MEMs that
+ropebwt3 does not report lie inside them, and with $L = 1000$ the
+numbers are 5 and 2. Movi~2~\cite{ZakeriEtAl2026}, which we ran with
+its regular index of both strands and a table of 10-mers, reads
+\texttt{N} in the collection as \texttt{A}, and most of its differences
+from our MEMs are explained in the same way, but not all: with
+$L = 100$, at each size, between 140 and 281 strings reported only by
+Movi~2 and 16 MEMs reported only by us remain, and with $L = 1000$ at
+most 89 and 1. Many of the former are not maximal; for example, they
+start a few characters after a MEM that has the same end. We have not
+investigated these differences.
+Ropebwt3 and Movi~2 answer a slightly more general question than our
+index of $T$ and $T'$, which finds only forward-strand MEMs. Building
+ropebwt3's index took $20$ and $43$ minutes with 32 and 64 individuals,
+with a peak of $9.6$\,GiB.
+Given the RLBWTs, building the parse indexes for both directions took
+$5.4$, $7.5$ and $12.1$ minutes for 16, 32 and 64 individuals, with a
+peak memory use of $1.9$, $3.5$ and $7.0$\,GiB.
+
+\begin{table}[t]
+  \centering
+  \caption{Finding the MEMs of two chromosome~19 haplotypes (122.4
+    million characters) with respect to collections of 16, 32 and 64
+    individuals: space in MiB for both directions, and time in seconds,
+    single-threaded, for BML with $L = 1000$ and $L = 100$ and for
+    forward--backward (FB) with $L = 1000$. Plain search uses only the
+    two RLBWTs, the shortcuts have $\ell = 25$ and $\tau = 6$, and
+    ropebwt3 and Movi~2 index both strands. For Movi~2, the FB column
+    gives the time to find all MEMs.}
+  \label{tab:main}
+  \begin{tabular}{l l r rrr}
+    \toprule
+    individuals & method & MiB & BML, 1000 & BML, 100 & FB, 1000 \\
+    \midrule
+    16 & plain search            & 314 & 290.5 & 287.3 & 287.2 \\
+       & shortcuts               & 543 & 37.2 & 39.5 & 39.3 \\
+       & two-level               & 417 & 12.3 & 14.5 & 13.8 \\
+       & two-level, block jumps  & 454 & 8.0 & 10.3 & 9.7 \\
+       & ropebwt3                & 157 & 64.3 & 65.5 & 63.1 \\
+       & Movi~2                  & 554 & 25.9 & 28.9 & 57.3 \\
+    \midrule
+    32 & plain search            & 349 & 321.5 & 318.2 & 318.6 \\
+       & shortcuts               & 699 & 40.3 & 42.2 & 41.5 \\
+       & two-level               & 475 & 12.1 & 13.7 & 12.8 \\
+       & two-level, block jumps  & 526 & 7.1 & 8.7 & 7.9 \\
+       & ropebwt3                & 178 & 72.8 & 73.9 & 69.0 \\
+       & Movi~2                  & 586 & 30.2 & 34.2 & 65.1 \\
+    \midrule
+    64 & plain search            & 406 & 348.7 & 345.5 & 344.3 \\
+       & shortcuts               & 998 & 43.1 & 44.8 & 44.2 \\
+       & two-level               & 569 & 12.9 & 14.3 & 13.4 \\
+       & two-level, block jumps  & 642 & 7.1 & 8.6 & 7.7 \\
+       & ropebwt3                & 212 & 79.5 & 80.2 & 76.8 \\
+       & Movi~2                  & 639 & 35.5 & 40.8 & 85.1 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph*{Results.}
+\Cref{tab:main} shows the space and time of each method. With 16
+individuals, the parse has $106.9$ million phrases, $4.17$ million of
+them distinct, and $11.2$ million blocks, so a block has $9.5$ phrases
+on average. Without shortcuts, finding the MEMs with BML and $L = 1000$
+takes $3.7$ backward steps per pattern character, since a forward search
+and two backward searches cover each MEM and consecutive MEMs overlap.
+Two-level indexing replaces most of them by $0.19$ steps on the parse
+per character, block jumps reduce these to $0.05$ steps on the parse and
+on $\Delta$, and only $0.06$ backward steps per character remain on the
+RLBWT. Two-level indexing with block jumps is then $36$ times faster
+than plain search and $4.6$ times faster than the shortcuts, for $1.4$
+times the space of the RLBWTs, less than the shortcuts take. It is $6.4$
+to $8.0$ times faster than ropebwt3, whose index of both strands takes a
+third of its space, and $2.8$ to $3.2$ times faster than Movi~2, whose
+index of both strands, with its table of 10-mers, takes $1.2$ times its
+space. With 32 and 64 individuals, it is $8.5$ to $10.3$ and $9.3$ to
+$11.2$ times faster than ropebwt3, whose index takes a third of its
+space, and $3.9$ to $4.3$ and $4.7$ to $5.0$ times faster than Movi~2,
+whose index takes $1.1$ and $1.0$ times its space.
+
+KeBaB~\cite{BrownEtAl2025KeBaB}, with $k = 20$, does not help here,
+as it does with long reads that mostly do not match the collection: its
+fragments keep more than $99.5\%$ of the characters with 16 individuals,
+and more than $99.8\%$ with 32 and 64, since almost every
+character of a whole chromosome lies in a long MEM, and neither plain
+search, nor block jumps, nor ropebwt3 gets faster on the fragments. We
+checked that the MEMs found in the fragments are exactly the MEMs of
+length at least $L$.
+
+As the collection grows from 16 to 64 individuals, the average number of
+phrases per block drops from $9.5$ to $8.3$ and $7.1$: each new
+haplotype adds successors to some phrases, and a phrase that used to be
+the only successor of its predecessor may no longer be the smallest one.
+Nevertheless, block jumps get faster: for BML with $L = 1000$ their
+speedup over plain search grows from $36$ to $45$ and $49$, and over
+two-level indexing without them from $1.5$ to $1.7$ and $1.8$. The
+number of steps on the parse and on $\Delta$ stays at about $5$ million,
+with more block steps and fewer parse steps, while plain search and
+two-level indexing without jumps take more steps, presumably because the
+MEMs get longer and overlap more. The space of the parse index grows
+much more slowly than that of the shortcuts: from $0.44$ to $0.51$ and
+$0.58$ times that of the RLBWTs, against $0.73$, $1.00$ and $1.46$.

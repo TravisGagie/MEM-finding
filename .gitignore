@@ -1,0 +1,14 @@
+# LaTeX build products
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/*.vtc
+paper/*.pdf
+!paper/cc-by.pdf
+!paper/lipics-logo-bw.pdf
+!paper/orcid.pdf
+# build directories
+build/
+*/build/

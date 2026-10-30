@@ -1,0 +1,20 @@
+% conclusions.tex -- owner: merging task (joint).  Section owners: request changes through NOTES.md.
+\section{Conclusions}
+\label{sec:conclusions}
+\label{sec:conclusion}
+
+We have described three experiments in finding MEMs with BWT-based indexes, each with a different bottleneck and a different structure that removes it.
+On long noisy reads from whole genomes, the bottleneck is finding the right matches: each read's longest MEMs, found by BML with an adaptive threshold and KeBaB's filter searched longest first, avoid choosing a threshold and are both more accurate and faster than all the MEMs of a fixed length.
+On short 16S reads, the bottleneck is answering each MEM: proportional credit is the most accurate split, and a complete, run-length compressed tag array, built from the BWT in space proportional to the number of runs, gives the counts it needs without locating any occurrence.
+On whole chromosomes, the bottleneck is crossing long matches: two-level indexing with block jumps crosses them 28 to 49 times faster than plain backward search, still returning each MEM with its BWT interval, with structures whose space depends mostly on the distinct material in the collection.
+The structure that removes one bottleneck does nothing for another: KeBaB's filter, which helps on the Zymo reads (Section~\ref{sec:zymo}), saves little on short, accurate reads or on whole chromosomes (Section~\ref{sec:chr19-exp}).
+
+Each experiment leaves open questions.
+For classification, the main one is how to make credit robust to differences between the database and the sample, including reads from taxa absent from the database, for example by correcting towards an estimated composition of the sample; we would also like to scale to GTDB.
+It would be natural to bound the grammar of the tag runs in terms of $r$, $d$ and $\rho$.
+We conjecture that tagging each character with the rank of its genome in a phylogenetic tree gives a differentially compressible tag array that yields counts at every rank.
+For crossing long matches, the weakness we see is that blocks shrink as haplotypes are added; so far this has not hurt, but it may with larger collections.
+The most frequent successor keeps blocks long (Section~\ref{sec:blocks}), but we have yet to make it pay off: that needs cheaper ends and back-ups.
+The shortcuts of Section~\ref{sec:shortcuts} could also be applied directly to the parse, instead of encoding it.
+We would also like to see these ideas applied to DNA alignment, where MEMs are the usual seeds~\cite{RossiEtAl2022,VarkiEtAl2025}: BML with an adaptive threshold and KeBaB's filter to find good seeds in noisy reads, tags giving reference positions~\cite{BalazEtAl2024,OO26} to answer them without locating every occurrence, and block jumps to cross the long matches of accurate reads and assemblies; we hope someone takes this up.
+Finally, the three structures could be combined: block jumps with faster character-level indexes, such as Movi~2~\cite{ZakeriEtAl2026} and ropebwt3~\cite{Li2024}, and with KeBaB~\cite{BrownEtAl2025KeBaB} on noisier patterns; and tag arrays with two-level indexing, to report the taxa or the paths through a pangenome graph of long matches.

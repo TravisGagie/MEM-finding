@@ -1,0 +1,260 @@
+% app-katka-alternatives.tex -- owner: KATKA task.
+% Extracted by the merging task (2026-10-30) from tax_cpm.tex, Appendix C.  Key map and renamings applied (see NOTES.md).
+\section{Alternatives we considered}
+\label{app:alternatives}
+\label{app:negative}
+
+This appendix explains the choices behind our default configuration, by describing the alternatives we tried along the way, and some we have not tried yet.
+Most of them were worse on SILVA, which consists of short, highly conserved sequences with many per genus.
+Some might work better on other datasets, such as whole genomes, where the number of occurrences of matches and the compressibility of tag arrays could differ greatly.
+
+\subsection{Which matches}
+\label{app:matches}
+
+Cliffy cuts each read into \emph{Ziv--Merhav phrases} (ZMPs), the phrases of the cross parse of Section~\ref{sec:background}: each is the longest string ending at its position that occurs in the database, and each new backward search starts at the character where the previous one failed.
+The same parse underlies Relative Lempel--Ziv compression~\cite{KPZ10}, but there each phrase also stores the position of a source, which is needed to decompress.
+For classification only the phrases matter, so ZMP is the more appropriate name.
+Our first experiments compared ZMPs with all the MEMs of each read, found by Li's forward--backward algorithm~\cite{Li2012}, which alternates backward and forward extensions and starts each search one position after the end of the previous MEM, with the range scheme.
+MEMs were more accurate than ZMPs by 0.4 to 1.3 points at the genus level (with Cliffy's scoring), both with and without digestion.
+However, reads have many short MEMs, short MEMs occur many times in the database, and listing the genera containing them is expensive: with a subsampled r-index (Appendix~\ref{app:listing}), locating all the occurrences of all the MEMs of a read took 35 to 78\,ms.
+
+Table~\ref{tab:L} shows how the threshold $L$ of BML affects accuracy with even credit.
+With $L = 15$, the accuracy of the range scheme (87.3\% with Cliffy's scoring; not shown in the table, which is for even credit) is the same as with all the MEMs found by forward--backward search (87.2\%), while listing with the sr-index becomes more than 100 times faster (289\,$\mu$s per read instead of 35 to 78\,ms, with sampling parameter $s_r = 4$ and an explicit RLCSA).
+Accuracy is almost unchanged up to $L = 30$, drops by about 2 points at $L = 50$ and collapses for larger $L$, as reads start to have no MEM that long.
+Most of the gain in time comes from not listing the short MEMs, but BML also searches faster: forward--backward search that lists only the MEMs of length at least $L$ takes 133 to 146\,$\mu$s per read without digestion, almost independently of $L$, against 77 to 136\,$\mu$s for BML (unsampled tags, explicit RLCSA, no lookup table, $L$ from 40 down to 15), and remains slower with a lookup table (for example, 75 against 61\,$\mu$s with $L = 30$ and a 12-base table).
+
+\begin{table}[t]
+\centering
+\caption{Genus-level accuracy with BML for various thresholds $L$ (mean over the four regions), listing the genera containing each MEM, with even credit.
+``Strict'' counts ties and unclassified read pairs as wrong; ``theirs'' is Cliffy's scoring.
+The last column is the fraction of unclassified read pairs.}
+\label{tab:L}
+\begin{tabular}{rccccccc}
+\toprule
+ & \multicolumn{3}{c}{undigested} & & \multicolumn{3}{c}{minimizer digests} \\
+\cmidrule{2-4} \cmidrule{6-8}
+$L$ & strict & theirs & uncl. & & strict & theirs & uncl. \\
+\midrule
+15 & 90.56\% & 91.59\% & 0.0\% & & 88.93\% & 89.97\% & 0.0\% \\
+20 & 90.53\% & 91.68\% & 0.0\% & & 88.91\% & 89.98\% & 0.0\% \\
+30 & 90.28\% & 91.83\% & 0.0\% & & 88.84\% & 90.03\% & 0.0\% \\
+40 & 89.61\% & 91.93\% & 0.0\% & & 88.55\% & 90.12\% & 0.0\% \\
+50 & 88.27\% & 92.01\% & 0.2\% & & 87.91\% & 90.27\% & 0.0\% \\
+75 & 78.05\% & 87.46\% & 7.6\% & & 82.59\% & 89.91\% & 2.3\% \\
+100 & 56.85\% & 66.13\% & 31.8\% & & 67.58\% & 77.77\% & 18.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table also shows why we prefer the strict accuracy: with Cliffy's scoring, accuracy appears to \emph{increase} up to $L = 50$, but only because more read pairs end in ties among a few genera.
+Even credit is also clearly more accurate than the range: with $L = 15$, by 3.5 points (strict) without digestion and by 3.6 points with it.
+
+\subsection{How to give credit}
+\label{app:freq}
+\label{sec:norm}
+
+\begin{table}[t]
+\centering
+\caption{Genus-level accuracy (strict / Cliffy's scoring, mean over the four regions) with even credit to each genus containing a match, credit proportional to the number of occurrences in each genus, and credit proportional to the fraction of each genus's sequences (both strands) containing the match.}
+\label{tab:freq}
+\begin{tabular}{lccc}
+\toprule
+ & even & proportional & normalised \\
+\midrule
+digests, $L = 15$ & 88.93 / 89.97\% & 92.47 / 92.49\% & 91.36 / 91.36\% \\
+digests, $L = 30$ & 88.84 / 90.03\% & 92.48 / 92.51\% & 91.34 / 91.34\% \\
+undigested, $L = 15$ & 90.56 / 91.59\% & 93.74 / 93.75\% & 92.92 / 92.92\% \\
+undigested, $L = 30$ & 90.28 / 91.83\% & 93.77 / 93.79\% & 92.76 / 92.76\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Even credit, as in Cliffy's approximate listing, was our first choice, since it treats each genus containing a match alike.
+Table~\ref{tab:freq} shows that proportional credit (Section~\ref{sec:accuracy}) is about 3.5 points more accurate, both with and without digestion, and that it almost eliminates ties.
+Proportional credit favours genera with many sequences in SILVA, since they have more occurrences of everything.
+To separate this effect from that of weighting each genus by how much of it contains the match, we also tried dividing each count $c_g$ by $2 n_g$, where $n_g$ is the number of sequences in genus $g$ and the factor 2 accounts for the two strands, so that each genus gets credit in proportion to the fraction of its sequences containing the match.
+This normalised credit gains about 2.5 points of strict accuracy over even credit, but about 1 point less than proportional credit.
+
+This does not mean that normalising is a bad idea in general.
+MicrobeMixer chooses the genus of each simulated read according to the abundances in an aquatic biome, and only then a sequence of that genus, so our reads are not drawn in proportion to how well each genus is represented in SILVA.
+Proportional credit then acts as a prior that a genus with many sequences in the database is more likely, and it helps only insofar as the genera that are abundant in the simulated samples are also well represented in SILVA, which is plausible.
+On samples whose composition differs from that of the database, the prior could hurt, and normalising, or correcting towards a known or estimated composition of the sample, could be better.
+A direct test would be to simulate reads by choosing genera uniformly, regardless of their representation in the database, and then sequences within each genus: if the advantage of proportional credit comes from the prior, it should shrink or disappear, while both kinds of weighting should still beat even credit if the rest of the gain comes from weighting each genus by how much of it contains the match.
+We leave this test for future work.
+On the Zymo reads, where the reference has up to 30 times as many sequences of one species as of another, normalising by the number of sequences or by their total length did not help (Section~\ref{sec:zymo-accuracy}), but almost every long MEM there occurs in a single species.
+
+\subsection{How to list and count}
+\label{app:listing}
+\label{sec:sr}
+\label{sec:rlcsa}
+
+\subparagraph*{Subsampled r-indexes.}
+Once we have the BWT interval of a MEM, the obvious way to find the genera containing it, and the number of occurrences in each, is to locate all its occurrences with an r-index~\cite{GagieNavarroPrezza2020} and map each to its genus.
+The r-index stores two samples of the suffix array per run of the BWT.
+The subsampled r-index (sr-index)~\cite{CGN21,CGN25} discards samples that are close in the text to others, so that it stores $O(\min(r, n/s_r))$ samples for a parameter $s_r$ while locating each occurrence in $O(s_r)$ time.
+We first stored the BWT as an RLBWT, with the run heads in a Huffman-shaped wavelet tree and the run starts in Elias--Fano coded bitvectors.
+With $s_r = 16$ and no lookup table, this index takes only 0.41\,GB and classifies a read in 477\,$\mu$s with $L = 30$.
+Building it from the sequences took under 9 minutes on our desktop (347\,s for the BWT, 119\,s for the r-index samples and 43\,s to subsample them), and it is the smallest undigested index on our Pareto surface.
+
+\subparagraph*{RLCSAs.}
+Backward search on an RLBWT computes rank queries on the BWT, which become slower as the alphabet grows, and this matters especially for minimizer digests, whose alphabet has 256 symbols.
+The RLCSA (Section~\ref{sec:prelim}) avoids this, and the sr-index's subsampling works the same way on an RLCSA, as in Cobas et al.'s sr-csa~\cite{CGN25}.
+We still use the RLBWT's run heads to read characters when locating.
+Building an RLCSA from the BWT takes a few seconds, and an explicit RLCSA makes every configuration two to four times faster than the RLBWT.
+
+\subparagraph*{Tag arrays.}
+A tag array needs no suffix-array samples, and listing or counting with it costs time proportional to the number of genera or runs in the interval, rather than to the number of occurrences, so it is much faster than locating.
+It is also larger, because the tags have more runs than the BWT.
+Tagger~\cite{DAF+25} stores the genus of only the last position of each BWT run, which suffices for its single-genus toehold but not for listing.
+Most of the space of our tag array is in the genera of its runs, so we tried storing them for only some runs, in the spirit of subsampled r-indexes~\cite{CGN25} and of Olbrich and Ohlebusch's sampled tag arrays~\cite{OO26}.
+Following Olbrich and Ohlebusch, let $e(i)$ be the run containing the LF-mapping of the first position of run $i$.
+LF moves to the previous position of the text, so run $e(i)$ has the same genus as run $i$, unless the first position of run $i$ is the first position of a segment.
+We store the genera of those runs, of which there are fewer than genera, since only some genus starts are the first position of a run.
+The graph with edges $i \to e(i)$ has out-degree 1.
+Unlike in Olbrich and Ohlebusch's setting, where tags strictly decrease along edges, it may have cycles (within a genus), so we also store the genus of one run on each cycle.
+We then choose the other sampled runs greedily so that every run reaches a sampled run in fewer than $s_r$ steps.
+On the digest there are 7\,467 segment boundaries and 11\,141 cycles, and we sample 24\% of the runs with $s_r = 4$ and 5\% with $s_r = 16$, which shrinks the tags from 0.19\,GB to 0.09\,GB and 0.06\,GB, respectively (without the range-minimum structure).
+Sampling did not help much, and grammar-compressing the runs instead works better (Section~\ref{sec:tags}).
+Computing LF needs access to the BWT, which an RLCSA does not provide, so a sampled tag array needs the RLBWT as well, which cancels most of its savings unless the RLBWT is used for backward search anyway.
+Moreover, counting with sampled tags needs the genus of every run in the interval, each recovered by following LF.
+
+\subparagraph*{The Pareto surface.}
+A configuration is on the time--space--accuracy Pareto surface if no other configuration is at least as good in all three measures and better in at least one.
+Table~\ref{tab:pareto} lists the configurations on this surface, out of all combinations of backend (RLBWT, Elias--Fano or explicit RLCSA), listing structure (sr-index with $s_r = 0, 4, 16$, tags with $s_r = 1, 4, 16$, or, without digestion and with $L = 30$ or 40, tags with grammar-compressed runs), lookup table ($k_t = 0, 10, 12$ bases or $0, 2$ digest symbols) and $L$ (15 to 40 bases, or to 50 with digests), all with proportional credit, so the space of a tag array does not include its range-minimum structure.
+No configuration with $L < 30$ is on the surface, since $L = 30$ is at least as accurate and faster.
+Without digestion, sr-indexes give the smallest configurations, run-length compressed tag arrays the fastest, and grammar-compressed runs most of those in between.
+With digestion, only tag arrays appear.
+
+\begin{table}[t]
+\centering
+\caption{Configurations on the time--space--accuracy Pareto surface (time per read in $\mu$s, by threshold $L$), with proportional credit.
+EF stands for Elias--Fano, gramm.\ runs for tags with grammar-compressed runs (Section~\ref{sec:tags}), $s_r$ is the sampling parameter of the sr-index or of the tags, and $k_t$ is the length of the strings in the lookup table: $k_t = 2$ digest symbols with digestion and, unless stated otherwise, $k_t = 10$ bases without.
+The accuracy depends only on the digestion and on $L$ (strict, mean over the four regions).}
+\label{tab:pareto}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+configuration & space (GB) & $L = 30$ & $L = 40$ & $L = 50$ \\
+\midrule
+\multicolumn{2}{l}{\emph{minimizer digests}: strict accuracy} & 92.48\% & 92.36\% & 92.05\% \\
+\quad RLBWT + tags, $s_r = 16$ & 0.16 & 735.6 & 361.4 & 225.1 \\
+\quad RLBWT + tags, $s_r = 4$, no table & 0.18 & 240.1 & 162.0 & 125.6 \\
+\quad RLBWT + tags, $s_r = 4$ & 0.19 & 220.1 & 147.0 & 114.3 \\
+\quad EF RLCSA + tags & 0.27 & 61.9 & 50.7 & 44.4 \\
+\quad explicit RLCSA + tags & 0.49 & 39.3 & 32.7 & 25.2 \\
+\midrule
+\multicolumn{2}{l}{\emph{undigested}: strict accuracy} & 93.77\% & 93.48\% & \\
+\quad RLBWT + sr-index, $s_r = 16$, no table & 0.41 & 476.9 & 389.5 & \\
+\quad RLBWT + sr-index, $s_r = 16$ & 0.46 & 315.1 & 265.9 & \\
+\quad RLBWT + tags, $s_r = 4$ & 0.61 & 227.8 & 197.6 & \\
+\quad RLBWT + gramm.\ runs & 0.64 & 211.5 & 186.6 & \\
+\quad RLBWT + tags, $s_r = 4$, $k_t = 12$ & 0.88 & 216.2 & 185.8 & \\
+\quad RLBWT + gramm.\ runs, $k_t = 12$ & 0.90 & 199.1 & 177.3 & \\
+\quad explicit RLCSA + sr-index, $s_r = 16$, no table & 0.98 & 193.9 & 145.3 & \\
+\quad explicit RLCSA + gramm.\ runs, no table & 1.02 & 104.0 & 85.0 & \\
+\quad explicit RLCSA + gramm.\ runs & 1.04 & 75.0 & 62.4 & \\
+\quad explicit RLCSA + gramm.\ runs, $k_t = 12$ & 1.31 & 71.0 & 60.0 & \\
+\quad explicit RLCSA + tags (default) & 1.44 & 66.0 & 57.3 & \\
+\quad explicit RLCSA + tags, $k_t = 12$ & 1.71 & 62.9 & 54.4 & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Counting with rank queries}
+\label{app:rank}
+
+Instead of scanning the tag runs in a MEM's BWT interval to count its occurrences in each taxon, we could list the taxa with Muthukrishnan's algorithm and then count the occurrences of each with two rank queries on the tag array, as Sadakane's document listing allows~\cite{Sad07} and as Cobas, M\"akinen and Rossi do on a grammar-compressed document array~\cite{CMR20}.
+This takes time proportional to the number of taxa containing the MEM, times the cost of a rank query, rather than to the number of tag runs in the interval.
+It needs rank support on the run-length compressed tag array, for example, for each taxon, the sorted list of the starts of its tag runs with their cumulative lengths, like the lists of our RLCSA, so that a rank query is a predecessor search in one list.
+It can pay off only when intervals span many tag runs of few taxa, as the intervals of short or common MEMs can on references with many genomes per taxon.
+We implemented it, with explicit lists and jump tables as in our RLCSA, and compared it with scanning on the BWT intervals of the MEMs of our SILVA timing reads and of 1\% of the Zymo reads; both methods give identical counts.
+On SILVA, with $L = 30$, it takes 1.32\,$\mu$s per MEM against 0.92\,$\mu$s for scanning, and its lists take 3.0\,GB against 0.97\,GB for the whole tag array: intervals with many tag runs also contain many genera, so listing alone costs almost as much as scanning.
+On Zymo it wins for the rare intervals with 64 or more tag runs (1.8\,$\mu$s against up to 10\,$\mu$s), which contain many runs of few species, but these are fewer than 0.03\% of the intervals, and 99\% lie inside a single tag run, where counting is trivial; its lists take 7.3\,GB against 1.47\,GB.
+On both references, counting is a small fraction of the time per read.
+
+\subsection{LCAs without locating: the rz-index}
+\label{sec:rz}
+
+When each match votes for an LCA, we only need the leftmost and rightmost genera containing it, which are the genera of its leftmost and rightmost occurrences in the text.
+The rz-index finds these without locating any other occurrence.
+It combines the first KATKA~\cite{GKL22}, which found the leftmost and rightmost occurrences of a $k$-mer with range-minimum queries on grids built from LZ77 parses, with the composite indexes of Belazzougui et al.~\cite{BelazzouguiEtAl2015,BelazzouguiEtAl2017}, which pair the RLBWT with the phrase boundaries of the LZ77 parse: an occurrence that crosses or ends at a phrase boundary (a \emph{primary} occurrence) is found with a two-dimensional grid whose points are the phrase boundaries, sorted by the text that follows them and by the reversed text that precedes them, and all other occurrences are copies of primary ones.
+To query the grid for a pattern, they need the BWT interval of each of its suffixes, which backward search over the RLBWT of the text provides, and the interval of the reverse of each of its prefixes, for which they keep a second RLBWT, of the reversed text.
+Since our index contains both strands, we do not need that second RLBWT: we sort the phrase boundaries by the reverse complement of the text preceding them, instead of its reverse, so the intervals we need are those of the reverse complements of the prefixes, which are in the same index.
+Since the leftmost occurrence of a pattern is always primary, we can also replace range reporting with range-minimum queries on the grid.
+A symmetric grid built on a right-to-left parse gives the rightmost occurrence.
+For the rz-index, $T$ and its reverse are parsed with a left-referencing greedy LZ77 parse in which each phrase's source starts within the previous 32\,million characters.
+The two grids are built on the phrase ends of the two parses, each as a wavelet matrix with a range-minimum structure on each level, and auxiliary structures (per-level union bitvectors and scan arrays) speed up the grid queries.
+
+Table~\ref{tab:rz} compares the rz-index with Cliffy's LCA query.
+With Cliffy's own matches (ZMPs), the rz-index is 4.4 to 9 times smaller than Cliffy's index, and on our older desktop it takes 1.6 to 3 times as long per read as Cliffy reports on its server (1.6 times with the explicit RLCSA).
+Its accuracy is within a few points of Cliffy's on a different set of reads: 1 point higher on V1--V2 and 1 to 4 points lower on the other three regions, which suggests that the two read sets differ somewhat in difficulty, and which served as a check on our setup.
+With MEMs found by BML and $L = 50$, the digested rz-index classifies a read in 66\,$\mu$s, faster than Cliffy reports for its digested LCA query on its server, with an index 4.4 times smaller and similar accuracy.
+
+\begin{table}[t]
+\centering
+\caption{LCA classification: the rz-index with ZMPs (Cliffy's matches; scored on 1 million read pairs per region) and with BML MEMs, against Cliffy's LCA query.
+Accuracy is at the genus level, with Cliffy's scoring (``theirs'') and strict.
+Ranges are over the four regions and single values are means, and we did not compute strict accuracy for the ZMP runs.
+The rz-index sizes include auxiliary structures that speed up its grid queries.
+EF stands for Elias--Fano.
+Cliffy's time is for approximate listing, which uses the same index as its LCA query.}
+\label{tab:rz}
+\small
+\resizebox{\textwidth}{!}{\begin{tabular}{llrrcc}
+\toprule
+ & configuration & space (GB) & time ($\mu$s/read) & theirs & strict \\
+\midrule
+\multirow{3}{*}{\shortstack[l]{digested\\ZMPs}} & rz, RLBWT & 0.76 & 212 & \multirow{3}{*}{83.7--87.3\%} & \\
+ & rz, EF RLCSA & 0.75 & 152 & & \\
+ & rz, explicit RLCSA & 0.96 & 125 & & \\
+\addlinespace
+\multirow{3}{*}{\shortstack[l]{undigested\\ZMPs}} & rz, RLBWT & 0.99 & 522 & \multirow{3}{*}{84.8--88.6\%} & \\
+ & rz, EF RLCSA & 1.01 & 594 & & \\
+ & rz, explicit RLCSA & 1.39 & 330 & & \\
+\addlinespace
+digested MEMs & rz, explicit RLCSA, $L = 30$ & 0.96 & 131 & 85.7\% & 85.3\% \\
+ & rz, explicit RLCSA, $L = 50$ & 0.96 & 66 & 86.7\% & 84.8\% \\
+undigested MEMs & rz, explicit RLCSA, $L = 30$ & 1.39 & 262 & 87.6\% & 87.0\% \\
+ & rz, explicit RLCSA, $L = 50$ & 1.39 & 167 & 89.3\% & 85.5\% \\
+\midrule
+Cliffy LCA & minimizers & 4.27 & 77--82 & 86.3--88.5\% & \\
+ & undigested & 9.01 & 199--204 & 87.5--90.2\% & \\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+The rz-index is not on our Pareto surface, however, because with tag arrays listing costs little more than computing the LCA and is about 3.5 points more accurate with even credit, and more with proportional credit.
+Computing the LCA from tags, as the smallest and largest genus listed, also gives exactly the same answers as the rz-index, about three times faster: over digests, with $L = 30$ and an explicit RLCSA, about 40\,$\mu$s per read against 131\,$\mu$s.
+The rz-index may still be useful where listing is not an option, for example when the number of documents is so large that listing them is too expensive.
+
+\subsection{Verifying digested matches}
+
+Undigested MEMs are more accurate than digested ones, so we tried to get the best of both by verifying each occurrence of a digested MEM against the DNA and extending it to an exact match, using a Relative Lempel--Ziv representation of the database (with the longest sequence of each genus as the reference) and the positions of the minimizers.
+These structures took 0.24\,GB, and verification worked, but digested MEMs are less specific than DNA MEMs (with $L = 30$, they occur in 6.0 genera on average, against 3.8), and checking their occurrences took 850\,$\mu$s per read, against 125 to 253\,$\mu$s for classifying with an undigested sr-index on an explicit RLCSA with a lookup table ($L$ from 30 down to 15).
+
+\subsection{Combining LCAs and listing}
+
+Listing is most expensive for MEMs with many occurrences, and for such MEMs the LCA may lose little information, so we tried answering by LCA (with the rz-index's grids) whenever a MEM has more than $K$ occurrences, or whenever its occurrences cover a fraction at least $\alpha$ of the sequences under its LCA, and listing (with the sr-index) otherwise.
+With BML, few MEMs have many occurrences: the threshold $K$ saved 25 to 45\% of the time over digests, but required the grids (0.42\,GB more), and the rule based on $\alpha$ sent fewer than 1\% of the MEMs to the LCA while needing the LCA of every MEM to decide.
+With tag arrays, listing is as fast as computing the LCA anyway.
+
+\subsection{Filtering \texorpdfstring{$k$}{k}-mers instead of digesting}
+
+KeBaB~\cite{BrownEtAl2025KeBaB} first breaks each read into \emph{pseudo-MEMs}, the maximal substrings of length at least $L$ all of whose $k$-mers pass a Bloom filter of the database's $k$-mers ($k < L$).
+Every MEM of length at least $L$ lies in a pseudo-MEM, so the rest of the read can be skipped without changing the answers.
+Since this keeps the accuracy of undigested matches, we asked whether it could give us the speed of digests instead.
+To bound what any filter could achieve, we used exact $k$-mer membership at no cost before undigested BML (listing with tags on the explicit RLCSA).
+The answers were identical, but 94 to 97\% of the bases remained in pseudo-MEMs, and the time per read dropped only from 92--99 to 72--83\,$\mu$s for $L = 30$ ($k = 20$ or $25$) and by 7 to 9\% for $L = 15$ ($k = 12$), against 42\,$\mu$s with digests and an index a third of the size (all without lookup tables).
+Almost every $k$-mer of our short, accurate reads occurs in the database, and BML spends its time extending the long MEMs themselves.
+KeBaB is designed for long, error-prone reads.
+Brown et al.\ obtained their largest speedups by searching only each read's longest pseudo-MEMs, which risks discarding all of its long MEMs, since a long pseudo-MEM need not contain a long MEM: in their pipeline the pseudo-MEMs were chosen before any was searched.
+If finding pseudo-MEMs is integrated with searching them, this risk disappears: we can search the pseudo-MEMs in decreasing order of length and stop only when we have found as many MEMs as we want that are longer than the next pseudo-MEM~\cite{BrownEtAl2025KeBaB}, or use parse indexing to bound the lengths of the MEMs that pseudo-MEMs must contain~\cite{Gagie2026pseudo}.
+
+\subsection{Matching whole phrases}
+
+A digest symbol names only its minimizer, not the bases up to the next one.
+A one-level parse index~\cite{HongEtAl2024,BrownEtAlRLCSA,Gagie2026pseudo} instead replaces each phrase of a locally consistent parse, such as prefix-free parsing~\cite{BoucherEtAl2019} or a parse into phrases starting at minimizers, by an identifier, such as its Karp--Rabin hash, and parses the read the same way, so that matching whole phrases is exact, at about the cost of matching digests.
+Only the ends of each MEM, up to about a phrase on each side, are lost.
+To estimate that loss, we trimmed each MEM found with $L = 30$ by the undigested index to the part a phrase index with minimizer phrases ($k = 4$, $w = 11$) would certainly match (18.5 bases removed per MEM, on average) and listed the genera of the trimmed strings.
+On 20\,000 read pairs from each of V1--V2 and V4, strict accuracy dropped by 2.3 and 3.3 points, more than digestion costs, and trimming just 2 bases from each end already cost 0.3 to 0.5 points: the ends of a MEM are where the read diverges from all but a few genera, and the middles of our MEMs occur in 219 genera on average, against 4 for the whole MEMs.
+A one-level phrase index is therefore no substitute for digests on SILVA, although it might be on datasets whose matches carry less of their information at their ends.
