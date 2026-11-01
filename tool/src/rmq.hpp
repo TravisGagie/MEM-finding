@@ -1,5 +1,6 @@
 // A range-minimum structure that does not keep the array (for Muthukrishnan-Sadakane listing, Section 4
-// of the paper, "Counting"): about 4 bits per element plus o(n).
+// of the paper, "Counting"): about 6 bits per element (2 for the parentheses, the rest for rank,
+// select, the excess per word and the segment tree; 6.1 measured on 10^6 runs).
 //
 // For A[0..n), let node i's parent be the last j < i with A[j] < A[i] (a virtual root, -infinity, if
 // none), with children in index order, and store the balanced parentheses (BP) of that tree, the root

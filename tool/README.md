@@ -161,7 +161,7 @@ Section numbers are those of *Three Examples of MEM-Finding* (`../paper/`).
 | §2 "KeBaB", §3 | `src/kmer_filter.hpp` | the Bloom filter (from KATKA) |
 | §3 "Long, noisy reads" | `src/mems.hpp` (`distinct_3mers`), `src/main.cpp` (`finder::run`) | the low-complexity filter; homopolymer compression of reads, with spans mapped back |
 | §4 "Counting with complete tag arrays" | `src/tag_array.hpp` | counting (proportional credit); listing (even credit, range/LCA); sampled tags via LF |
-| §4 "Counting" (listing without the previous-run array) | `src/rmq.hpp` | a range-minimum structure that does not store the array (balanced parentheses of a min-tree, about 4 bits per run) |
+| §4 "Counting" (listing without the previous-run array) | `src/rmq.hpp` | a range-minimum structure that does not store the array (balanced parentheses of a min-tree, about 6 bits per run) |
 | §4 "Construction" | `src/tag_build.hpp` | LF pass for the r-index samples; φ streaming of the suffix array into tag runs; sampling |
 | §4 "Grammar-compressing the runs" | `src/grammar.hpp` | approximate RePair, bigrepair input, the encoding of Gagie et al. |
 | §5 "Two-level indexing with a syncmer parse", "Blocks" (Lemmas 6–14) | `src/twolevel.hpp` | canonical closed syncmers, the phrase dictionary of both strands, the pattern parse, `search2` (block steps and the back-up rule) |
