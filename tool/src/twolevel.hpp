@@ -1,4 +1,4 @@
-// Two-level indexing with blocks (Section 4 of the paper, "Two-level indexing with a syncmer parse" and
+// Two-level indexing with blocks (Section 5 of the paper, "Two-level indexing with a syncmer parse" and
 // "Blocks"), on the text of both strands.
 //
 // The text S (with its terminator $) is parsed at the starts of closed syncmers and at position 0.  A

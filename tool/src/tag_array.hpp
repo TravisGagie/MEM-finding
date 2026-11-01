@@ -1,4 +1,4 @@
-// The run-length compressed tag array (Section 3 of the paper, "Counting with complete tag arrays").  The
+// The run-length compressed tag array (Section 4 of the paper, "Counting with complete tag arrays").  The
 // tag array gives, for each BWT row, the tag (taxon) of the suffix starting there.  We store it by its
 // rho tag runs:
 //   RB    Elias-Fano list of the first row of every run;

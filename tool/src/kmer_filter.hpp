@@ -1,4 +1,4 @@
-// The KeBaB k-mer filter (Section 2, "KeBaB"; KATKA Section 5, "Longest MEMs"): a blocked Bloom filter of the canonical k-mers
+// The KeBaB k-mer filter (Section 2, "KeBaB"; Section 3): a blocked Bloom filter of the canonical k-mers
 // (k <= 32) of the text.  A k-mer of a read that the filter rejects occurs in no reference, so no MEM
 // contains it; the maximal substrings of the read all of whose k-mers pass the filter (pseudo-MEMs) contain
 // every MEM of length at least k.

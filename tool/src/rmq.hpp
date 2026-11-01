@@ -1,4 +1,4 @@
-// A range-minimum structure that does not keep the array (for Muthukrishnan-Sadakane listing, Section 3
+// A range-minimum structure that does not keep the array (for Muthukrishnan-Sadakane listing, Section 4
 // of the paper, "Counting"): about 4 bits per element plus o(n).
 //
 // For A[0..n), let node i's parent be the last j < i with A[j] < A[i] (a virtual root, -infinity, if

@@ -168,10 +168,12 @@ inline void build_twolevel(const std::string &Sfile, const rlbwt &bwt, const ste
     // the parse BWT
     std::vector<int32_t> SA(m + 1);
     {
-        std::vector<int32_t> Tz(m + 1);
-        for (uint64_t i = 0; i < m; ++i) Tz[i] = (int32_t)pz[i];
-        Tz[m] = 0;
-        if (libsais_int(Tz.data(), SA.data(), (int32_t)(m + 1), (int32_t)sigma + 1, 0) != 0) die("libsais_int failed");
+        {
+            std::vector<int32_t> Tz(m + 1);           // (libsais_int overwrites its input)
+            for (uint64_t i = 0; i < m; ++i) Tz[i] = (int32_t)pz[i];
+            Tz[m] = 0;
+            if (libsais_int(Tz.data(), SA.data(), (int32_t)(m + 1), (int32_t)sigma + 1, 0) != 0) die("libsais_int failed");
+        }
         std::vector<uint32_t> bw(m + 1);
         for (uint64_t r = 0; r <= m; ++r) bw[r] = SA[r] == 0 ? 0 : pz[SA[r] - 1];
         L.pbwt.build(bw, sigma + 1);

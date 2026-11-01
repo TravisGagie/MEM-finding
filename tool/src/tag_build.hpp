@@ -1,4 +1,4 @@
-// Building the tag array without a suffix array (Section 3 of the paper, "Construction"):
+// Building the tag array without a suffix array (Section 4 of the paper, "Construction"):
 //   1. one pass of LF over each dataset, from its terminator to its first character, with "move"-style
 //      arrays of O(r) words, gives the suffix-array samples at the ends of the BWT runs (as for the
 //      r-index; KATKA's katka-build -A);
