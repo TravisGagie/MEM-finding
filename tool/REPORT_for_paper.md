@@ -100,7 +100,9 @@ Keep the t longest MEMs found so far. Once there are t, set L to one more than t
 
 This is for a fixed, large L on queries mostly absent from the text. Before taking backward steps for the window P[x..x+L), check its k-mers against the Bloom filter. If P[j..j+k) fails, with j the rightmost failing k-mer start in the window, jump to x = j + 1.
 
-Correctness: the filter has no false negatives, so P[j..j+k) does not occur, and no MEM contains it. Any MEM of length at least L starting at some s in [x, j] covers [s, s+L), which contains [j, j+k) because j + k ≤ x + L ≤ s + L. Precomputing, for each position p, the last failing k-mer start at or before p makes each window check O(1).
+Correctness: the filter has no false negatives, so P[j..j+k) does not occur, and no MEM contains it. Any MEM of length at least L starting at some s in [x, j] covers [s, s+L), which contains [j, j+k) because j + k ≤ x + L ≤ s + L.
+
+Implementation (as the paper task asked, 2026-11-02): the k-mers are tested lazily, from the window's right end leftward. The rolling forward and reverse-complement codes are restarted at the window's last k-mer, which takes k steps, and are then updated one character to the left per test. Testing stops at the first failure, which is the rightmost failing k-mer. Nothing is precomputed over the pattern. `--stats` reports the numbers of k-mer tests and restarts. On 50 random 5,000-base queries with L = 200 and k = 20, there were 1,350 restarts and 1,475 k-mer tests, with no backward steps.
 
 On the tool's tests, the output is exactly the MEMs of length at least L, as for plain BML.
 
@@ -108,7 +110,17 @@ On the tool's tests, the output is exactly the MEMs of length at least L, as for
 
 Two-level search returns the same intervals in the BWT of S as plain backward search, so tag answers carry over. Listings with tags were byte-identical with and without two-level search, with and without block jumps, and with grammar-compressed tags. This combination had never been run before.
 
-### 3.4 BWTs
+### 3.4 STPD search
+
+This is a backend from *Compressing Suffix Trees by Path Decompositions* (Becker et al., ICALP 2026; `src/stpd.hpp`), added 2026-11-02. It is the mirror image of their Algorithm 1: it matches right to left with π = ISA, i.e. their st-colex⁻ of the reversed text.
+
+- **Sample:** the sample positions are BWT run starts. A run start x is needed iff lcp(SA[y], SA[x]) < lcp(SA[x−1], SA[x]), where y is the previous row with the same BWT character.
+- **Construction:** the sample is built from the r-index's LF pass plus text comparisons, without a suffix tree.
+- **Size:** it is exactly 2 smaller than the paper's |st-colex⁻| computed by definition on every test collection, the 2 being boundary entries. It holds about 0.66 r positions there.
+- **Correctness:** it is checked to give the same MEMs and intervals as plain search, with every search ending at the lexicographically smallest occurrence.
+- **Speed:** on the synthetic chromosome-like collection, BML with L = 1000 took 0.20 s without intervals and 1.2 s with them, against 2.1 s for plain search and 0.40 s for two-level search with blocks.
+
+### 3.5 BWTs
 
 `katka bwt` builds BWT(S$) with libsais. `katka bwt -d` builds a per-dataset BWT like pfp-merge's, for small data, from the suffix array of the datasets with distinct terminators. That makes the whole pipeline runnable without Big-BWT or pfp-merge on small data.
 
@@ -132,6 +144,7 @@ All of this is on small data (synthetic: 20 genomes of 4 species, 300 reads with
   - KATKA (`katka-readable`): byte-identical text, table, KeBaB filter and listings for 12 option combinations on a plain, a homopolymer-compressed and a per-dataset text.
   - KATKA's original digest code (`katka/rz-index`): byte-identical digested text, byte map and listings, for L = 11 to 30, with and without a lookup table.
   - `chr19/twolevel`: identical MEMs and occurrence counts.
+- **STPD:** the same MEMs and intervals as plain search, and the sample's size against the paper's definition (§3.4).
 - **Sabotage tests:** deliberately broken jumps in BML, in block back-ups and in the digest failure jump were each detected by the tests.
 
 Not verified: anything at the scale of the paper's data. KATKA's 40-genome `test-small` collection is not in the repository, so the KATKA regression ran only on synthetic data.

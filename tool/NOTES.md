@@ -25,9 +25,34 @@ All tested with `selftest.sh` (brute force, plus both regressions):
   - `find` runs BML on digests with L in bases, the failure jump and spans as in App. A, and keeps only the span-maximal MEMs. The lookup table works over digest symbols (`-F 2`).
   - It is checked against brute force, and against KATKA's original `rz-prep -B` and `rz-classify -B` (identical text, map and listings).
   - Over digests, only BML with a fixed L is supported: no adaptive L, top t, FB, KeBaB, two-level search or homopolymer compression, as in KATKA.
+- **STPD search (added 2026-11-02, at Travis's request):** a backend from *Compressing Suffix Trees by Path Decompositions* (Becker et al., ICALP 2026); see the next section.
+- **The inline KeBaB check is now lazy (2026-11-02, at the paper task's request):** each window's k-mers are tested from its right end leftward, with the rolling codes restarted at the window's last k-mer, stopping at the first failure. Nothing is precomputed over the pattern. `--stats` counts k-mer tests and restarts. The output is unchanged (it jumps to the same place: the first failure from the right is the rightmost one).
 - **Not in the tool, as the brief says:** the rz-index, shortcuts, the frequency-rank encoding of the parse, RLZ verification, whole-phrase matching, and the combined LCA-and-listing rule.
 
 Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like pfp-merge, for small data). The test data can therefore be built entirely here.
+
+### STPD search
+
+`katka index --stpd` and `katka find --stpd` (`src/stpd.hpp`). BML and forward–backward search only need longest-suffix searches, so this is the mirror image of the paper's Algorithm 1.
+
+- **The search:** it matches right to left with π = ISA, keeping the occurrence of the matched suffix whose suffix of S is smallest (t = SA[sp]). If S[t−1] is the next pattern character, t decreases by one. Otherwise a binary search over the sample, comparing the text directly, finds the smallest suffix prefixed by the extended string.
+- **The sample:** it consists of BWT run starts x (as text positions SA[x] − 1), sorted by LF(x). A run start is kept only if lcp(SA[y], SA[x]) < lcp(SA[x−1], SA[x]), where y is the previous row with the same character. The sample is built from one LF pass, as for the tag array, plus text comparisons: no suffix array or suffix tree, unlike the paper's builder (which computes the explicit suffix tree).
+- **Size:** on every test collection, the pruned sample is exactly 2 smaller than |st-colex⁻| of the reversed text computed by the paper's definition (`katka-test stpd-size`). Those 2 are boundary entries, for row 0 and for text position 0, which a search never jumps to. It holds about 0.66 r positions on the test collections.
+- **Intervals:** the search gives positions, not BWT intervals. The interval of each reported MEM is computed afterwards by backward search over the MEM, so tags and the mems format are unchanged; `--no-intervals` skips this.
+- **Memory:** the text S$ is held in memory as the oracle (1 byte per character), plus the sample. A compressed oracle (RLZ or 2-bit packing) is not implemented.
+
+On the 2 Mbp × 16 chromosome-like collection, BML with L = 1000 (same MEMs in every case):
+
+| configuration | time |
+|---|---|
+| plain search | 2.1 s |
+| STPD, with intervals | 1.2 s |
+| STPD, `--no-intervals` | 0.20 s |
+| two-level with blocks | 0.40 s |
+
+The sample takes 8.2 MB (2.5 million positions, against r = 3.8 million) on top of the 64 MB text.
+
+The paper's code is at https://github.com/regindex/STPD-index. It couldn't be built here, because its CMake fetches dependencies from `chromium.googlesource.com`, which this cloud environment blocks.
 
 ### sdsl-lite
 
@@ -181,7 +206,7 @@ for n in 33 65 129; do
 done
 ```
 
-`--continuation frequent` at index time gives the most-frequent-successor blocks.
+`--continuation frequent` at index time gives the most-frequent-successor blocks. For STPD search, add `--stpd` at index time and use `find -L 1000 --format mems --stpd [--no-intervals]`. It needs the text in memory: 4 GB for 16 individuals (both strands).
 
 Memory: the parse of both strands has about twice as many phrases as T's. With 64 individuals, if that is about 800 million, building blocks needs roughly 13 bytes per phrase, about 10 GB. That should fit in 16 GB, but tightly. If it doesn't, `--no-blocks` needs about 12 bytes per phrase.
 

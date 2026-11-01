@@ -20,7 +20,9 @@
 //   top t        keep the t longest MEMs found so far; once there are t, L = 1 + the shortest of them
 //   KeBaB        (a) pseudo-MEMs: search only the maximal substrings whose k-mers all pass the filter,
 //                longest first with adaptive L or top t, stopping at the first one shorter than L;
-//                (b) inline: the window check above, O(1) per window from the last failing k-mer start
+//                (b) inline: the window check above, testing the window's k-mers lazily from its right end
+//                and stopping at the first that fails (O(k + 1/p) hash steps per failed window, for a
+//                fraction p of failing k-mers), before any backward step
 //   min3         ignore MEMs with fewer than min3 distinct 3-mers (they do not raise L either)
 // Forward-backward search (fb_segment), as in KATKA's -W: from x, search forward to the largest e such
 // that R[x..e) occurs (a MEM, as x is left-maximal by construction); report it if e - x >= L; then the
@@ -28,6 +30,7 @@
 #pragma once
 #include "digest.hpp"
 #include "kmer_filter.hpp"
+#include "stpd.hpp"
 #include "twolevel.hpp"
 #include <algorithm>
 
@@ -42,7 +45,10 @@ struct segment_search {
     const two_level *TL = nullptr;        // if set, two-level search
     bool jumps = true;
     const unsigned char *comp = nullptr;  // complement of each symbol (digest symbols), if not DNA
+    const stpd_index *SP = nullptr;       // if set, STPD search (stpd.hpp)
+    bool intervals = true;                // with STPD: compute the intervals of the reported MEMs
     search_counters cnt;
+    stpd_state sst[2];
 
     const char *R = nullptr;
     u64 n = 0;
@@ -62,6 +68,18 @@ struct segment_search {
     u64 back(int dir, u64 lo, u64 end, interval &I) {
         const char *X = dir ? rc.data() : R;
         if (TL) return search2(*S, *TL, dir ? qi : pi, X, (int64_t)lo, (int64_t)end, jumps, I, cnt);
+        if (SP) {
+            ++cnt.searches;
+            stpd_state &st = sst[dir];
+            st.dir = dir; st.end = end; st.j = end; st.t = SP->n - 1;     // t = SA[0], the suffix $
+            stpd_extend(*SP, X, lo, st, cnt);
+            I = {0, 0};
+            return st.j;
+        }
+        return plain_back(dir, lo, end, I);
+    }
+    u64 plain_back(int dir, u64 lo, u64 end, interval &I) {
+        const char *X = dir ? rc.data() : R;
         ++cnt.searches;
         I = S->full();
         u64 j = end;
@@ -79,6 +97,12 @@ struct segment_search {
     // X[j..end) occurs with interval I: extend it to the left down to lo
     u64 extend_left(int dir, u64 lo, u64 j, u64 end, interval &I) {
         if (TL) return back(dir, lo, end, I);
+        if (SP) {
+            stpd_state &st = sst[dir];
+            if (st.dir != dir || st.end != end || st.j != j) return back(dir, lo, end, I);
+            stpd_extend(*SP, dir ? rc.data() : R, lo, st, cnt);
+            return st.j;
+        }
         const char *X = dir ? rc.data() : R;
         while (j > lo) {
             ++cnt.char_steps;
@@ -88,7 +112,14 @@ struct segment_search {
         return j;
     }
     // the largest e <= n such that R[a..e) occurs, with the interval of rc(R[a..e))
+    // (with STPD, J is computed only by rc_interval, for the MEMs reported)
     u64 forward(u64 a, interval &J) { return n - back(1, 0, n - a, J); }
+    // with STPD, the interval of rc(R[a..e)) for a MEM about to be reported, by plain backward search
+    void rc_interval(u64 a, u64 e, interval &J) {
+        if (!SP) return;
+        if (!intervals) { J = {0, 0}; return; }
+        if (plain_back(1, n - e, n - a, J) != n - e) die("internal error: STPD and backward search disagree");
+    }
 };
 
 struct mem_options {
@@ -171,23 +202,32 @@ template <class F>
 void bml_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &st, F report) {
     const u64 n = Q.n;
     const char *R = Q.R;
-    static thread_local std::vector<int64_t> lastfail;     // inline KeBaB: last failing k-mer start <= p
     const kmer_filter *KF = opt.inline_check ? opt.filter : nullptr;
-    if (KF) {
-        lastfail.assign(n >= KF->k ? n - KF->k + 1 : 0, -1);
-        int64_t last = -1; u64 p = 0;
-        KF->for_each_kmer((const unsigned char *)R, n, [&](uint64_t q, uint64_t c) {
-            while (p < q) lastfail[p++] = last;              // (no gaps: the segment is over A/C/G/T)
-            if (!KF->has(c)) last = (int64_t)q;
-            lastfail[p++] = last;
-        });
-    }
     u64 x = 0;
     while (x + st.L <= n) {
         const u64 L = st.L;
         if (KF && L >= KF->k) {
-            int64_t j = lastfail[x + L - KF->k];
-            if (j >= (int64_t)x) { x = (u64)j + 1; continue; }
+            // inline KeBaB, lazily: the k-mers of R[x..x+L) from the right end leftward, with the rolling
+            // codes restarted at the window's last k-mer; jump past the first one that fails
+            const u64 k = KF->k, mask = k == 32 ? ~0ULL : (1ULL << (2 * k)) - 1;
+            u64 p = x + L - k, fw = 0, rcv = 0;
+            for (u64 i = 0; i < k; ++i) {
+                u64 c = (u64)base_code(R[p + i]);
+                fw = ((fw << 2) | c) & mask;
+                rcv = (rcv >> 2) | ((3 - c) << (2 * (k - 1)));
+            }
+            Q.cnt.kmer_restarts += 1;
+            int64_t fail = -1;
+            for (;;) {
+                ++Q.cnt.kmer_tests;
+                if (!KF->has(fw < rcv ? fw : rcv)) { fail = (int64_t)p; break; }
+                if (p == x) break;
+                --p;
+                u64 c = (u64)base_code(R[p]);
+                fw = (fw >> 2) | (c << (2 * (k - 1)));
+                rcv = ((rcv << 2) | (3 - c)) & mask;
+            }
+            if (fail >= 0) { x = (u64)fail + 1; continue; }
         }
         interval I;
         u64 j = Q.back(0, x, x + L, I);
@@ -195,6 +235,7 @@ void bml_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &
         u64 a = Q.extend_left(0, 0, x, x + L, I);
         interval J;
         u64 e = Q.forward(a, J);
+        Q.rc_interval(a, e, J);
         found(R, r0, a, e, J, opt, st, report);
         // the first window that ends after the MEM (L may have been raised; with top t, past e + 1)
         x = e + 1 >= st.L ? e + 1 - st.L : 0;
@@ -210,7 +251,7 @@ void fb_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &s
         interval J, I;
         u64 e = Q.forward(s0, J);                           // R[s0..e) is the MEM starting at s0
         if (e <= s0) { ++s0; continue; }
-        if (e - s0 >= st.L) found(Q.R, r0, s0, e, J, opt, st, report);
+        if (e - s0 >= st.L) { Q.rc_interval(s0, e, J); found(Q.R, r0, s0, e, J, opt, st, report); }
         if (e >= m) break;
         u64 s2 = Q.back(0, 0, e + 1, I);                   // leftmost start of a match ending at R[e]
         s0 = s2 > e ? e + 1 : s2;
@@ -249,6 +290,7 @@ void bml_digest_run(segment_search &Q, const digest_map &M, const char *R, u64 n
         u64 aa = Q.extend_left(0, 0, a, b + 1, I);
         interval J;
         u64 e = Q.forward(aa, J);
+        Q.rc_interval(aa, e, J);
         u64 left, right, yR;
         D.span(aa, e - 1, n, (int)w, left, right, yR);
         fr.push_back({left, right, J});

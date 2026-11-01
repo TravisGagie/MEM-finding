@@ -140,12 +140,13 @@ struct config {
     const lookup_table *T = nullptr;
     const two_level *TL = nullptr;
     bool jumps = true;
+    const stpd_index *SP = nullptr;
 };
 
 static vector<mem> run_find(const stepper &base, const config &c, const string &read, const mem_options &opt) {
     stepper S = base;
     if (c.csa) S.csa = c.csa;
-    segment_search Q; Q.S = &S; Q.T = c.T; Q.TL = c.TL; Q.jumps = c.jumps;
+    segment_search Q; Q.S = &S; Q.T = c.T; Q.TL = c.TL; Q.jumps = c.jumps; Q.SP = c.SP;
     vector<mem> out;
     find_mems(Q, read, opt, [&](const mem &M) { out.push_back(M); });
     return out;
@@ -162,7 +163,7 @@ static std::set<std::pair<u64, u64>> as_set(const vector<mem> &v) { std::set<std
 static int mems_test(int argc, char **argv) {
     if (argc < 4) die("usage: katka-test mems PREFIX reads [--tags FILE] [--kebab k] [--twolevel] [--hpc] [--random n]");
     const string prefix = argv[2], readfile = argv[3];
-    string tagfile; uint32_t kk = 0; bool tl = false, hpc = false, digest = false; int nrand = 0;
+    string tagfile; uint32_t kk = 0; bool tl = false, hpc = false, digest = false, stpd = false; int nrand = 0;
     for (int i = 4; i < argc; ++i) {
         string a = argv[i];
         if (a == "--tags") tagfile = argv[++i];
@@ -171,6 +172,7 @@ static int mems_test(int argc, char **argv) {
         else if (a == "--hpc") hpc = true;
         else if (a == "--random") nrand = std::stoi(argv[++i]);
         else if (a == "--digest") digest = true;
+        else if (a == "--stpd") stpd = true;
         else die("unknown option " + a);
     }
     brute BF; BF.build(prefix);
@@ -209,6 +211,13 @@ static int mems_test(int argc, char **argv) {
         cfgs.push_back({"twolevel", &X, nullptr, &L2, false});
         cfgs.push_back({"twolevel+jumps", &X, nullptr, &L2, true});
         cfgs.push_back({"twolevel+jumps/rlbwt", nullptr, nullptr, &L2, true});
+    }
+    stpd_index SD, SDall;
+    if (stpd) {
+        SD.load(prefix + ".stpd", prefix + ".S");
+        SDall.build(prefix + ".S", prefix + ".bwt", B, false);
+        cfgs.push_back({"stpd", &X, nullptr, nullptr, true, &SD});
+        cfgs.push_back({"stpd-all/rlbwt", nullptr, nullptr, nullptr, true, &SDall});
     }
     tag_array T;
     vector<uint32_t> rowtag;
@@ -423,12 +432,91 @@ static int mems_test(int argc, char **argv) {
             }
         }
     }
+    if (stpd) {   // every STPD search ends at the lexicographically smallest occurrence: t = SA[sp]
+        stepper S = base; S.csa = &X;
+        u64 nq = 0;
+        for (size_t pi = 0; pi < pats.size(); ++pi) {
+            const string &P = pats[pi];
+            for (u64 i = 0; i < P.size();) {
+                while (i < P.size() && base_code(P[i]) < 0) ++i;
+                u64 r0 = i;
+                while (i < P.size() && base_code(P[i]) >= 0) ++i;
+                u64 n = i - r0;
+                if (!n) continue;
+                segment_search Q0, Q1; Q0.S = Q1.S = &S; Q1.SP = &SD;
+                Q0.prepare(P.data() + r0, n); Q1.prepare(P.data() + r0, n);
+                for (int q = 0; q < 20; ++q) {
+                    u64 end = 1 + rng() % n, lo = q % 3 ? 0 : rng() % end;
+                    int dir = q & 1;
+                    interval I0, I1;
+                    u64 j0 = Q0.back(dir, lo, end, I0), j1 = Q1.back(dir, lo, end, I1);
+                    bool ok = j0 == j1 && (j0 == end || (u64)BF.SA[I0.sp] == Q1.sst[dir].t);
+                    CHECK(ok, "STPD: pattern %zu dir %d [%lu,%lu): j %lu vs %lu", pi, dir, lo, end, j1, j0);
+                    ++nq;
+                }
+            }
+        }
+        printf("STPD: %lu longest-suffix searches checked (start and lex-smallest occurrence)\n", nq);
+    }
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
 }
 
+// |st-colex-| of T = rev(S) $ by the paper's definition (Definition 7 with pi = IPA): the number of
+// distinct i + LPF[i], where LPF[i] = max { lcp(T[i..], T[j..]) : pi(j) < pi(i) } and pi(i) = the colex rank
+// of T[0..i), i.e. the lex rank of the suffix S[n-i..] of S$.  LPF[i] is the larger lcp with the nearest
+// suffixes before and after T[i..] in SA order with smaller pi.  Compared with the size of PREFIX.stpd,
+// which is built on S from the BWT runs (the mirror image).
+static int stpd_size(const string &prefix) {
+    brute BF; BF.build(prefix);                 // SA of S$ (BF.S ends with byte 1)
+    const u64 n = BF.S.size() - 1, N = n + 1;
+    vector<int32_t> isaS(N);
+    for (u64 x = 0; x < N; ++x) isaS[BF.SA[x]] = (int32_t)x;
+    string T(BF.S.rbegin() + 1, BF.S.rend());   // rev(S)
+    vector<int32_t> sa(n), SA(N), rk(N), lcp(N, 0);
+    libsais((const uint8_t *)T.data(), sa.data(), (int32_t)n, 0, nullptr);
+    T.push_back(1);
+    SA[0] = (int32_t)n; for (u64 i = 0; i < n; ++i) SA[i + 1] = sa[i];
+    for (u64 x = 0; x < N; ++x) rk[SA[x]] = (int32_t)x;
+    for (u64 i = 0, h = 0; i < N; ++i) {        // Kasai
+        if (rk[i] == 0) { h = 0; continue; }
+        u64 j = SA[rk[i] - 1];
+        while (i + h < N && j + h < N && T[i + h] == T[j + h]) ++h;
+        lcp[rk[i]] = (int32_t)h;
+        if (h) --h;
+    }
+    auto pi = [&](u64 i) -> int64_t { return isaS[n - i]; };   // T[0..i) reversed is S[n-i..n)
+    vector<int64_t> best(N, 0);
+    for (int dir = 0; dir < 2; ++dir) {          // nearest smaller pi before / after, in SA order
+        // stack of (pi, h): h = lcp with the entry above it, or, for the top, with the last position seen
+        vector<std::pair<int64_t, int64_t>> stk;
+        for (u64 q = 0; q < N; ++q) {
+            u64 x = dir ? N - 1 - q : q;
+            int64_t p = pi(SA[x]);
+            if (!stk.empty()) {
+                int64_t g = dir ? lcp[x + 1] : lcp[x];          // lcp with the previous position seen
+                stk.back().second = std::min(stk.back().second, g);
+                while (!stk.empty() && stk.back().first > p) {
+                    int64_t h = stk.back().second;
+                    stk.pop_back();
+                    if (!stk.empty()) stk.back().second = std::min(stk.back().second, h);
+                }
+                if (!stk.empty()) best[SA[x]] = std::max(best[SA[x]], stk.back().second);
+            }
+            stk.push_back({p, INT64_MAX});
+        }
+    }
+    std::set<u64> pda;
+    for (u64 i = 0; i < N; ++i) pda.insert(i + best[i]);
+    FILE *f = open_or_die(prefix + ".stpd", "rb"); rmagic(f, "KTSTPD01", prefix + ".stpd");
+    u64 nn, r; rd(f, nn); rd(f, r); PackedInts pos; pos.load(f); fclose(f);
+    printf("|st-colex-(rev(S)$)| by definition = %zu; PREFIX.stpd sample = %lu; r = %lu\n", pda.size(), pos.size(), r);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     if (argc >= 2 && string(argv[1]) == "unit") return unit();
+    if (argc == 3 && string(argv[1]) == "stpd-size") return stpd_size(argv[2]);
     if (argc >= 2 && string(argv[1]) == "mems") return mems_test(argc, argv);
     fputs("usage: katka-test unit | katka-test mems PREFIX reads [options]\n", stderr);
     return 1;

@@ -9,9 +9,11 @@
 #      longest-suffix searches against plain backward search on both strands;
 #   3. the same with homopolymer compression; BML over minimizer digests (spans against brute force);
 #      and on a chromosome-19-like collection with both continuation rules;
-#   4. the command line: threads, two-level search with tags, a BWT with one terminator per dataset, the
+#   4. STPD search (stpd.hpp): the same MEMs and intervals as plain search, every search ending at the
+#      lexicographically smallest occurrence, and the sample's size against the paper's definition;
+#   5. the command line: threads, two-level search with tags, a BWT with one terminator per dataset, the
 #      presets;
-#   5. if KATKA_OLD (katka-readable's bin/), RZ_OLD (a build of katka/rz-index) or CHR19_OLD
+#   6. if KATKA_OLD (katka-readable's bin/), RZ_OLD (a build of katka/rz-index) or CHR19_OLD
 #      (chr19/twolevel's build/) is set, the regressions against the old code (tests/regress_katka.sh,
 #      tests/regress_digest.sh, tests/regress_chr19.sh).
 # Everything is written to selftest/ (ignored by git).
@@ -35,12 +37,13 @@ D=$W/data
 step "index of both strands (20 genomes, 4 species)"
 (cd "$D" && quiet $K prep -s list.tsv "$W/t")
 quiet $K bwt t
-quiet $K index --csa --efcsa --tags --kebab 20 --twolevel --syncmer 21,8 t
+quiet $K index --csa --efcsa --tags --kebab 20 --twolevel --syncmer 21,8 --stpd t
 quiet $K index --tags --sample 4 --tag-out t.s4.tag t
 quiet $K index --tags --grammar --tag-out t.g.tag t
 quiet $K index --tags --by-tag --tag-out t.sp.tag t
 step "brute force: MEMs, intervals, KeBaB, two-level, tags (s = 1)"
-$KT mems t "$D/reads.fq" --tags t.tag --kebab 20 --twolevel --random 40
+$KT mems t "$D/reads.fq" --tags t.tag --kebab 20 --twolevel --stpd --random 40
+$KT stpd-size t
 for v in s4 g sp; do
   step "brute force: tags ($v)"
   $KT mems t "$D/reads.fa" --tags t.$v.tag
@@ -61,8 +64,9 @@ $KT mems g "$D/reads.fq" --digest --tags g.tag
 step "chromosome-19-like collection (k = 51, s = 12)"
 (cd "$D/chr" && quiet $K prep list.tsv "$W/c")
 quiet $K bwt c
-quiet $K index --csa --efcsa --twolevel c
-$KT mems c "$D/chr/queries.fa" --twolevel --random 20
+quiet $K index --csa --efcsa --twolevel --stpd c
+$KT mems c "$D/chr/queries.fa" --twolevel --stpd --random 20
+$KT stpd-size c
 for f in c.*; do ln -sf "$f" "cf${f#c}"; done
 rm cf.lvl; quiet $K index --csa --efcsa --twolevel --continuation frequent cf
 step "  with the most frequent successor"
@@ -84,7 +88,14 @@ quiet $K find -L 20 -c --csa t reads.fq.gz b.out
 same a.out b.out "gzipped reads"
 quiet $K find -L 20 -c --csa --fb t "$D/reads.fq" b.out
 same a.out b.out "forward-backward search (all MEMs of at least L)"
+quiet $K find -L 20 -c --csa --stpd t "$D/reads.fq" b.out
+same a.out b.out "STPD search with tags (intervals of the reported MEMs by backward search)"
 quiet $K find -L 1000 --format mems --csa c "$D/chr/queries.fa" a.out
+quiet $K find -L 1000 --format mems --stpd c "$D/chr/queries.fa" b.out
+same a.out b.out "STPD search, chromosome-like"
+quiet $K find -L 1000 --format mems --stpd --no-intervals c "$D/chr/queries.fa" b.out
+cut -f1-3 a.out > a3.out; cut -f1-3 b.out > b3.out
+same a3.out b3.out "STPD search without intervals (the same MEMs)"
 quiet $K find --preset chr19 c "$D/chr/queries.fa" b.out
 same a.out b.out "preset chr19 (two-level, blocks) = plain search"
 quiet $K find --preset novel -L 200 t "$D/reads.fq" a.out

@@ -186,6 +186,8 @@ static const char *INDEX_USAGE =
     "    --tag-out FILE    write the tag array to FILE instead of PREFIX.tag\n"
     "  --kebab k           KeBaB Bloom filter of the k-mers of S (PREFIX.k<k>.kbf)\n"
     "    --kebab-eps e     its false-positive rate (default 0.1)\n"
+    "  --stpd              suffix-tree path decomposition sample (PREFIX.stpd; needs one terminator)\n"
+    "    --stpd-all        keep every BWT run start (no pruning)\n"
     "  --twolevel          two-level index with blocks (PREFIX.lvl; needs one terminator)\n"
     "    --syncmer k,s     closed syncmers (default 51,12)\n"
     "    --no-blocks       parse only\n"
@@ -246,8 +248,9 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
+    int stpd = 0;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "h", longopts, nullptr)) != -1) {
         switch (c) {
@@ -266,6 +269,8 @@ static int cmd_index(int argc, char **argv) {
             case '2': tl = true; break;
             case 'y': if (sscanf(optarg, "%d,%d", &to.k, &to.s) != 2) die("--syncmer k,s"); break;
             case 'B': to.blocks = false; break;
+            case 'P': stpd = std::max(stpd, 1); break;
+            case 'Q': stpd = 2; break;
             case 'C': { string v = optarg; if (v == "frequent") to.frequent = true; else if (v != "smallest") die("--continuation smallest|frequent"); break; }
             default: fputs(INDEX_USAGE, stderr); return 1;
         }
@@ -296,6 +301,11 @@ static int cmd_index(int argc, char **argv) {
         build_tag_array(TR, &B, o, T);
         T.save(tagout.empty() ? prefix + ".tag" : tagout);
         fprintf(stderr, "tag array: n=%lu, %lu tag runs, %.3f MB (%.1f s)\n", T.n, T.rho, T.bytes() / 1e6, now() - t1);
+    }
+    if (stpd) {
+        stpd_index D;
+        D.build(Sfile, bwtfile, B, stpd == 1);
+        D.save(prefix + ".stpd");
     }
     if (read_info_digest(prefix) && (kebab || tl)) die("KeBaB and two-level indexing are for undigested texts");
     if (kebab) build_kebab(Sfile, kebab, eps, prefix + ".k" + std::to_string(kebab) + ".kbf");
@@ -331,6 +341,9 @@ static const char *FIND_USAGE =
     "    -F t              lookup table of the intervals of all t-mers (t <= 13)\n"
     "    --twolevel        two-level search (PREFIX.lvl)\n"
     "    --no-jumps        two-level search without block steps\n"
+    "    --stpd            STPD search (PREFIX.stpd and the text PREFIX.S): binary searches over a sample of\n"
+    "                      at most r positions; the intervals of reported MEMs by backward search\n"
+    "    --no-intervals    with --stpd: do not compute intervals (mems format prints - -; no tags)\n"
     "  answers (Cliffy's listing format, with counts)\n"
     "    -c, --count       each tag with its number of occurrences (proportional credit)\n"
     "    -l, --list        the distinct tags (even credit)\n"
@@ -352,6 +365,8 @@ struct finder {
     answer_mode mode = RANGE;
     bool hpc = false, mems_format = false;
     const unsigned char *comp = nullptr;      // digests: complement of each symbol
+    const stpd_index *SP = nullptr;
+    bool intervals = true;
 
     void answer(const interval &I, string &out) const {
         char b[48];
@@ -384,7 +399,8 @@ struct finder {
         find_mems(Q, hpc ? h : read, opt, [&](const mem &M) {
             u64 first = hpc ? pos[M.a] : M.a, last = hpc ? pos[M.e] - 1 : M.e - 1;
             if (mems_format) {
-                snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\n", first, last + 1, M.I.sp, M.I.ep);
+                if (intervals) snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\n", first, last + 1, M.I.sp, M.I.ep);
+                else snprintf(b, sizeof b, "\t%lu\t%lu\t-\t-\n", first, last + 1);
                 line += name; line += b;
             } else {
                 snprintf(b, sizeof b, "[%lu,%lu] {", first, last);
@@ -459,7 +475,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
         run_stats st;
         string name, seq;
         segment_search Q;
-        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp;
+        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp; Q.SP = K.SP; Q.intervals = K.intervals;
         for (;;) {
             u64 my;
             {
@@ -500,12 +516,13 @@ static int cmd_find(int argc, char **argv) {
     string tagfile, kbffile, format = "listing";
     int nthreads = 1, ft = 0, hpc = -1, csa = 0;
     uint32_t kebab_k = 0;
-    bool twolevel = false, stats = false;
+    bool twolevel = false, stats = false, use_stpd = false;
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
-        {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
+        {"no-intervals", 0, 0, 15}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -533,6 +550,8 @@ static int cmd_find(int argc, char **argv) {
             case 'j': nthreads = std::max(1, std::stoi(optarg)); break;
             case 12: stats = true; break;
             case 13: mode = NONE; break;
+            case 14: use_stpd = true; break;
+            case 15: K.intervals = false; break;
             default: fputs(FIND_USAGE, stderr); return 1;
         }
     }
@@ -576,6 +595,14 @@ static int cmd_find(int argc, char **argv) {
         K.opt.digest = &DM;
         K.comp = DM.comp;
     }
+    stpd_index SD;
+    if (use_stpd) {
+        if (twolevel) die("--stpd and --twolevel are exclusive");
+        SD.load(prefix + ".stpd", prefix + ".S");
+        K.SP = &SD;
+        fprintf(stderr, "STPD: %lu sampled positions (r = %lu), %.3f MB on top of the text\n", SD.pos.size(), SD.runs, SD.bytes() / 1e6);
+    }
+    if (!K.intervals && (!use_stpd || K.mode != NONE)) die("--no-intervals needs --stpd and no tags (--format mems or --no-tags)");
     two_level L2;
     if (twolevel) {
         L2.load(prefix + ".lvl");
@@ -602,7 +629,8 @@ static int cmd_find(int argc, char **argv) {
     fprintf(stderr, "reads=%lu MEMs=%lu without MEMs=%lu | threads=%d wall %.2f s, %.1f us/read\n", st.reads, st.mems, st.unclassified, nthreads, wall,
             1e6 * wall * nthreads / std::max<u64>(1, st.reads));
     if (stats)
-        fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu\n", st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps);
+        fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
+                st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
     return 0;
 }
 

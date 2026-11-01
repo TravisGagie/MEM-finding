@@ -62,6 +62,8 @@ Reads `PREFIX.S`, `PREFIX.tbl` and the BWT, and always writes the RLBWT `PREFIX.
 | `--kebab k` | `PREFIX.k<k>.kbf` | KeBaB: a blocked Bloom filter of the canonical k-mers of S |
 | `--kebab-eps e` | | its false-positive rate (default 0.1) |
 | `--twolevel` | `PREFIX.lvl` | two-level index with blocks; needs a BWT with one terminator |
+| `--stpd` | `PREFIX.stpd` | suffix-tree path decomposition sample for `find --stpd`: the needed BWT run starts, from the LF pass and text comparisons; needs one terminator |
+| `--stpd-all` | | keep every BWT run start (no pruning) |
 | `--syncmer k,s` | | closed syncmers (default 51,12), canonical under reverse complement |
 | `--no-blocks` | | the parse only |
 | `--continuation smallest\|frequent` | | which successor continues a block (default smallest; frequent stores the order bit ω) |
@@ -81,12 +83,14 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `-D d` | low-complexity filter: ignore MEMs with fewer than d distinct 3-mers |
 | `-U`, `--no-hpc` | homopolymer-compress the reads, or don't (default: as the index was built). Spans are reported in the original read |
 | `-K k` | KeBaB pseudo-MEMs with `PREFIX.k<k>.kbf`. With `-X` or `--top`, searched longest first, stopping at the first one shorter than L |
-| `--inline-kebab k` | KeBaB window check inside BML: if a k-mer of the window fails, jump past the rightmost failing one, in O(1) per window |
+| `--inline-kebab k` | KeBaB window check inside BML: test the window's k-mers lazily from its right end leftward (the rolling codes restarted at the window's last k-mer) and, at the first that fails, jump past it, before any backward step |
 | `--kbf FILE` | the filter file, if not `PREFIX.k<k>.kbf` |
 | `--csa`, `--efcsa` | backward steps on the explicit or Elias–Fano RLCSA (default: the RLBWT) |
 | `-F t` | lookup table of the intervals of all t-mers, t ≤ 13 (plain search only; over digests, of all t-symbol strings, e.g. `-F 2`) |
 | `--twolevel` | two-level search with block jumps (`PREFIX.lvl`); character steps use the RLCSA if `--csa` is given |
 | `--no-jumps` | two-level search without block steps |
+| `--stpd` | STPD search (`PREFIX.stpd`, with the text `PREFIX.S` as the oracle): binary searches over a sample of at most r text positions instead of backward steps. The intervals of the reported MEMs are then computed by backward search, so the output is the same as plain search |
+| `--no-intervals` | with `--stpd` and no tags: skip the intervals (the mems format prints `-` for them) |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |
 | `-l`, `--list` | the distinct tags (even credit), by Muthukrishnan–Sadakane listing |
 | `--range` | the smallest and largest tags (range scheme, LCA). This is the default when there is a tag array |
@@ -138,6 +142,7 @@ For `zymo`, build the BWT with one string per dataset: run Big-BWT on each `PREF
 | `PREFIX.tag`, `.tag.rmq` | tag array (run starts; tags, sampled tags or grammar); RMQ for listing |
 | `PREFIX.tagruns`, `.sp.tagruns` | cache of the tag runs |
 | `PREFIX.k<k>.kbf` | KeBaB filter; the same format as KATKA's `.kbf` (`RZKBLM01`) |
+| `PREFIX.stpd` | STPD sample (sorted text positions) |
 | `PREFIX.lvl` | two-level index: B, the parse BWT, the phrase dictionary, and the blocks (succ, BS, block BWT, symbols) |
 
 Apart from the `.kbf`, the formats are new. The tool doesn't read KATKA's `.rz`, `.tag` or `.csa` files, because it doesn't use sdsl.
@@ -162,6 +167,7 @@ Section numbers are those of *Three Examples of MEM-Finding* (`../paper/`).
 | §5 "Two-level indexing with a syncmer parse", "Blocks" (Lemmas 6–14) | `src/twolevel.hpp` | canonical closed syncmers, the phrase dictionary of both strands, the pattern parse, `search2` (block steps and the back-up rule) |
 | §5 "Implementation and setup" | `src/twolevel_build.hpp` | streaming parse of S, B, the parse BWT (libsais), successors, blocks, symbols, block BWT |
 | App. B "Minimizer digests"; App. A "Digests", "BML with digests" | `src/digest.hpp`, `src/mems.hpp` (`bml_digest_run`) | symmetric digests, the byte map, the windows' digest ranges and spans; BML on digests |
+| Becker et al., "Compressing Suffix Trees by Path Decompositions" (ICALP 2026) | `src/stpd.hpp` | an STPD search backend: the mirror image of their Algorithm 1 (right to left, π = ISA, i.e. their st-colex⁻ of the reversed text); the sample built from the BWT runs |
 | App. A "Parallelism"; output | `src/main.cpp` | the command line, presets, threads writing in input order |
 | §3, §4, Table 1 | `scripts/*.py` | the credit schemes and scorers (from `katka-readable/scripts/`) |
 
@@ -180,6 +186,7 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
   - KeBaB pseudo-MEMs and the inline check (exactly the MEMs of length ≥ L, for L ≥ k);
   - counting and listing for every MEM, with full, sampled (s = 4), grammar-compressed and per-species tag arrays;
   - reads plus random patterns from both strands, with and without homopolymer compression;
+  - STPD search: the same MEMs and intervals as plain search with the pruned and the full samples, every longest-suffix search ending at the lexicographically smallest occurrence (t = SA[sp]), and the sample's size against the paper's definition of st-colex⁻ (`katka-test stpd-size`);
   - BML over digests: every digested MEM by brute force, with its span, for L = 11, 15, 20, 30 (as KATKA's `RZ_BML_CHECK`), with and without a lookup table.
 - **All search configurations** give identical output: RLBWT, explicit and Elias–Fano RLCSA, lookup table, two-level without and with block jumps, with either continuation rule. Two-level search is also checked query by query against plain backward search, on both strands.
 - **Command line**: threads; two-level search with tags; gzipped and FASTA reads; a BWT with one string per dataset; each preset.
