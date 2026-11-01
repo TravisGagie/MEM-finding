@@ -121,7 +121,13 @@ This is a backend from *Compressing Suffix Trees by Path Decompositions* (Becker
 - **Correctness:** it is checked to give the same MEMs and intervals as plain search, with every search ending at the lexicographically smallest occurrence.
 - **Speed:** on the synthetic chromosome-like collection, BML with L = 1000 took 0.20 s without intervals and 1.2 s with them, against 2.1 s for plain search and 0.40 s for two-level search with blocks.
 
-### 3.5 BWTs
+### 3.5 Items for the draft's TODOs (2026-11-02)
+
+- **Lines 333–334 (intervals of STPD MEMs by two-level search):** implemented as `find --stpd --twolevel`, with identical output. On the synthetic chromosome-like collection (L = 1000), it takes 0.40 s, against 0.98 s with plain backward search for the intervals and 0.34 s for two-level search alone.
+- **Line 390 (B_λ):** `index --tags --tag-lcp λ1,…` reports B_λ, exact against brute force, with Lemma 11's bound. It still needs running on the Zymo and SILVA references.
+- **Lines 192–193 (KeBaB experiment):** `tests/exp_kebab.sh` runs KeBaB then BML, plain BML, and KeBaB inside BML. On small synthetic data, inside BML tests 15 times fewer k-mers than the separate pass but is not faster than plain BML (0.110 s against 0.100 s), because a 64-Mb index makes failed windows cheap. The experiment needs a large index on the desktop.
+
+### 3.6 BWTs
 
 `katka bwt` builds BWT(S$) with libsais. `katka bwt -d` builds a per-dataset BWT like pfp-merge's, for small data, from the suffix array of the datasets with distinct terminators. That makes the whole pipeline runnable without Big-BWT or pfp-merge on small data.
 

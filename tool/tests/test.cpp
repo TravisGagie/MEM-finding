@@ -218,6 +218,7 @@ static int mems_test(int argc, char **argv) {
         SDall.build(prefix + ".S", prefix + ".bwt", B, false);
         cfgs.push_back({"stpd", &X, nullptr, nullptr, true, &SD});
         cfgs.push_back({"stpd-all/rlbwt", nullptr, nullptr, nullptr, true, &SDall});
+        if (tl) cfgs.push_back({"stpd+twolevel", &X, nullptr, &L2, true, &SD});
     }
     tag_array T;
     vector<uint32_t> rowtag;
@@ -538,8 +539,38 @@ static int stpd_vs(const string &prefix, const string &colex) {
     return ok ? 0 : 1;
 }
 
+// B_lambda by brute force (suffix array and LCP of S$): tag boundaries p (tag of row p-1 != tag of row p)
+// with lcp(p) > lambda, tags by genome (bycol 0) or by tag column (1).  Prints the same lines as
+// katka index --tag-lcp.
+static int blam(const string &prefix, bool bycol, const string &ls) {
+    brute BF; BF.build(prefix);
+    genome_table G; G.load(prefix + ".tbl");
+    vector<uint32_t> gt = G.tags(bycol);
+    const u64 N = BF.S.size();
+    vector<int32_t> rk(N);
+    for (u64 x = 0; x < N; ++x) rk[BF.SA[x]] = (int32_t)x;
+    vector<u64> lcp(N, 0);
+    for (u64 i = 0, h = 0; i < N; ++i) {
+        if (rk[i] == 0) { h = 0; continue; }
+        u64 j = BF.SA[rk[i] - 1];
+        while (i + h < N && j + h < N && BF.S[i + h] == BF.S[j + h]) ++h;
+        lcp[rk[i]] = h;
+        if (h) --h;
+    }
+    auto tag = [&](u64 x) { u64 p = BF.SA[x] == (int32_t)(N - 1) ? N - 2 : BF.SA[x];
+        return gt[std::upper_bound(G.start.begin(), G.start.end(), p) - G.start.begin() - 1]; };
+    vector<u64> lambdas; { string w; for (char c : ls + ",") { if (c == ',') { if (!w.empty()) lambdas.push_back(std::stoull(w)); w.clear(); } else w += c; } }
+    u64 rho = 1;
+    vector<u64> B(lambdas.size(), 0);
+    for (u64 x = 1; x < N; ++x) if (tag(x) != tag(x - 1)) { ++rho; for (size_t i = 0; i < lambdas.size(); ++i) if (lcp[x] > lambdas[i]) ++B[i]; }
+    printf("tag runs rho = %lu\n", rho);
+    for (size_t i = 0; i < lambdas.size(); ++i) printf("  lambda = %lu: B_lambda = %lu\n", lambdas[i], B[i]);
+    return 0;
+}
+
 int main(int argc, char **argv) {
     if (argc >= 2 && string(argv[1]) == "unit") return unit();
+    if (argc == 5 && string(argv[1]) == "blam") return blam(argv[2], string(argv[3]) == "1", argv[4]);
     if (argc == 4 && string(argv[1]) == "stpd-vs") return stpd_vs(argv[2], argv[3]);
     if (argc == 3 && string(argv[1]) == "stpd-size") return stpd_size(argv[2]);
     if (argc >= 2 && string(argv[1]) == "mems") return mems_test(argc, argv);

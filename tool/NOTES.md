@@ -31,6 +31,34 @@ All tested with `selftest.sh` (brute force, plus both regressions):
 
 Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like pfp-merge, for small data). The test data can therefore be built entirely here.
 
+### Added 2026-11-02 for the paper's TODOs
+
+- **STPD with two-level intervals** (`find --stpd --twolevel`): STPD finds the MEMs, and two-level search (with blocks) computes the interval of each reported MEM instead of plain backward search. The output is identical (brute force and command-line tests). On the 2 Mbp × 16 synthetic collection with L = 1000:
+
+  | configuration | time |
+  |---|---|
+  | STPD with plain intervals | 0.98 s |
+  | STPD with two-level intervals | 0.40 s |
+  | two-level search alone | 0.34 s |
+
+  Here, recovering each MEM's interval costs about as much as finding it.
+- **B_λ** (`index --tags --tag-lcp 0,10,30,100,1000`): the tag boundaries whose suffixes share more than λ characters, with Lemma 11's bound. It is exact against brute force (`katka-test blam`, in the self-test). For the paper's TODO, run it on the Zymo and SILVA references on the desktop, for example:
+
+  ```
+  $T index --tags --by-tag --no-rmq --tag-out /dev/null --tag-lcp 0,10,30,100,1000 zy
+  ```
+
+  It loads the text into memory for the comparisons, and stops each comparison after max λ + 1 characters. On the synthetic data, per-species tags have B_30 = 29,501 of 267,599 boundaries, against 706,851 of 1,004,033 boundaries with B_10 for per-genome tags.
+- **The KeBaB experiment** (`tests/exp_kebab.sh`, Section 3.2's TODO). On 20 synthetic 100-kb queries, each with three 3-kb segments copied from the 64-Mb synthetic collection, with L = 1000 and k = 20 (median of 5 runs, same 71 MEMs):
+
+  | method | time | k-mer tests | backward steps |
+  |---|---|---|---|
+  | KeBaB then BML | 0.140 s | 1,999,620 | 212,678 |
+  | plain BML | 0.100 s | 0 | 277,758 |
+  | KeBaB inside BML | 0.110 s | 134,640 (2,093 window restarts) | 212,803 |
+
+  Inside BML it tests 15 times fewer k-mers than KeBaB's separate pass. With an index this small, though, a failed window costs plain BML only about 13 cheap steps, and most of the time goes into the shared segments, so it is not faster. The case the paper describes needs a large index (cache misses per step), i.e. the desktop: for example the chromosome 19 index with queries from `tests/gen_novel.py` built on other sequence.
+
 ### STPD search
 
 `katka index --stpd` and `katka find --stpd` (`src/stpd.hpp`). BML and forward–backward search only need longest-suffix searches, so this is the mirror image of the paper's Algorithm 1.

@@ -59,6 +59,7 @@ Reads `PREFIX.S`, `PREFIX.tbl` and the BWT, and always writes the RLBWT `PREFIX.
 | `--grammar` | | grammar-compress the runs' tags with the built-in approximate RePair |
 | `--bigrepair P` | | grammar-compress them with `bigrepair -i` output `P.R`, `P.C` (as KATKA did) |
 | `--tag-out FILE` | | write the tag array somewhere other than `PREFIX.tag` |
+| `--tag-lcp l1,l2,…` | | also report B_λ for each λ: the tag boundaries whose two suffixes share more than λ characters. It compares the text at each boundary while φ streams the suffix array, and prints the bound (r + σ + 2d)(λ + 1) + B_λ + 1 of Lemma 11 against the number of tag runs |
 | `--kebab k` | `PREFIX.k<k>.kbf` | KeBaB: a blocked Bloom filter of the canonical k-mers of S |
 | `--kebab-eps e` | | its false-positive rate (default 0.1) |
 | `--twolevel` | `PREFIX.lvl` | two-level index with blocks; needs a BWT with one terminator |
@@ -91,6 +92,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--no-jumps` | two-level search without block steps |
 | `--stpd` | STPD search (`PREFIX.stpd`, with the text `PREFIX.S` as the oracle): binary searches over a sample of at most r text positions instead of backward steps. The intervals of the reported MEMs are then computed by backward search, so the output is the same as plain search |
 | `--no-intervals` | with `--stpd` and no tags: skip the intervals (the mems format prints `-` for them) |
+| `--stpd --twolevel` | STPD finds the MEMs, and two-level search (with blocks unless `--no-jumps`) computes their intervals |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |
 | `-l`, `--list` | the distinct tags (even credit), by Muthukrishnan–Sadakane listing |
 | `--range` | the smallest and largest tags (range scheme, LCA). This is the default when there is a tag array |
@@ -173,6 +175,10 @@ Section numbers are those of *Three Examples of MEM-Finding* (`../paper/`).
 
 Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `tag_array.hpp` → `twolevel.hpp` → `main.cpp`.
 
+## Experiments
+
+- `tests/exp_kebab.sh PREFIX queries.fa [L] [k] [R]`: KeBaB then BML, plain BML, and KeBaB inside BML, on queries mostly absent from the text (Section 3.2). It reports the median time of R runs, k-mer tests, window restarts, backward steps and MEMs, and checks that all three give the same MEMs. `tests/gen_novel.py` makes synthetic queries of that kind.
+
 ## Testing
 
 `selftest.sh` runs everything below on data from `tests/gen_data.py` (4 species of 5 genomes each, 300 reads with errors and reverse complements, and a chromosome-19-like collection):
@@ -186,6 +192,7 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
   - KeBaB pseudo-MEMs and the inline check (exactly the MEMs of length ≥ L, for L ≥ k);
   - counting and listing for every MEM, with full, sampled (s = 4), grammar-compressed and per-species tag arrays;
   - reads plus random patterns from both strands, with and without homopolymer compression;
+  - B_λ of the tag runs (`--tag-lcp`) against a suffix array and LCP array (`katka-test blam`);
   - STPD search: the same MEMs and intervals as plain search with the pruned and the full samples, every longest-suffix search ending at the lexicographically smallest occurrence (t = SA[sp]), and the sample's size against the paper's definition of st-colex⁻ (`katka-test stpd-size`);
   - BML over digests: every digested MEM by brute force, with its span, for L = 11, 15, 20, 30 (as KATKA's `RZ_BML_CHECK`), with and without a lookup table.
 - **All search configurations** give identical output: RLBWT, explicit and Elias–Fano RLCSA, lookup table, two-level without and with block jumps, with either continuation rule. Two-level search is also checked query by query against plain backward search, on both strands.

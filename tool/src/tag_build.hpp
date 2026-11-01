@@ -19,6 +19,18 @@
 
 namespace katka {
 
+// number of equal leading bytes of a[0..len) and b[0..len)
+inline u64 lce_bytes(const uint8_t *a, const uint8_t *b, u64 len) {
+    u64 i = 0;
+    for (; i + 8 <= len; i += 8) {
+        uint64_t x, y;
+        memcpy(&x, a + i, 8); memcpy(&y, b + i, 8);
+        if (x != y) return i + (__builtin_ctzll(x ^ y) >> 3);
+    }
+    while (i < len && a[i] == b[i]) ++i;
+    return i;
+}
+
 // prefix.tbl: one line per genome: index, tag, name, length, start in S
 struct genome_table {
     std::vector<u64> start, len;
@@ -224,8 +236,22 @@ struct tag_runs {
     }
     void save(const std::string &f) const { FILE *o = open_or_die(f, "wb"); wmagic(o, "KTRUNS01"); wr(o, n); wvec(o, start); wvec(o, tag); fclose(o); }
 
-    void compute(const std::string &Sfile, const std::string &bwtfile, const rlbwt &B, const genome_table &G, bool by_column) {
+    // lambdas (optional): also count, for each lambda, the tag boundaries p with lcp(p) > lambda (B_lambda
+    // of Lemma "runs" in the paper), comparing the text at each boundary (it is loaded for that); blam gets
+    // the counts
+    void compute(const std::string &Sfile, const std::string &bwtfile, const rlbwt &B, const genome_table &G, bool by_column,
+                 const std::vector<u64> &lambdas = {}, std::vector<u64> *blam = nullptr) {
         phi_samples P = sample_rindex(Sfile, bwtfile, B, G);
+        std::vector<uint8_t> text;
+        u64 cap = 0;
+        if (!lambdas.empty()) {
+            text.resize(file_size(Sfile));
+            FILE *f = open_or_die(Sfile, "rb");
+            if (fread(text.data(), 1, text.size(), f) != text.size()) die("cannot read " + Sfile);
+            fclose(f);
+            for (u64 l : lambdas) cap = std::max(cap, l + 1);
+            blam->assign(lambdas.size(), 0);
+        }
         std::vector<uint32_t> gt = G.tags(by_column);
         n = P.n;
         const u64 K = P.dstart.size();
@@ -234,6 +260,8 @@ struct tag_runs {
         u64 d = P.esa[P.R - 1], j = K - 1;                  // SA[n-1], in D
         u64 g = 0, g0 = 0, g1 = G.start.size() > 1 ? G.start[1] : ~0ULL;
         int64_t cur = -1; u64 top = 0;
+        u64 pd = 0, pj = 0;                                 // the previous row's D position and dataset
+        auto avail = [&](u64 dd, u64 jj) { return ds[jj + 1] - 1 - dd; };   // characters before the terminator
         for (u64 row = n; row-- > 0;) {
             u64 q;                                          // D position -> S position (a terminator: its dataset's last)
             if (K == 1) q = d < n - 1 ? d : n - 2;
@@ -247,8 +275,18 @@ struct tag_runs {
                 g0 = G.start[g]; g1 = g + 1 < G.start.size() ? G.start[g + 1] : ~0ULL;
             }
             int64_t t = gt[g];
-            if (t != cur) { if (cur >= 0) { rs.push_back(top); rt.push_back((uint32_t)cur); } cur = t; }
-            top = row;
+            if (t != cur) {
+                if (cur >= 0) {
+                    rs.push_back(top); rt.push_back((uint32_t)cur);
+                    if (!lambdas.empty()) {                  // a tag boundary at row + 1: lcp of the suffixes at rows row, row + 1
+                        u64 jc = K == 1 ? 0 : j, m = std::min({avail(d, jc), avail(pd, pj), cap});
+                        u64 l = m ? lce_bytes(text.data() + (d - jc), text.data() + (pd - pj), m) : 0;
+                        for (size_t i = 0; i < lambdas.size(); ++i) if (l > lambdas[i]) (*blam)[i]++;
+                    }
+                }
+                cur = t;
+            }
+            top = row; pd = d; pj = K == 1 ? 0 : j;
             if (row) d = P.phi(d);
         }
         rs.push_back(top); rt.push_back((uint32_t)cur);

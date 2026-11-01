@@ -41,7 +41,11 @@ quiet $K bwt t
 quiet $K index --csa --efcsa --tags --kebab 20 --twolevel --syncmer 21,8 --stpd t
 quiet $K index --tags --sample 4 --tag-out t.s4.tag t
 quiet $K index --tags --grammar --tag-out t.g.tag t
-quiet $K index --tags --by-tag --tag-out t.sp.tag t
+quiet $K index --tags --by-tag --tag-out t.sp.tag --tag-lcp 0,10,30,100,1000 t
+grep -E "rho|lambda" log.txt | sed 's/; r = .*//; s/, bound .*//' > blam.out
+$KT blam t 1 0,10,30,100,1000 > blam.ref
+same() { if cmp -s "$1" "$2"; then echo "  same: $3"; else echo "FAILED: $3"; exit 1; fi; }
+same blam.out blam.ref "B_lambda of the tag runs against brute force"
 step "brute force: MEMs, intervals, KeBaB, two-level, tags (s = 1)"
 $KT mems t "$D/reads.fq" --tags t.tag --kebab 20 --twolevel --stpd --random 40
 $KT stpd-size t

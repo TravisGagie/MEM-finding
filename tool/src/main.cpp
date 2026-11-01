@@ -184,6 +184,8 @@ static const char *INDEX_USAGE =
     "    --grammar         grammar-compress the runs' tags (built-in approximate RePair)\n"
     "    --bigrepair P     grammar-compress them with bigrepair -i output P.R, P.C\n"
     "    --tag-out FILE    write the tag array to FILE instead of PREFIX.tag\n"
+    "    --tag-lcp l1,l2,..  also report B_l, the tag boundaries whose suffixes share more than l characters,\n"
+    "                      and the bound (r + sigma + 2d)(l + 1) + B_l + 1 on the number of tag runs\n"
     "  --kebab k           KeBaB Bloom filter of the k-mers of S (PREFIX.k<k>.kbf)\n"
     "    --kebab-eps e     its false-positive rate (default 0.1)\n"
     "  --stpd              suffix-tree path decomposition sample (PREFIX.stpd; needs one terminator)\n"
@@ -248,9 +250,10 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
+    std::vector<u64> lambdas;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "h", longopts, nullptr)) != -1) {
         switch (c) {
@@ -270,6 +273,7 @@ static int cmd_index(int argc, char **argv) {
             case 'y': if (sscanf(optarg, "%d,%d", &to.k, &to.s) != 2) die("--syncmer k,s"); break;
             case 'B': to.blocks = false; break;
             case 'P': stpd = std::max(stpd, 1); break;
+            case 'l': { std::string v = optarg, w; for (char ch : v + ",") { if (ch == ',') { if (!w.empty()) lambdas.push_back(std::stoull(w)); w.clear(); } else w += ch; } break; }
             case 'Q': stpd = 2; break;
             case 'C': { string v = optarg; if (v == "frequent") to.frequent = true; else if (v != "smallest") die("--continuation smallest|frequent"); break; }
             default: fputs(INDEX_USAGE, stderr); return 1;
@@ -295,7 +299,21 @@ static int cmd_index(int argc, char **argv) {
         genome_table G; G.load(prefix + ".tbl");
         tag_runs TR;
         const string cache = prefix + (by_tag ? ".sp.tagruns" : ".tagruns");
-        if (!TR.load(cache) || TR.n != B.n) { TR.compute(Sfile, bwtfile, B, G, by_tag); TR.save(cache); }
+        if (!lambdas.empty() || !TR.load(cache) || TR.n != B.n) {
+            std::vector<u64> blam;
+            TR.compute(Sfile, bwtfile, B, G, by_tag, lambdas, &blam);
+            TR.save(cache);
+            if (!lambdas.empty()) {                    // Lemma "runs": rho <= (r + sigma + 2d)(lambda + 1) + B_lambda + 1
+                u64 sigma = 0, dseg = 0;
+                for (int ch = 0; ch < 256; ++ch) sigma += B.C[ch + 1] > B.C[ch];
+                std::vector<uint32_t> gt = G.tags(by_tag);
+                for (size_t i = 0; i < gt.size(); ++i) dseg += i == 0 || gt[i] != gt[i - 1];
+                fprintf(stderr, "tag runs rho = %zu; r = %lu, sigma = %lu, d = %lu segments\n", TR.start.size(), B.R, sigma, dseg);
+                for (size_t i = 0; i < lambdas.size(); ++i)
+                    fprintf(stderr, "  lambda = %lu: B_lambda = %lu, bound %lu\n", lambdas[i], blam[i],
+                            (B.R + sigma + 2 * dseg) * (lambdas[i] + 1) + blam[i] + 1);
+            }
+        }
         tag_build_options o; o.s = sample; o.rmq = !no_rmq; o.grammar = grammar; o.bigrepair = bigrep;
         tag_array T;
         build_tag_array(TR, &B, o, T);
@@ -344,6 +362,7 @@ static const char *FIND_USAGE =
     "    --stpd            STPD search (PREFIX.stpd and the text PREFIX.S): binary searches over a sample of\n"
     "                      at most r positions; the intervals of reported MEMs by backward search\n"
     "    --no-intervals    with --stpd: do not compute intervals (mems format prints - -; no tags)\n"
+    "                      (--stpd --twolevel: STPD finds the MEMs, two-level search their intervals)\n"
     "  answers (Cliffy's listing format, with counts)\n"
     "    -c, --count       each tag with its number of occurrences (proportional credit)\n"
     "    -l, --list        the distinct tags (even credit)\n"
@@ -597,7 +616,6 @@ static int cmd_find(int argc, char **argv) {
     }
     stpd_index SD;
     if (use_stpd) {
-        if (twolevel) die("--stpd and --twolevel are exclusive");
         SD.load(prefix + ".stpd", prefix + ".S");
         K.SP = &SD;
         fprintf(stderr, "STPD: %lu sampled positions (r = %lu), %.3f MB on top of the text\n", SD.pos.size(), SD.runs, SD.bytes() / 1e6);

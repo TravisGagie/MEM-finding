@@ -46,7 +46,8 @@ struct segment_search {
     bool jumps = true;
     const unsigned char *comp = nullptr;  // complement of each symbol (digest symbols), if not DNA
     const stpd_index *SP = nullptr;       // if set, STPD search (stpd.hpp)
-    bool intervals = true;                // with STPD: compute the intervals of the reported MEMs
+    bool intervals = true;                // with STPD: compute the intervals of the reported MEMs (by two-level
+                                          // search if TL is set too, else by plain backward search)
     search_counters cnt;
     stpd_state sst[2];
 
@@ -67,7 +68,6 @@ struct segment_search {
     // the longest suffix of X[lo..end), X = R (dir 0) or rc(R) (dir 1); returns its start j and interval I
     u64 back(int dir, u64 lo, u64 end, interval &I) {
         const char *X = dir ? rc.data() : R;
-        if (TL) return search2(*S, *TL, dir ? qi : pi, X, (int64_t)lo, (int64_t)end, jumps, I, cnt);
         if (SP) {
             ++cnt.searches;
             stpd_state &st = sst[dir];
@@ -76,6 +76,7 @@ struct segment_search {
             I = {0, 0};
             return st.j;
         }
+        if (TL) return search2(*S, *TL, dir ? qi : pi, X, (int64_t)lo, (int64_t)end, jumps, I, cnt);
         return plain_back(dir, lo, end, I);
     }
     u64 plain_back(int dir, u64 lo, u64 end, interval &I) {
@@ -96,13 +97,13 @@ struct segment_search {
     }
     // X[j..end) occurs with interval I: extend it to the left down to lo
     u64 extend_left(int dir, u64 lo, u64 j, u64 end, interval &I) {
-        if (TL) return back(dir, lo, end, I);
         if (SP) {
             stpd_state &st = sst[dir];
             if (st.dir != dir || st.end != end || st.j != j) return back(dir, lo, end, I);
             stpd_extend(*SP, dir ? rc.data() : R, lo, st, cnt);
             return st.j;
         }
+        if (TL) return back(dir, lo, end, I);
         const char *X = dir ? rc.data() : R;
         while (j > lo) {
             ++cnt.char_steps;
@@ -118,7 +119,9 @@ struct segment_search {
     void rc_interval(u64 a, u64 e, interval &J) {
         if (!SP) return;
         if (!intervals) { J = {0, 0}; return; }
-        if (plain_back(1, n - e, n - a, J) != n - e) die("internal error: STPD and backward search disagree");
+        // by two-level search (with blocks) if there is a two-level index, else by plain backward search
+        u64 j = TL ? search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, J, cnt) : plain_back(1, n - e, n - a, J);
+        if (j != n - e) die("internal error: STPD and backward search disagree");
     }
 };
 
@@ -146,7 +149,7 @@ inline int distinct_3mers(const char *s, u64 m) {
 
 // The segments to search, as (start, length): the maximal A/C/G/T runs of the read, or with pseudo-MEMs
 // the maximal substrings of those runs all of whose k-mers pass the filter.
-inline void segments(const std::string &read, const kmer_filter *F, std::vector<std::pair<u64, u64>> &segs) {
+inline void segments(const std::string &read, const kmer_filter *F, std::vector<std::pair<u64, u64>> &segs, u64 *tests = nullptr) {
     segs.clear();
     u64 i = 0, len = read.size();
     while (i < len) {
@@ -160,6 +163,7 @@ inline void segments(const std::string &read, const kmer_filter *F, std::vector<
         static thread_local std::vector<uint64_t> kmers;
         kmers.assign(n - F->k + 1, 0);
         F->for_each_kmer((const unsigned char *)read.data() + r0, n, [&](uint64_t p, uint64_t c) { kmers[p] = c; });
+        if (tests) *tests += kmers.size();
         u64 start = 0; bool open = false;
         for (u64 p = 0; p < kmers.size(); ++p) {
             if (p + 8 < kmers.size()) F->prefetch(kmers[p + 8]);
@@ -319,7 +323,7 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
             if (n >= opt.L && n >= (u64)opt.digest->w) bml_digest_run(Q, *opt.digest, read.data() + r0, n, r0, opt, report);
         return;
     }
-    segments(read, opt.pseudo ? opt.filter : nullptr, segs);
+    segments(read, opt.pseudo ? opt.filter : nullptr, segs, &Q.cnt.kmer_tests);
     const bool longest_first = (opt.adaptive || opt.top) && opt.pseudo;
     if (longest_first)
         std::stable_sort(segs.begin(), segs.end(), [](const std::pair<u64, u64> &p, const std::pair<u64, u64> &q) { return p.second > q.second; });
