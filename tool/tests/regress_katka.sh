@@ -14,15 +14,15 @@ fails=0
 cmpout() {   # name old new
   if cmp -s "$2" "$3"; then echo "  same: $1"; else echo "  DIFFERENT: $1"; fails=$((fails + 1)); fi
 }
-for hpc in 0 1; do
-  U=""; [ $hpc = 1 ] && U="-U"
-  p=o$hpc; q=n$hpc
-  echo "== text ${U:-without homopolymer compression}"
-  (cd "$DATA" && "$OLD/katka-prep" -s $U list.tsv "$W/$p") 2> /dev/null
-  (cd "$DATA" && "$NEW" prep -s $U list.tsv "$W/$q") 2> /dev/null
+for mode in plain hpc datasets; do
+  U=""; D=""; [ $mode != plain ] && U="-U"; [ $mode = datasets ] && D="-d"
+  p=o$mode; q=n$mode
+  echo "== text: $mode"
+  (cd "$DATA" && "$OLD/katka-prep" -s $D $U list.tsv "$W/$p") 2> /dev/null
+  (cd "$DATA" && "$NEW" prep -s $D $U list.tsv "$W/$q") 2> /dev/null
   cmpout "S" $p.S $q.S; cmpout "tbl" $p.tbl $q.tbl
-  "$NEW" bwt $q 2> /dev/null; cp $q.bwt $p.bwt          # the same BWT for both
-  "$OLD/katka-build" -G -A $p.S $p.bwt $p.tbl $p > /dev/null 2>&1
+  "$NEW" bwt $D $q 2> /dev/null; cp $q.bwt $p.bwt        # the same BWT for both (one string per dataset with -d)
+  "$OLD/katka-build" -G -A $p.S $p.bwt $p.tbl $p > build.log 2>&1 || { cat build.log; exit 1; }
   "$OLD/katka-tagbuild" $p 1 $p.tag > /dev/null 2>&1
   "$OLD/katka-tagbuild" $p 4 $p.s4.tag > /dev/null 2>&1
   "$OLD/katka-tagbuild" $p 1 $p.sp.tag -S > /dev/null 2>&1
@@ -39,8 +39,9 @@ for hpc in 0 1; do
     local o=() n=()
     while [ "$1" != "--" ]; do o+=("$1"); shift; done; shift
     n=("$@")
-    "$OLD/katka-classify" $U "${o[@]}" $p.rlbwt "$READS" old.out 2> /dev/null
-    "$NEW" find $U "${n[@]}" $q "$READS" new.out 2> /dev/null
+    rm -f old.out new.out
+    "$OLD/katka-classify" $U "${o[@]}" $p.rlbwt "$READS" old.out 2> /dev/null || { echo "  FAILED (old): $name"; fails=$((fails + 1)); return; }
+    "$NEW" find $U "${n[@]}" $q "$READS" new.out 2> /dev/null || { echo "  FAILED (new): $name"; fails=$((fails + 1)); return; }
     cmpout "$name" old.out new.out
   }
   run "L=30 count, RLCSA, -F 10"     -L 30 -c -C $p.csa -F 10 -T $p.tag      -- -L 30 -c --csa -F 10

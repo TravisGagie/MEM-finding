@@ -98,8 +98,47 @@ static int cmd_prep(int argc, char **argv) {
 // ---------------------------------------------------------------------------------------------------
 // katka bwt: BWT(S$) with libsais, one byte per row, the terminator as byte 0
 
+// With -d, the BWT of the datasets as separate strings, one terminator each (what pfp-merge builds): the
+// suffix array of T_0 $_0 T_1 $_1 ..., with distinct terminators smaller than every base, gives the order
+// of the rotations of the strings; each row's character is the one before it in its own string, cyclically.
+static int bwt_datasets(const string &prefix) {
+    genome_table G; G.load(prefix + ".tbl");
+    std::vector<u64> ds = G.dataset_starts();
+    const u64 N = file_size(prefix + ".S"), K = ds.size();
+    if (K > 60) die("katka bwt -d: at most 60 datasets (use pfp-merge)");
+    if (N + K >= (1ull << 31) - 16) die("katka bwt -d: text too long for this builder (use pfp-merge)");
+    std::vector<uint8_t> T(N + K);
+    std::vector<u64> where(N + K);            // the dataset of each position
+    {
+        FILE *f = open_or_die(prefix + ".S", "rb");
+        std::vector<uint8_t> S(N);
+        if (fread(S.data(), 1, N, f) != N) die("cannot read S");
+        fclose(f);
+        ds.push_back(N);
+        u64 p = 0;
+        for (u64 j = 0; j < K; ++j) {
+            for (u64 i = ds[j]; i < ds[j + 1]; ++i) { where[p] = j; T[p++] = S[i]; }
+            where[p] = j; T[p++] = (uint8_t)(1 + j);
+        }
+    }
+    std::vector<u64> dstart(K + 1, 0);        // the start of each string in T
+    for (u64 j = 0; j < K; ++j) dstart[j + 1] = dstart[j] + (ds[j + 1] - ds[j]) + 1;
+    std::vector<int32_t> SA(N + K);
+    if (libsais(T.data(), SA.data(), (int32_t)(N + K), 0, nullptr) != 0) die("libsais failed");
+    FILE *o = open_or_die(prefix + ".bwt", "wb");
+    for (u64 r = 0; r < N + K; ++r) {
+        u64 p = SA[r], j = where[p];
+        uint8_t c = p == dstart[j] ? T[dstart[j + 1] - 1] : T[p - 1];
+        fputc(c <= 60 ? 0 : c, o);
+    }
+    fclose(o);
+    fprintf(stderr, "BWT of %lu datasets (%lu characters with terminators)\n", K, N + K);
+    return 0;
+}
+
 static int cmd_bwt(int argc, char **argv) {
-    if (argc != 2) { fputs("usage: katka bwt PREFIX     (reads PREFIX.S, writes PREFIX.bwt)\n", stderr); return 1; }
+    if (argc == 3 && string(argv[1]) == "-d") return bwt_datasets(argv[2]);
+    if (argc != 2) { fputs("usage: katka bwt [-d] PREFIX     (reads PREFIX.S, writes PREFIX.bwt; -d: one string per dataset)\n", stderr); return 1; }
     const string prefix = argv[1];
     double t0 = now();
     const u64 n = file_size(prefix + ".S");
