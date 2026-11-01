@@ -20,7 +20,11 @@ All tested with `selftest.sh` (brute force, plus both regressions):
   - closed syncmers canonical under reverse complement, and one dictionary for both strands;
   - B, the parse BWT, blocks with the smallest or the most frequent successor (with ω);
   - it plugs into BML and forward–backward search, and it works with tags. Two-level search with tags gives byte-identical listings to plain search.
-- **Minimizer digests (priority 4): not done.**
+- **Minimizer digests (priority 4): done** (added 2026-11-01, after the first push).
+  - `prep --digest 4,11` builds symmetric digests: a canonical hash, all tied minimizers per window, equal neighbours collapsed, and the rarest codes (in reverse-complement pairs) sharing one byte. It checks that every genome's digest is strand-symmetric.
+  - `find` runs BML on digests with L in bases, the failure jump and spans as in App. A, and keeps only the span-maximal MEMs. The lookup table works over digest symbols (`-F 2`).
+  - It is checked against brute force, and against KATKA's original `rz-prep -B` and `rz-classify -B` (identical text, map and listings).
+  - Over digests, only BML with a fixed L is supported: no adaptive L, top t, FB, KeBaB, two-level search or homopolymer compression, as in KATKA.
 - **Not in the tool, as the brief says:** the rz-index, shortcuts, the frequency-rank encoding of the parse, RLZ verification, whole-phrase matching, and the combined LCA-and-listing rule.
 
 Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like pfp-merge, for small data). The test data can therefore be built entirely here.
@@ -63,7 +67,8 @@ sdsl was then built here, only for the regressions. Its consequences:
 7. **`-K` with `-X`.** KATKA required the filter's k to be at most L. The tool requires it only with a fixed L (pseudo-MEMs), since adaptive L starts low and the longest-first order handles it, as KATKA's `-X -L 20 -K` runs did.
 8. **Tags** may be any 32-bit integers (KATKA stored 14 bits).
 9. **Grammar.** The built-in RePair is approximate: each round replaces every pair whose frequency is at least half the largest. The grammar differs from bigrepair's, so the size reported in the paper (0.23 GB for SILVA) should be remeasured, or the tool given bigrepair's output with `--bigrepair`. Answers are identical either way (tested). The built-in one needs about 16 bytes per run, roughly 6 GB for SILVA's 359 million runs, so on the desktop bigrepair may be the safer choice.
-10. **Output order with `--top`**: the t longest are printed at the end of the read, sorted by position.
+10. **Digests of reads collapse equal neighbouring codes, as the reference's do.** KATKA collapsed equal neighbouring bytes in reads but codes in the reference. These differ only when two different codes that share the merged byte are adjacent. In that case KATKA's read digest could miss a match, which the tool's cannot. The test data includes merged codes, and the listings were identical.
+11. **Output order with `--top`**: the t longest are printed at the end of the read, sorted by position.
 
 ## What was tested here (small data only)
 
@@ -72,8 +77,9 @@ sdsl was then built here, only for the regressions. Its consequences:
 - the unit tests;
 - the brute-force checks, on 340 patterns (300 reads plus 40 random patterns from both strands). These cover about 260,000 MEMs from plain BML and FB, every search configuration, KeBaB in both modes, adaptive L, the t longest, and counting and listing with four kinds of tag array. They also run on the homopolymer-compressed text, and on the chromosome-like collection with both continuation rules;
 - command-line checks of each preset and option combination;
-- the two regressions, with `KATKA_OLD` and `CHR19_OLD` set. Both pass:
+- the three regressions, with `KATKA_OLD`, `RZ_OLD` and `CHR19_OLD` set. All pass:
   - **KATKA:** byte-identical listings for 12 option combinations on each of three texts (plain, homopolymer-compressed, and one BWT string per dataset);
+  - **digests:** the same digested text, byte map and listings as KATKA's original `rz-classify -B`, for L = 11 to 30 (`tests/regress_digest.sh`);
   - **chr19:** identical MEMs and counts.
 
 KATKA's 40-genome `test-small` isn't in the repository, so the KATKA regression ran on synthetic data from `tests/gen_data.py`. To run it on `test-small`, put `list.tsv` and `reads.fq` in a directory DIR and run `tests/regress_katka.sh OLD_BIN DIR WORKDIR`.
@@ -119,6 +125,15 @@ Classification uses the same command lines as before, with `katka find` in place
 ```
 $T find --preset silva -j 8 bac R out        # = -L 30 -c --csa -F 10
 $T find -j 8 -L 30 -l --csa -F 10 bac R out  # even credit (listing)
+```
+
+The digested index of App. B (k = 4, w = 11), with an explicit RLCSA and tags:
+
+```
+$T prep --digest 4,11 list.tsv dg
+~/MEM-finding/katka/deps/Big-BWT/bigbwt dg.S && mv dg.S.bwt dg.bwt
+$T index --csa --efcsa --tags dg
+$T find -j 8 -L 30 -c --csa -F 2 dg R out      # L = 15 ... 50 for the table in App. B; --efcsa for its Elias-Fano row
 ```
 
 Then score with `scripts/score_silva.py` (or the `compare_lib.sh` pipeline, giving it the listings) as before.

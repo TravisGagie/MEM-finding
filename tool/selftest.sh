@@ -7,12 +7,13 @@
 #      configuration (RLBWT, RLCSAs, lookup table, two-level with and without block jumps) giving the
 #      same output; the tag answers (counting and listing) with every kind of tag array; and two-level
 #      longest-suffix searches against plain backward search on both strands;
-#   3. the same with homopolymer compression, and on a chromosome-19-like collection with both
-#      continuation rules;
+#   3. the same with homopolymer compression; BML over minimizer digests (spans against brute force);
+#      and on a chromosome-19-like collection with both continuation rules;
 #   4. the command line: threads, two-level search with tags, a BWT with one terminator per dataset, the
 #      presets;
-#   5. if KATKA_OLD (katka-readable's bin/) or CHR19_OLD (chr19/twolevel's build/) is set, the
-#      regressions against the old code (tests/regress_katka.sh, tests/regress_chr19.sh).
+#   5. if KATKA_OLD (katka-readable's bin/), RZ_OLD (a build of katka/rz-index) or CHR19_OLD
+#      (chr19/twolevel's build/) is set, the regressions against the old code (tests/regress_katka.sh,
+#      tests/regress_digest.sh, tests/regress_chr19.sh).
 # Everything is written to selftest/ (ignored by git).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -50,6 +51,12 @@ step "homopolymer compression"
 quiet $K bwt h
 quiet $K index --csa --efcsa --tags --kebab 20 --twolevel --syncmer 21,8 h
 $KT mems h "$D/reads.fq" --tags h.tag --kebab 20 --twolevel --hpc
+
+step "minimizer digests (k = 4, w = 11)"
+(cd "$D" && quiet $K prep -s --digest 4,11 list.tsv "$W/g")
+quiet $K bwt g
+quiet $K index --csa --efcsa --tags g
+$KT mems g "$D/reads.fq" --digest --tags g.tag
 
 step "chromosome-19-like collection (k = 51, s = 12)"
 (cd "$D/chr" && quiet $K prep list.tsv "$W/c")
@@ -97,5 +104,6 @@ same a.out b.out "preset zymo"
 grep -q "{0:" a.out && echo "  species tags present"
 
 if [ -n "${KATKA_OLD:-}" ]; then step "regression against katka-readable"; "$HERE/tests/regress_katka.sh" "$KATKA_OLD" "$D" "$W/regress_katka"; fi
+if [ -n "${RZ_OLD:-}" ]; then step "regression against rz-index digests"; "$HERE/tests/regress_digest.sh" "$RZ_OLD" "$D" "$W/regress_digest"; fi
 if [ -n "${CHR19_OLD:-}" ]; then step "regression against chr19/twolevel"; "$HERE/tests/regress_chr19.sh" "$CHR19_OLD" "$D/chr" "$W/regress_chr19"; fi
 echo "self-test passed"

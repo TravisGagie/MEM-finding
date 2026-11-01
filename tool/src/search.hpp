@@ -31,31 +31,44 @@ struct stepper {
     }
 };
 
+// The table is over an alphabet: A, C, G, T by default, or the symbols of a digest (set_alphabet).
 struct lookup_table {
     int t = 0;                      // 0: no table
-    std::vector<interval> iv;       // indexed by the string's 2-bit code, first base most significant
+    std::vector<unsigned char> alpha{'A', 'C', 'G', 'T'};
+    int16_t code[256];
+    std::vector<interval> iv;       // indexed by the string's code in base |alpha|, first symbol most significant
     std::vector<uint8_t> occurs;
 
+    lookup_table() { set_alphabet(alpha); }
+    void set_alphabet(const std::vector<unsigned char> &a) {
+        alpha = a;
+        std::fill(code, code + 256, -1);
+        for (size_t i = 0; i < alpha.size(); ++i) code[alpha[i]] = (int16_t)i;
+    }
     void build(const stepper &S, int tt) {
         t = tt;
+        const u64 sig = alpha.size();
+        long double total = 1;
+        for (int i = 0; i < t; ++i) total *= sig;
+        if (total > 5e8) die("lookup table too large (" + std::to_string((double)total) + " entries)");
         std::vector<interval> a{S.full()};
         std::vector<uint8_t> ok{1};
-        for (int i = 0; i < t; ++i) {        // the strings of length i + 1 are those of length i with a base in front
+        for (int i = 0; i < t; ++i) {        // the strings of length i + 1 are those of length i with a symbol in front
             u64 m = a.size();
-            std::vector<interval> a2(4 * m);
-            std::vector<uint8_t> ok2(4 * m, 0);
-            for (int c = 0; c < 4; ++c)
+            std::vector<interval> a2(sig * m);
+            std::vector<uint8_t> ok2(sig * m, 0);
+            for (u64 c = 0; c < sig; ++c)
                 for (u64 w = 0; w < m; ++w)
-                    if (ok[w]) { interval I = a[w]; if (S.step(I, "ACGT"[c])) { a2[c * m + w] = I; ok2[c * m + w] = 1; } }
+                    if (ok[w]) { interval I = a[w]; if (S.step(I, alpha[c])) { a2[c * m + w] = I; ok2[c * m + w] = 1; } }
             a.swap(a2); ok.swap(ok2);
         }
         iv.swap(a); occurs.swap(ok);
     }
     u64 bytes() const { return iv.size() * (sizeof(interval) + 1); }
-    // the interval of p[0..t) (bases A/C/G/T only); false if it does not occur
+    // the interval of p[0..t); false if it does not occur (or has a symbol outside the alphabet)
     bool get(const unsigned char *p, interval &I) const {
         u64 key = 0;
-        for (int i = 0; i < t; ++i) key = 4 * key + base_code(p[i]);
+        for (int i = 0; i < t; ++i) { int c = code[p[i]]; if (c < 0) return false; key = alpha.size() * key + c; }
         if (!occurs[key]) return false;
         I = iv[key];
         return true;

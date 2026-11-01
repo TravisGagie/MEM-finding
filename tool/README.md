@@ -28,7 +28,7 @@ katka find --preset silva ref reads.fq out.listings
 
 ## Commands
 
-### `katka prep [--preset NAME] [-d] [-s] [-U] list.tsv PREFIX`
+### `katka prep [--preset NAME] [-d] [-s] [-U] [--digest k,w] list.tsv PREFIX`
 
 Builds the text `S = G_1 X rc(G_1) X G_2 X rc(G_2) X ...`, where every character other than A, C, G or T becomes `X`. It writes `PREFIX.S`, `PREFIX.tbl` (index, tag, name, length, start in S) and `PREFIX.info`. The text and table are KATKA's `katka-prep` output, byte for byte.
 
@@ -37,6 +37,7 @@ Builds the text `S = G_1 X rc(G_1) X G_2 X rc(G_2) X ...`, where every character
 | `-s` | a FASTA file may hold several genomes, a genome being a run of consecutive records with the same sample ID (the header up to the first `.` or blank) |
 | `-d` | also write one text per dataset (consecutive genomes with the same tag), `PREFIX.ds<j>.S`, listed in `PREFIX.datasets`, for Big-BWT and pfp-merge |
 | `-U` | homopolymer compression of every genome; `katka find` then compresses the reads too (recorded in `PREFIX.info`) |
+| `--digest k,w` | index symmetric minimizer digests instead of the bases (App. B; the paper uses 4,11): a canonical hash, all tied minimizers in each window, equal neighbours collapsed, the rarest codes sharing one byte if more than 252 occur. Writes the byte map `PREFIX.map`; `katka find` then digests the reads too. The text, table and map are the same as KATKA's `rz-prep -B` |
 
 ### `katka bwt [-d] PREFIX`
 
@@ -83,7 +84,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--inline-kebab k` | KeBaB window check inside BML: if a k-mer of the window fails, jump past the rightmost failing one, in O(1) per window |
 | `--kbf FILE` | the filter file, if not `PREFIX.k<k>.kbf` |
 | `--csa`, `--efcsa` | backward steps on the explicit or Elias–Fano RLCSA (default: the RLBWT) |
-| `-F t` | lookup table of the intervals of all t-mers, t ≤ 13 (plain search only) |
+| `-F t` | lookup table of the intervals of all t-mers, t ≤ 13 (plain search only; over digests, of all t-symbol strings, e.g. `-F 2`) |
 | `--twolevel` | two-level search with block jumps (`PREFIX.lvl`); character steps use the RLCSA if `--csa` is given |
 | `--no-jumps` | two-level search without block steps |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |
@@ -94,6 +95,8 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--format listing\|mems` | Cliffy's listing format extended with counts (default), or one line per MEM, `name start end sp ep` (0-based, half-open), with no tags |
 | `-j p` | p threads, which take chunks of 256 reads; the output is the same as with one thread |
 | `--stats` | numbers of searches and of character, parse and block steps |
+
+Over a digested index (`prep --digest`), `find` runs BML on the digests with L in bases (L ≥ w): a failed window jumps to the first window that selects only later symbols, and each digested MEM is reported with its span in bases, keeping only the spans not inside another's (App. A, "BML with digests"). Answers, the RLCSAs, the lookup table and threads work as usual; `-X`, `--top`, `--fb`, KeBaB, two-level search and `-U` do not apply.
 
 In the listing format, each read gets `>name`, then `[a,b] {answer}` for each MEM, where `[a,b]` is its span in the read (0-based, inclusive). This is the format of `katka-classify`, so the scorers in `scripts/` (copied from `katka-readable/scripts/`) work unchanged:
 
@@ -127,7 +130,8 @@ For `zymo`, build the BWT with one string per dataset: run Big-BWT on each `PREF
 
 | file | contents |
 |---|---|
-| `PREFIX.S`, `.tbl`, `.info` | the text, the genome table, whether homopolymer-compressed |
+| `PREFIX.S`, `.tbl`, `.info` | the text, the genome table, whether homopolymer-compressed or digested |
+| `PREFIX.map` | the digest's byte map (KATKA's format, `RZDGMAP1`) |
 | `PREFIX.bwt` | the BWT (input) |
 | `PREFIX.rlbwt` | RLBWT: Elias–Fano run starts, a wavelet matrix over the run heads, per-character Elias–Fano cumulative run lengths |
 | `PREFIX.csa`, `.efcsa` | RLCSAs |
@@ -157,6 +161,7 @@ Section numbers are those of *Three Examples of MEM-Finding* (`../paper/`).
 | §4 "Grammar-compressing the runs" | `src/grammar.hpp` | approximate RePair, bigrepair input, the encoding of Gagie et al. |
 | §5 "Two-level indexing with a syncmer parse", "Blocks" (Lemmas 6–14) | `src/twolevel.hpp` | canonical closed syncmers, the phrase dictionary of both strands, the pattern parse, `search2` (block steps and the back-up rule) |
 | §5 "Implementation and setup" | `src/twolevel_build.hpp` | streaming parse of S, B, the parse BWT (libsais), successors, blocks, symbols, block BWT |
+| App. B "Minimizer digests"; App. A "Digests", "BML with digests" | `src/digest.hpp`, `src/mems.hpp` (`bml_digest_run`) | symmetric digests, the byte map, the windows' digest ranges and spans; BML on digests |
 | App. A "Parallelism"; output | `src/main.cpp` | the command line, presets, threads writing in input order |
 | §3, §4, Table 1 | `scripts/*.py` | the credit schemes and scorers (from `katka-readable/scripts/`) |
 
@@ -174,15 +179,18 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
   - the t longest (t = 1, 3, 10; their lengths are the top t);
   - KeBaB pseudo-MEMs and the inline check (exactly the MEMs of length ≥ L, for L ≥ k);
   - counting and listing for every MEM, with full, sampled (s = 4), grammar-compressed and per-species tag arrays;
-  - reads plus random patterns from both strands, with and without homopolymer compression.
+  - reads plus random patterns from both strands, with and without homopolymer compression;
+  - BML over digests: every digested MEM by brute force, with its span, for L = 11, 15, 20, 30 (as KATKA's `RZ_BML_CHECK`), with and without a lookup table.
 - **All search configurations** give identical output: RLBWT, explicit and Elias–Fano RLCSA, lookup table, two-level without and with block jumps, with either continuation rule. Two-level search is also checked query by query against plain backward search, on both strands.
 - **Command line**: threads; two-level search with tags; gzipped and FASTA reads; a BWT with one string per dataset; each preset.
-- **Regressions**, if `KATKA_OLD` (katka-readable's `bin/`) or `CHR19_OLD` (`chr19/twolevel/build/`) is set:
+- **Regressions**, if `KATKA_OLD` (katka-readable's `bin/`), `RZ_OLD` (a build of `katka/rz-index`) or `CHR19_OLD` (`chr19/twolevel/build/`) is set:
   - `tests/regress_katka.sh`: the same text, table, KeBaB filter and listings, byte for byte, as `katka-classify`. It covers counting, listing and range answers, sampled, per-species and grammar tags, `-X`, `-K`, `-D`, `-U`, a per-dataset BWT and 4 threads;
+  - `tests/regress_digest.sh`: the same digested text, table and byte map as `rz-prep -B`, and the same listings, byte for byte, as `rz-classify -B` with tags, for L = 11 to 30, with and without a lookup table;
   - `tests/regress_chr19.sh`: the same MEMs, with the same numbers of occurrences, as `query_twolevel`, for BML and FB with L = 100 and 1000.
 
 ```
 make -C ../katka-readable SDSL=/path/to/sdsl
 (cd ../chr19/twolevel && cmake -S . -B build && cmake --build build --target build_twolevel query_twolevel build_index)
-KATKA_OLD=../katka-readable/bin CHR19_OLD=../chr19/twolevel/build ./selftest.sh
+make -C ../katka/rz-index SDSL=/path/to/sdsl rz-prep rz-build rz-classify rz-csabuild rz-tagbuild
+KATKA_OLD=../katka-readable/bin RZ_OLD=../katka/rz-index CHR19_OLD=../chr19/twolevel/build ./selftest.sh
 ```

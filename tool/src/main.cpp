@@ -86,11 +86,14 @@ static int cmd_prep(int argc, char **argv) {
     prep_options o;
     int c;
     optind = 1;
-    while ((c = getopt(A.argc(), A.argv(), "dsUh")) != -1) {
+    const char *usage = "usage: katka prep [--preset NAME] [-d] [-s] [-U] [--digest k,w] list.tsv PREFIX\n";
+    static option longopts[] = {{"digest", 1, 0, 'B'}, {0, 0, 0, 0}};
+    while ((c = getopt_long(A.argc(), A.argv(), "dsUhB:", longopts, nullptr)) != -1) {
         if (c == 'd') o.datasets = true; else if (c == 's') o.split = true; else if (c == 'U') o.hpc = true;
-        else { fputs("usage: katka prep [--preset NAME] [-d] [-s] [-U] list.tsv PREFIX\n", stderr); return 1; }
+        else if (c == 'B') { if (sscanf(optarg, "%d,%d", &o.dk, &o.dw) != 2) die("--digest k,w"); }
+        else { fputs(usage, stderr); return 1; }
     }
-    if (A.argc() - optind != 2) { fputs("usage: katka prep [--preset NAME] [-d] [-s] [-U] list.tsv PREFIX\n", stderr); return 1; }
+    if (A.argc() - optind != 2) { fputs(usage, stderr); return 1; }
     prep(A.argv()[optind], A.argv()[optind + 1], o);
     return 0;
 }
@@ -115,6 +118,7 @@ static int bwt_datasets(const string &prefix) {
         if (fread(S.data(), 1, N, f) != N) die("cannot read S");
         fclose(f);
         ds.push_back(N);
+        for (u64 i = 0; i < N; ++i) if (S[i] <= K) die("katka bwt -d: S has symbols below " + std::to_string(K + 1) + " (a digest?); use pfp-merge");
         u64 p = 0;
         for (u64 j = 0; j < K; ++j) {
             for (u64 i = ds[j]; i < ds[j + 1]; ++i) { where[p] = j; T[p++] = S[i]; }
@@ -293,6 +297,7 @@ static int cmd_index(int argc, char **argv) {
         T.save(tagout.empty() ? prefix + ".tag" : tagout);
         fprintf(stderr, "tag array: n=%lu, %lu tag runs, %.3f MB (%.1f s)\n", T.n, T.rho, T.bytes() / 1e6, now() - t1);
     }
+    if (read_info_digest(prefix) && (kebab || tl)) die("KeBaB and two-level indexing are for undigested texts");
     if (kebab) build_kebab(Sfile, kebab, eps, prefix + ".k" + std::to_string(kebab) + ".kbf");
     if (tl) {
         stepper st; st.bwt = &B; st.csa = &X;
@@ -346,6 +351,7 @@ struct finder {
     mem_options opt;
     answer_mode mode = RANGE;
     bool hpc = false, mems_format = false;
+    const unsigned char *comp = nullptr;      // digests: complement of each symbol
 
     void answer(const interval &I, string &out) const {
         char b[48];
@@ -453,7 +459,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
         run_stats st;
         string name, seq;
         segment_search Q;
-        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps;
+        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp;
         for (;;) {
             u64 my;
             {
@@ -560,6 +566,16 @@ static int cmd_find(int argc, char **argv) {
         if (KF.k > K.opt.L && !K.opt.adaptive && !K.opt.top && K.opt.pseudo) die("-K: the filter's k exceeds L");
         K.opt.filter = &KF;
     }
+    digest_map DM;
+    const bool digested = read_info_digest(prefix);
+    if (digested) {
+        DM.load(prefix + ".map");
+        if (K.opt.adaptive || K.opt.top || K.opt.fb || kebab_k || twolevel || K.hpc)
+            die("over digests, only BML with a fixed L (and -D) is supported: no -X, --top, --fb, KeBaB, two-level or -U");
+        if (K.opt.L < (u64)DM.w) die("over digests, L must be at least w = " + std::to_string(DM.w));
+        K.opt.digest = &DM;
+        K.comp = DM.comp;
+    }
     two_level L2;
     if (twolevel) {
         L2.load(prefix + ".lvl");
@@ -567,7 +583,14 @@ static int cmd_find(int argc, char **argv) {
         if (ft) { fprintf(stderr, "note: -F is not used by two-level search\n"); ft = 0; }
     }
     lookup_table LT;
-    if (ft) { LT.build(K.S, ft); K.table = &LT; }
+    if (ft) {
+        if (digested) {          // the table over the digest symbols
+            std::vector<unsigned char> a;
+            for (int c = 3; c < 256; ++c) if (c != 'X' && B.C[c + 1] > B.C[c]) a.push_back((unsigned char)c);
+            LT.set_alphabet(a);
+        }
+        LT.build(K.S, ft); K.table = &LT;
+    }
     fprintf(stderr, "index loaded in %.1f s\n", now() - t0);
 
     read_parser P(readfile);
@@ -591,13 +614,14 @@ static int cmd_info(int argc, char **argv) {
     for (const char *s : {".S", ".bwt", ".rlbwt", ".csa", ".efcsa", ".tag", ".tag.rmq", ".lvl"})
         if (file_exists(p + s)) printf("%-12s %12.3f MB\n", s, file_size(p + s) / 1e6);
     printf("homopolymer-compressed: %s\n", read_info_hpc(p) ? "yes" : "no");
+    if (read_info_digest(p)) { digest_map M; M.load(p + ".map"); printf("minimizer digest: k = %d, w = %d\n", M.k, M.w); }
     return 0;
 }
 
 int main(int argc, char **argv) {
     const char *usage =
         "katka: MEM-finding with BWTs of both strands (Three Examples of MEM-Finding)\n"
-        "  katka prep  [--preset NAME] [-d] [-s] [-U] list.tsv PREFIX\n"
+        "  katka prep  [--preset NAME] [-d] [-s] [-U] [--digest k,w] list.tsv PREFIX\n"
         "  katka bwt   PREFIX\n"
         "  katka index [--preset NAME] [options] PREFIX\n"
         "  katka find  [--preset NAME] [options] PREFIX reads out\n"

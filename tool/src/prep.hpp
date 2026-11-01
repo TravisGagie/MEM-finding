@@ -14,14 +14,14 @@
 // writes prefix.S (no terminator), prefix.tbl (index, tag, name, length, start in S) and prefix.info.
 // This is KATKA's katka-prep, unchanged except for prefix.info.
 #pragma once
-#include "common.hpp"
+#include "digest.hpp"
 #include <algorithm>
 #include <fstream>
 #include <zlib.h>
 
 namespace katka {
 
-struct prep_options { bool datasets = false, split = false, hpc = false; };
+struct prep_options { bool datasets = false, split = false, hpc = false; int dk = 0, dw = 0; };   // dk, dw: digest k, w
 
 inline char clean_base(char c) {
     switch (c) { case 'A': case 'a': return 'A'; case 'C': case 'c': return 'C'; case 'G': case 'g': return 'G'; case 'T': case 't': return 'T'; default: return 'X'; }
@@ -57,9 +57,9 @@ inline std::vector<std::pair<std::string, std::string>> read_genomes(const std::
     return out;
 }
 
-inline void write_info(const std::string &prefix, bool hpc) {
+inline void write_info(const std::string &prefix, bool hpc, int dk = 0, int dw = 0) {
     FILE *f = open_or_die(prefix + ".info", "w");
-    fprintf(f, "hpc\t%d\n", hpc ? 1 : 0);
+    fprintf(f, "hpc\t%d\ndigest\t%d\t%d\n", hpc ? 1 : 0, dk, dw);
     fclose(f);
 }
 inline bool read_info_hpc(const std::string &prefix) {
@@ -70,8 +70,40 @@ inline bool read_info_hpc(const std::string &prefix) {
     fclose(f);
     return h;
 }
+// whether the text is digested (prep --digest; the map is PREFIX.map)
+inline bool read_info_digest(const std::string &prefix) {
+    FILE *f = fopen((prefix + ".info").c_str(), "r");
+    if (!f) return false;
+    int h = 0, k = 0, w = 0;
+    if (fscanf(f, "hpc\t%d\ndigest\t%d\t%d", &h, &k, &w) != 3) k = 0;
+    fclose(f);
+    return k > 0;
+}
+
+// the (tag, path) lines of list.tsv
+inline std::vector<std::pair<std::string, std::string>> read_list(const std::string &listfile) {
+    std::ifstream list(listfile);
+    if (!list) die("cannot open " + listfile);
+    std::vector<std::pair<std::string, std::string>> v;
+    std::string line;
+    while (std::getline(list, line)) {
+        if (line.empty() || line[0] == '#') continue;
+        size_t tab = line.find('\t');
+        if (tab == std::string::npos) v.push_back({"-", line}); else v.push_back({line.substr(0, tab), line.substr(tab + 1)});
+    }
+    return v;
+}
 
 inline void prep(const std::string &listfile, const std::string &out, const prep_options &o) {
+    digest_map M;
+    if (o.dk) {
+        if (o.hpc) die("homopolymer compression cannot be combined with digests");
+        if (o.dk < 1 || o.dk > 4 || o.dw < o.dk) die("--digest k,w: need 1 <= k <= 4 and w >= k");
+        auto lst = read_list(listfile);
+        M.build(o.dk, o.dw, [&](auto f) { for (auto &[tag, path] : lst) for (auto &[id, g] : read_genomes(path, o.split)) f(g); });
+        M.save(out + ".map");
+    }
+    uint64_t asym = 0;
     std::ifstream list(listfile);
     if (!list) die("cannot open " + listfile);
     FILE *fs = open_or_die(out + ".S", "wb");
@@ -89,7 +121,15 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
             std::string name = o.split ? path + "#" + id : path;
             if (g.empty()) { fprintf(stderr, "warning: empty genome %s\n", name.c_str()); continue; }
             if (o.hpc) { raw += g.size(); g.erase(std::unique(g.begin(), g.end()), g.end()); }
-            std::string rc = reverse_complement(g);
+            std::string rc;
+            if (o.dk) {
+                raw += g.size();
+                std::string d = M.digest(g);
+                if (M.digest(reverse_complement(g)) != M.rc(d)) ++asym;     // the digest must be strand-symmetric
+                g.swap(d);
+                if (g.empty()) { fprintf(stderr, "warning: empty digest %s\n", name.c_str()); continue; }
+                rc = M.rc(g);
+            } else rc = reverse_complement(g);
             tbl << idx << "\t" << tag << "\t" << name << "\t" << g.size() << "\t" << pos << "\n";
             fwrite(g.data(), 1, g.size(), fs); fputc('X', fs);
             fwrite(rc.data(), 1, rc.size(), fs); fputc('X', fs);
@@ -110,9 +150,11 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
     }
     fclose(fs);
     if (fd) fclose(fd);
-    write_info(out, o.hpc);
+    write_info(out, o.hpc, o.dk, o.dw);
+    if (asym) die(std::to_string(asym) + " genomes whose digest is not strand-symmetric (internal error)");
     fprintf(stderr, "genomes=%lu |S|=%lu", idx, pos);
     if (o.datasets) fprintf(stderr, " datasets=%lu", nds);
+    if (o.dk) fprintf(stderr, " digested: %lu bases -> %lu symbols per strand", raw, pos / 2);
     if (o.hpc) fprintf(stderr, " homopolymer-compressed: %lu bases -> %lu per strand (%g)", raw, pos / 2, (double)pos / 2 / (raw ? raw : 1));
     fprintf(stderr, "\n");
 }

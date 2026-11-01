@@ -26,6 +26,7 @@
 // that R[x..e) occurs (a MEM, as x is left-maximal by construction); report it if e - x >= L; then the
 // next x is the start of the longest suffix of R[0..e+1) that occurs.
 #pragma once
+#include "digest.hpp"
 #include "kmer_filter.hpp"
 #include "twolevel.hpp"
 #include <algorithm>
@@ -40,6 +41,7 @@ struct segment_search {
     const lookup_table *T = nullptr;      // plain search only
     const two_level *TL = nullptr;        // if set, two-level search
     bool jumps = true;
+    const unsigned char *comp = nullptr;  // complement of each symbol (digest symbols), if not DNA
     search_counters cnt;
 
     const char *R = nullptr;
@@ -50,7 +52,10 @@ struct segment_search {
     void prepare(const char *r, u64 len) {
         R = r; n = len;
         rc.resize(n);
-        for (u64 t = 0; t < n; ++t) rc[t] = (char)complement((unsigned char)R[n - 1 - t]);
+        for (u64 t = 0; t < n; ++t) {
+            unsigned char c = (unsigned char)R[n - 1 - t];
+            rc[t] = (char)(comp ? comp[c] : complement(c));
+        }
         if (TL) parse_pattern(*TL, R, n, pi, qi);
     }
     // the longest suffix of X[lo..end), X = R (dir 0) or rc(R) (dir 1); returns its start j and interval I
@@ -95,6 +100,7 @@ struct mem_options {
     bool pseudo = false;            // KeBaB pseudo-MEMs (-K)
     bool inline_check = false;      // KeBaB inline window check
     bool fb = false;                // forward-backward instead of BML
+    const digest_map *digest = nullptr;   // BML over minimizer digests (the index is of the digested text)
 };
 
 // number of distinct 3-mers of s[0..m)
@@ -211,11 +217,66 @@ void fb_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &s
     }
 }
 
+// BML over minimizer digests (App. B "Minimizer digests", App. A "BML with digests"), on one A/C/G/T run
+// R[0..n) of a read, n >= max(L, w), with L in bases.  Window y covers bases y..y+w-1 and selects digest
+// symbols lo[y]..hi[y]; a DNA match R[x..x+L) contains exactly the windows x..x+L-w, so its digest is
+// dg[lo[x]..hi[x+L-w]], which must occur if R[x..x+L) does.
+//   search backward for dg[lo[x]..hi[x+L-w]]; if it fails at symbol j-1, jump to the first window y with
+//     lo[y] > j-1 (every x' with lo[x'] <= j-1 fails too)
+//   otherwise extend to a maximal digested MEM dg[a..b] and take its span in bases (digest.hpp); continue
+//     from the first window start whose last window has hi > b
+// Finally, MEMs whose span lies inside another's are dropped (of equal spans, the first is kept).  This
+// finds every digested MEM whose span is at least L and is not contained in another's span.
+template <class F>
+void bml_digest_run(segment_search &Q, const digest_map &M, const char *R, u64 n, u64 r0, const mem_options &opt, F report) {
+    static thread_local read_digest D;
+    D.build(M, R, n);
+    const u64 L = opt.L, w = M.w, nwin = D.lo.size(), nd = D.dg.size();
+    Q.prepare(D.dg.data(), nd);
+    struct found_mem { u64 l, r; interval I; };
+    static thread_local std::vector<found_mem> fr;
+    fr.clear();
+    u64 x = 0;
+    while (x + L <= n) {
+        u64 a = D.lo[x], b = D.hi[x + L - w];
+        interval I;
+        u64 j = Q.back(0, a, b + 1, I);
+        if (j > a) {                                        // dg[j-1..b] does not occur
+            u64 nx = std::upper_bound(D.lo.begin(), D.lo.end(), j - 1) - D.lo.begin();
+            if (nx >= nwin) break;
+            x = nx; continue;
+        }
+        u64 aa = Q.extend_left(0, 0, a, b + 1, I);
+        interval J;
+        u64 e = Q.forward(aa, J);
+        u64 left, right, yR;
+        D.span(aa, e - 1, n, (int)w, left, right, yR);
+        fr.push_back({left, right, J});
+        if (yR >= nwin) break;
+        u64 nx = yR >= L - w ? yR - (L - w) : 0;
+        x = nx > x ? nx : x + 1;
+    }
+    for (u64 p = 0; p < fr.size(); ++p) {
+        bool in = false;
+        for (u64 q = 0; q < fr.size() && !in; ++q)
+            if (q != p && fr[q].l <= fr[p].l && fr[p].r <= fr[q].r && (fr[q].l < fr[p].l || fr[p].r < fr[q].r || q < p)) in = true;
+        if (in) continue;
+        if (opt.min3 && distinct_3mers(R + fr[p].l, fr[p].r + 1 - fr[p].l) < opt.min3) continue;
+        report(mem{r0 + fr[p].l, r0 + fr[p].r + 1, fr[p].I});
+    }
+}
+
 // All the MEMs of a read, by BML or forward-backward search; calls report(mem) in the order found (with
 // top t, the t longest at the end, sorted by position).
 template <class F>
 void find_mems(segment_search &Q, const std::string &read, const mem_options &opt, F report) {
     static thread_local std::vector<std::pair<u64, u64>> segs;
+    if (opt.digest) {
+        segments(read, nullptr, segs);
+        for (auto [r0, n] : segs)
+            if (n >= opt.L && n >= (u64)opt.digest->w) bml_digest_run(Q, *opt.digest, read.data() + r0, n, r0, opt, report);
+        return;
+    }
     segments(read, opt.pseudo ? opt.filter : nullptr, segs);
     const bool longest_first = (opt.adaptive || opt.top) && opt.pseudo;
     if (longest_first)

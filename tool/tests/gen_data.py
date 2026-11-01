@@ -34,6 +34,8 @@ with open(os.path.join(out, 'list.tsv'), 'w') as L:
         for g in range(5):
             gs = mut(base, 0.01)
             recs = [('g%d_%d.1 chr' % (sp, g), gs[:len(gs) // 2]), ('g%d_%d.2 plasmid' % (sp, g), gs[len(gs) // 2:])]
+            if sp == 3 and g == 4:   # short A/C/G/T runs between Ns: every 4-mer becomes a minimizer, so digests share a byte
+                recs.append(('g3_4.3 scaffold', 'N'.join(rnd(random.randint(4, 7)) for _ in range(3000))))
             p = os.path.join(out, 'sp%d_g%d.fa' % (sp, g))
             fasta(p, recs)
             L.write('species%d\t%s\n' % (sp, p))

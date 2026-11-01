@@ -157,10 +157,12 @@ static bool same(const vector<mem> &x, const vector<mem> &y) {
     return true;
 }
 
+static std::set<std::pair<u64, u64>> as_set(const vector<mem> &v) { std::set<std::pair<u64, u64>> s; for (auto &M : v) s.insert({M.a, M.e}); return s; }
+
 static int mems_test(int argc, char **argv) {
     if (argc < 4) die("usage: katka-test mems PREFIX reads [--tags FILE] [--kebab k] [--twolevel] [--hpc] [--random n]");
     const string prefix = argv[2], readfile = argv[3];
-    string tagfile; uint32_t kk = 0; bool tl = false, hpc = false; int nrand = 0;
+    string tagfile; uint32_t kk = 0; bool tl = false, hpc = false, digest = false; int nrand = 0;
     for (int i = 4; i < argc; ++i) {
         string a = argv[i];
         if (a == "--tags") tagfile = argv[++i];
@@ -168,6 +170,7 @@ static int mems_test(int argc, char **argv) {
         else if (a == "--twolevel") tl = true;
         else if (a == "--hpc") hpc = true;
         else if (a == "--random") nrand = std::stoi(argv[++i]);
+        else if (a == "--digest") digest = true;
         else die("unknown option " + a);
     }
     brute BF; BF.build(prefix);
@@ -190,7 +193,15 @@ static int mems_test(int argc, char **argv) {
     rlcsa X, Y;
     X.load(prefix + ".csa"); Y.load(prefix + ".efcsa");
     stepper base; base.bwt = &B;
-    lookup_table LT; LT.build(base, 6);
+    lookup_table LT;
+    digest_map DM;
+    if (digest) {               // a table over the digest symbols
+        DM.load(prefix + ".map");
+        std::vector<unsigned char> a;
+        for (int c = 3; c < 256; ++c) if (c != 'X' && B.C[c + 1] > B.C[c]) a.push_back((unsigned char)c);
+        LT.set_alphabet(a); LT.build(base, 2);
+        nrand = 0;
+    } else LT.build(base, 6);
     two_level L2;
     vector<config> cfgs = {{"rlbwt"}, {"csa", &X}, {"efcsa", &Y}, {"rlbwt+F6", nullptr, &LT}, {"csa+F6", &X, &LT}};
     if (tl) {
@@ -251,6 +262,57 @@ static int mems_test(int argc, char **argv) {
     u64 nmems = 0, nchecked = 0;
     for (size_t pi = 0; pi < pats.size(); ++pi) {
         const string &P = pats[pi];
+        if (digest) {
+            // brute force (as KATKA's RZ_BML_CHECK): every digested MEM dg[a..b] of each run, with its span,
+            // the spans of at least L bases, and of those the ones not inside another's span
+            for (u64 L : {11ul, 15ul, 20ul, 30ul}) {
+                std::set<std::pair<u64, u64>> want;
+                for (u64 i = 0; i < P.size();) {
+                    while (i < P.size() && base_code(P[i]) < 0) ++i;
+                    u64 r0 = i;
+                    while (i < P.size() && base_code(P[i]) >= 0) ++i;
+                    u64 n = i - r0;
+                    if (n < L || n < (u64)DM.w) continue;
+                    read_digest D; D.build(DM, P.data() + r0, n);
+                    const u64 nd = D.dg.size();
+                    std::vector<u64> A(nd);
+                    for (u64 b = 0; b < nd; ++b) {           // leftmost start of a match ending at b
+                        u64 j = b + 1;
+                        while (j > 0 && BF.occurs(D.dg.data() + j - 1, b + 2 - j)) --j;
+                        A[b] = j;
+                    }
+                    std::vector<std::pair<u64, u64>> all;
+                    for (u64 b = 0; b < nd; ++b) {
+                        if (A[b] > b || (b + 1 < nd && A[b + 1] <= A[b])) continue;
+                        u64 left, right, yR;
+                        D.span(A[b], b, n, DM.w, left, right, yR);
+                        if (right >= left && right - left + 1 >= L) all.push_back({left, right});
+                    }
+                    for (auto &p : all) {
+                        bool in = false;
+                        for (auto &q : all) if (q != p && q.first <= p.first && p.second <= q.second) { in = true; break; }
+                        if (!in) want.insert({r0 + p.first, r0 + p.second + 1});
+                    }
+                }
+                mem_options o; o.L = L; o.digest = &DM;
+                vector<mem> ref;
+                for (size_t c = 0; c < cfgs.size(); ++c) {
+                    stepper S2 = base;
+                    if (cfgs[c].csa) S2.csa = cfgs[c].csa;
+                    segment_search Q; Q.S = &S2; Q.T = cfgs[c].T; Q.comp = DM.comp;
+                    vector<mem> got;
+                    find_mems(Q, P, o, [&](const mem &M) { got.push_back(M); });
+                    if (c == 0) {
+                        ref = got;
+                        bool okd = as_set(got) == want && got.size() == want.size();
+                        CHECK(okd, "digest L=%lu pattern %zu: %zu MEMs, brute %zu", L, pi, got.size(), want.size());
+                        for (auto &M : got) CHECK(M.I.sp < M.I.ep, "digest: empty interval");
+                        nmems += got.size(); ++nchecked;
+                    } else CHECK(same(got, ref), "digest L=%lu pattern %zu: %s differs", L, pi, cfgs[c].name.c_str());
+                }
+            }
+            continue;
+        }
         // brute force: the MEMs of every A/C/G/T run
         vector<std::pair<u64, u64>> all;
         for (u64 i = 0; i < P.size();) {
@@ -266,7 +328,6 @@ static int mems_test(int argc, char **argv) {
                 CHECK(I == M.I, "%s: pattern %zu, MEM [%lu,%lu): interval [%lu,%lu) != brute [%lu,%lu)", what, pi, M.a, M.e, M.I.sp, M.I.ep, I.sp, I.ep);
             }
         };
-        auto as_set = [](const vector<mem> &v) { std::set<std::pair<u64, u64>> s; for (auto &M : v) s.insert({M.a, M.e}); return s; };
         for (u64 L : {1ul, 12ul, 25ul, 40ul}) {
             std::set<std::pair<u64, u64>> want;
             for (auto [a, e] : all) if (e - a >= L) want.insert({a, e});
