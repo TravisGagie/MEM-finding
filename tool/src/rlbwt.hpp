@@ -79,8 +79,10 @@ struct rlbwt {
         if (i == 0 || C[c + 1] == C[c]) return 0;
         if (i >= n) return C[c + 1] - C[c];
         u64 q = run_of(i - 1), s = starts.access(q);
-        uint32_t cc = code[c], hq = heads.access(q);
-        u64 t = heads.rank(cc, q);                           // runs of c before run q
+        uint32_t cc = code[c];
+        auto is = heads.inverse_select(q);                   // (runs of heads[q] before run q, heads[q])
+        uint32_t hq = is.second;
+        u64 t = hq == cc ? is.first : heads.rank(cc, q);     // runs of c before run q
         u64 r = t == 0 ? 0 : cum[c].access(t - 1) + 1;       // c's in those runs
         if (hq == cc) r += i - s;
         return r;
