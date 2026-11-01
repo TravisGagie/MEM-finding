@@ -1,0 +1,373 @@
+// Succinct building blocks, with no outside dependencies:
+//   EliasFano   a non-decreasing integer sequence (equivalently a sparse bitvector): access, count_less
+//               (= rank), with a rank directory over its high bits for fast selects;
+//   PackedInts  fixed-width integers;
+//   BitRank     a plain bitvector with rank and select;
+//   RLBits      a bitvector stored as runs of ones;
+//   EFRank      rank over a sequence with a large alphabet, by Elias-Fano lists of its runs grouped by
+//               symbol (Brown et al., "Faster run-length compressed suffix arrays"): the RLCSA of
+//               Section 2 of the paper, used for the BWTs of the parse and of the block sequence;
+//   WaveletMatrix  rank and access over a small alphabet (the run heads of the RLBWT).
+#pragma once
+#include "common.hpp"
+#include <algorithm>
+#ifdef __BMI2__
+#include <immintrin.h>
+#endif
+
+namespace katka {
+
+inline uint64_t select_in_word(uint64_t w, uint64_t k) {      // position of the k-th (0-based) one in w
+#ifdef __BMI2__
+    return __builtin_ctzll(_pdep_u64(1ull << k, w));
+#else
+    for (uint64_t i = 0;; ++i) if ((w >> i) & 1) { if (!k) return i; --k; }
+#endif
+}
+
+// A non-decreasing sequence of n integers below u: l low bits each, the high parts in unary.
+struct EliasFano {
+    uint64_t n = 0, u = 0;
+    uint32_t l = 0;
+    std::vector<uint64_t> low, high;
+    uint64_t hbits = 0;
+    std::vector<uint64_t> s0, s1;       // positions of every SAMPLE-th zero and one in high
+    std::vector<uint64_t> ones;         // ones before each 512-bit block of high
+    static constexpr uint64_t SAMPLE = 256;
+
+    void build(const std::vector<uint64_t> &v, uint64_t universe) {
+        n = v.size(); u = universe; l = 0;
+        if (n && u / n > 1) while ((u / n) >> (l + 1)) ++l;
+        low.assign((n * l + 63) / 64 + 1, 0);
+        hbits = n + (u >> l) + 2;
+        high.assign(hbits / 64 + 2, 0);
+        for (uint64_t j = 0; j < n; ++j) {
+            if (j && v[j] < v[j - 1]) throw std::runtime_error("Elias-Fano: not sorted");
+            if (v[j] >= u && u) throw std::runtime_error("Elias-Fano: value out of range");
+            if (l) set_low(j, v[j] & ((1ull << l) - 1));
+            uint64_t p = (v[j] >> l) + j;
+            high[p >> 6] |= 1ull << (p & 63);
+        }
+        ones.assign(hbits / 512 + 2, 0);
+        for (uint64_t b = 1; b < ones.size(); ++b) {
+            uint64_t c = 0;
+            for (uint64_t w = (b - 1) * 8; w < b * 8 && w < high.size(); ++w) c += __builtin_popcountll(high[w]);
+            ones[b] = ones[b - 1] + c;
+        }
+        s0.clear(); s1.clear();
+        uint64_t c0 = 0, c1 = 0;
+        for (uint64_t p = 0; p < hbits; ++p) {
+            if (hbit(p)) { if (c1 % SAMPLE == 0) s1.push_back(p); ++c1; }
+            else { if (c0 % SAMPLE == 0) s0.push_back(p); ++c0; }
+        }
+    }
+    inline void set_low(uint64_t j, uint64_t x) {
+        uint64_t b = j * l;
+        low[b >> 6] |= x << (b & 63);
+        if ((b & 63) + l > 64) low[(b >> 6) + 1] |= x >> (64 - (b & 63));
+    }
+    inline uint64_t get_low(uint64_t j) const {
+        if (!l) return 0;
+        uint64_t b = j * l, w = b >> 6, o = b & 63, x = low[w] >> o;
+        if (o + l > 64) x |= low[w + 1] << (64 - o);
+        return x & ((1ull << l) - 1);
+    }
+    inline bool hbit(uint64_t p) const { return (high[p >> 6] >> (p & 63)) & 1; }
+
+    template <bool ONE> inline uint64_t select_(uint64_t k) const {
+        const std::vector<uint64_t> &smp = ONE ? s1 : s0;
+        uint64_t i = k / SAMPLE;
+        uint64_t lo = smp[i] >> 9;
+        uint64_t hi = (i + 1 < smp.size()) ? (smp[i + 1] >> 9) + 1 : ones.size() - 1;
+        auto before = [&](uint64_t blk) { return ONE ? ones[blk] : (blk << 9) - ones[blk]; };
+        while (hi - lo > 1) {
+            uint64_t mid = (lo + hi) >> 1;
+            if (before(mid) <= k) lo = mid; else hi = mid;
+        }
+        uint64_t rem = k - before(lo);
+        for (uint64_t w = lo * 8;; ++w) {
+            uint64_t word = ONE ? high[w] : ~high[w];
+            uint64_t c = __builtin_popcountll(word);
+            if (rem < c) return (w << 6) + select_in_word(word, rem);
+            rem -= c;
+        }
+    }
+    inline uint64_t access(uint64_t j) const { return ((select_<true>(j) - j) << l) | get_low(j); }
+    // access(j) and access(j + 1), j + 1 < n
+    inline void access2(uint64_t j, uint64_t &a, uint64_t &b) const {
+        uint64_t p = select_<true>(j), q = p + 1;
+        a = ((p - j) << l) | get_low(j);
+        while (!hbit(q)) ++q;
+        b = ((q - j - 1) << l) | get_low(j + 1);
+    }
+    // number of elements < x
+    inline uint64_t count_less(uint64_t x) const {
+        if (x >= u) return n;
+        uint64_t h = x >> l, xl = x & ((1ull << l) - 1);
+        uint64_t lo = h == 0 ? 0 : select_<false>(h - 1) - (h - 1);
+        uint64_t hi = select_<false>(h) - h;
+        while (hi - lo > 8) {
+            uint64_t mid = (lo + hi) >> 1;
+            if (get_low(mid) < xl) lo = mid + 1; else hi = mid;
+        }
+        while (lo < hi && get_low(lo) < xl) ++lo;
+        return lo;
+    }
+    // as a bitvector over [0, u) with ones at the values (distinct values)
+    inline uint64_t rank1(uint64_t i) const { return count_less(i); }      // ones in [0, i)
+    inline uint64_t select1(uint64_t k) const { return access(k); }         // position of the k-th one, 0-based
+    inline uint64_t pred_index(uint64_t x) const { return count_less(x + 1) - 1; }   // last element <= x (exists)
+
+    uint64_t bytes() const { return (low.size() + high.size() + s0.size() + s1.size() + ones.size()) * 8 + 40; }
+    void save(FILE *f) const {
+        wr(f, n); wr(f, u); wr(f, l); wr(f, hbits);
+        wvec(f, low); wvec(f, high); wvec(f, s0); wvec(f, s1); wvec(f, ones);
+    }
+    void load(FILE *f) {
+        rd(f, n); rd(f, u); rd(f, l); rd(f, hbits);
+        rvec(f, low); rvec(f, high); rvec(f, s0); rvec(f, s1); rvec(f, ones);
+    }
+};
+
+// Fixed-width packed integers.
+struct PackedInts {
+    uint64_t n = 0;
+    uint32_t w = 1;
+    std::vector<uint64_t> d;
+    void init(uint64_t count, uint32_t width) { n = count; w = std::max<uint32_t>(1, width); d.assign((n * w + 63) / 64 + 1, 0); }
+    static uint32_t width_for(uint64_t mx) { uint32_t w = 1; while (w < 64 && (mx >> w)) ++w; return w; }
+    void build(const std::vector<uint64_t> &v) {
+        uint64_t mx = 0;
+        for (auto x : v) mx = std::max(mx, x);
+        init(v.size(), width_for(mx));
+        for (uint64_t i = 0; i < n; ++i) set(i, v[i]);
+    }
+    template <class V> void build_from(const V &v) {
+        uint64_t mx = 0;
+        for (auto x : v) mx = std::max<uint64_t>(mx, x);
+        init(v.size(), width_for(mx));
+        for (uint64_t i = 0; i < n; ++i) set(i, v[i]);
+    }
+    inline void set(uint64_t i, uint64_t x) {
+        uint64_t b = i * w, k = b >> 6, o = b & 63;
+        uint64_t mask = w == 64 ? ~0ull : (1ull << w) - 1;
+        x &= mask;
+        d[k] = (d[k] & ~(mask << o)) | (x << o);
+        if (o + w > 64) { uint64_t hm = mask >> (64 - o); d[k + 1] = (d[k + 1] & ~hm) | (x >> (64 - o)); }
+    }
+    inline uint64_t get(uint64_t i) const {
+        uint64_t b = i * w, k = b >> 6, o = b & 63, x = d[k] >> o;
+        if (o + w > 64) x |= d[k + 1] << (64 - o);
+        return w == 64 ? x : x & ((1ull << w) - 1);
+    }
+    uint64_t operator[](uint64_t i) const { return get(i); }
+    uint64_t size() const { return n; }
+    uint64_t bytes() const { return d.size() * 8 + 12; }
+    void save(FILE *f) const { wr(f, n); wr(f, w); wvec(f, d); }
+    void load(FILE *f) { rd(f, n); rd(f, w); rvec(f, d); }
+};
+
+// A plain bitvector with rank (counts every 512 bits) and select (sampled).
+struct BitRank {
+    uint64_t n = 0, nones = 0;
+    std::vector<uint64_t> bits, cnt, s1, s0;
+    static constexpr uint64_t SAMPLE = 512;
+    void init(uint64_t size) { n = size; bits.assign(n / 64 + 2, 0); }
+    inline void set(uint64_t i) { bits[i >> 6] |= 1ull << (i & 63); }
+    inline bool get(uint64_t i) const { return (bits[i >> 6] >> (i & 63)) & 1; }
+    void finish() {                       // after all set()s
+        cnt.assign(bits.size() / 8 + 2, 0);
+        uint64_t c = 0;
+        for (uint64_t w = 0; w < bits.size(); ++w) {
+            if (w % 8 == 0) cnt[w / 8] = c;
+            c += __builtin_popcountll(bits[w]);
+        }
+        cnt[bits.size() / 8 + 1] = c;
+        if (bits.size() % 8 == 0) cnt[bits.size() / 8] = c;
+        nones = rank1(n);
+        s1.clear(); s0.clear();
+        uint64_t c1 = 0, c0 = 0;
+        for (uint64_t i = 0; i < n; ++i) {
+            if (get(i)) { if (c1++ % SAMPLE == 0) s1.push_back(i >> 9); }
+            else { if (c0++ % SAMPLE == 0) s0.push_back(i >> 9); }
+        }
+    }
+    inline uint64_t rank1(uint64_t i) const {          // ones in [0, i)
+        uint64_t w = i >> 6, r = cnt[w >> 3];
+        for (uint64_t x = w & ~7ull; x < w; ++x) r += __builtin_popcountll(bits[x]);
+        if (i & 63) r += __builtin_popcountll(bits[w] & ((1ull << (i & 63)) - 1));
+        return r;
+    }
+    inline uint64_t rank0(uint64_t i) const { return i - rank1(i); }
+    template <bool ONE> uint64_t select_(uint64_t k) const {   // position of the k-th (0-based) one / zero
+        const std::vector<uint64_t> &smp = ONE ? s1 : s0;
+        uint64_t lo = smp[k / SAMPLE], hi = k / SAMPLE + 1 < smp.size() ? smp[k / SAMPLE + 1] + 1 : cnt.size() - 1;
+        auto before = [&](uint64_t b) { return ONE ? cnt[b] : (b << 9) - cnt[b]; };
+        while (hi - lo > 1) { uint64_t m = (lo + hi) >> 1; if (before(m) <= k) lo = m; else hi = m; }
+        uint64_t rem = k - before(lo);
+        for (uint64_t w = lo * 8;; ++w) {
+            uint64_t word = ONE ? bits[w] : ~bits[w];
+            uint64_t c = __builtin_popcountll(word);
+            if (rem < c) return (w << 6) + select_in_word(word, rem);
+            rem -= c;
+        }
+    }
+    inline uint64_t select1(uint64_t k) const { return select_<true>(k); }
+    inline uint64_t select0(uint64_t k) const { return select_<false>(k); }
+    uint64_t bytes() const { return (bits.size() + cnt.size() + s0.size() + s1.size()) * 8 + 16; }
+    void save(FILE *f) const { wr(f, n); wr(f, nones); wvec(f, bits); wvec(f, cnt); wvec(f, s1); wvec(f, s0); }
+    void load(FILE *f) { rd(f, n); rd(f, nones); rvec(f, bits); rvec(f, cnt); rvec(f, s1); rvec(f, s0); }
+};
+
+// A bitvector stored as runs of ones: rank and select by Elias-Fano lists of the run starts and of the
+// number of ones before each run.
+struct RLBits {
+    uint64_t n = 0, ones = 0, nruns = 0;
+    EliasFano RS, RC;
+    void build(const std::vector<std::pair<uint64_t, uint64_t>> &runs, uint64_t size) {   // (start, length), sorted
+        n = size; nruns = runs.size();
+        std::vector<uint64_t> s(nruns), c(nruns + 1);
+        uint64_t acc = 0;
+        for (uint64_t k = 0; k < nruns; ++k) { s[k] = runs[k].first; c[k] = acc; acc += runs[k].second; }
+        c[nruns] = acc; ones = acc;
+        RS.build(s, n + 1); RC.build(c, ones + 1);
+    }
+    inline uint64_t rank1(uint64_t pos) const {        // ones in [0, pos)
+        uint64_t k = RS.count_less(pos);
+        if (k == 0) return 0;
+        --k;
+        uint64_t s = RS.access(k), c0, c1;
+        RC.access2(k, c0, c1);
+        uint64_t d = pos - s;
+        return c0 + (d < c1 - c0 ? d : c1 - c0);
+    }
+    inline uint64_t select1(uint64_t r) const {        // position of the r-th one (0-based)
+        uint64_t k = RC.count_less(r + 1) - 1;
+        return RS.access(k) + (r - RC.access(k));
+    }
+    uint64_t bytes() const { return RS.bytes() + RC.bytes() + 24; }
+    void save(FILE *f) const { wr(f, n); wr(f, ones); wr(f, nruns); RS.save(f); RC.save(f); }
+    void load(FILE *f) { rd(f, n); rd(f, ones); rd(f, nruns); RS.load(f); RC.load(f); }
+};
+
+// rank over a sequence s[0, n) of symbols below sigma, by its runs (see the top of the file)
+struct EFRank {
+    uint64_t n = 0;
+    uint32_t sigma = 0;
+    uint64_t nruns = 0;
+    EliasFano KS, FP;     // KS[j] = c * n + start of run j (runs grouped by c); FP[j] = its position in F
+
+    template <class V> void build(const V &s, uint32_t sig) {
+        n = s.size(); sigma = sig;
+        if ((unsigned __int128)sigma * (n + 1) >= ((unsigned __int128)1 << 63)) throw std::runtime_error("sigma*n too large");
+        std::vector<uint64_t> cnt(sigma + 1, 0), runsof(sigma + 1, 0);
+        nruns = 0;
+        for (uint64_t i = 0; i < n; ++i) {
+            cnt[s[i]]++;
+            if (i == 0 || s[i] != s[i - 1]) { runsof[s[i]]++; nruns++; }
+        }
+        std::vector<uint64_t> Cf(sigma + 1, 0), slot(sigma + 1, 0);
+        for (uint32_t c = 0; c < sigma; ++c) { Cf[c + 1] = Cf[c] + cnt[c]; slot[c + 1] = slot[c] + runsof[c]; }
+        std::vector<uint64_t> ks(nruns), fp(nruns), seen(sigma, 0);
+        for (uint64_t i = 0; i < n;) {
+            uint64_t j = i + 1;
+            while (j < n && s[j] == s[i]) ++j;
+            uint32_t c = s[i];
+            uint64_t k = slot[c]++;
+            ks[k] = (uint64_t)c * n + i; fp[k] = Cf[c] + seen[c]; seen[c] += j - i;
+            i = j;
+        }
+        KS.build(ks, (uint64_t)sigma * n);
+        FP.build(fp, n);
+    }
+    inline uint64_t rank_from(uint64_t b, uint64_t a, uint32_t c, uint64_t i) const {
+        uint64_t j = a - 1, start = KS.access(j) - (uint64_t)c * n, f, fn;
+        if (j + 1 < nruns) FP.access2(j, f, fn); else { f = FP.access(j); fn = n; }
+        uint64_t len = fn - f, d = i - start;
+        return f - FP.access(b) + (d < len ? d : len);
+    }
+    // rank_c at two positions, finding c's first run once
+    inline void rank2(uint32_t c, uint64_t i1, uint64_t i2, uint64_t &r1, uint64_t &r2) const {
+        if (c >= sigma) { r1 = r2 = 0; return; }
+        uint64_t base = (uint64_t)c * n, b = KS.count_less(base);
+        uint64_t a1 = i1 ? KS.count_less(base + i1) : b, a2 = i2 ? KS.count_less(base + i2) : b;
+        r1 = a1 == b ? 0 : rank_from(b, a1, c, i1);
+        r2 = a2 == b ? 0 : rank_from(b, a2, c, i2);
+    }
+    // LF without a C array: C[c] + rank_c(i)
+    inline uint64_t lf_one(uint64_t base, uint64_t b, uint64_t i) const {
+        uint64_t a = i ? KS.count_less(base + (i > n ? n : i)) : b;
+        if (a == b) return b < nruns ? FP.access(b) : n;
+        uint64_t j = a - 1, start = KS.access(j) - base, f, fn;
+        if (j + 1 < nruns) FP.access2(j, f, fn); else { f = FP.access(j); fn = n; }
+        uint64_t len = fn - f, d = i - start;
+        return f + (d < len ? d : len);
+    }
+    // a backward step: [i1, i2) -> [o1, o2) (empty if o1 >= o2)
+    inline void lf2(uint32_t c, uint64_t i1, uint64_t i2, uint64_t &o1, uint64_t &o2) const {
+        if (c >= sigma) { o1 = o2 = n; return; }
+        uint64_t base = (uint64_t)c * n, b = KS.count_less(base);
+        if (b == nruns || KS.access(b) >= base + n) { o1 = o2 = n; return; }    // c does not occur
+        o1 = lf_one(base, b, i1); o2 = lf_one(base, b, i2);
+    }
+    uint64_t bytes() const { return KS.bytes() + FP.bytes(); }
+    void save(FILE *f) const { wr(f, n); wr(f, sigma); wr(f, nruns); KS.save(f); FP.save(f); }
+    void load(FILE *f) { rd(f, n); rd(f, sigma); rd(f, nruns); KS.load(f); FP.load(f); }
+};
+
+// Wavelet matrix over symbols 0 .. sigma-1 (sigma small): access and rank.
+struct WaveletMatrix {
+    uint64_t n = 0;
+    uint32_t levels = 0;
+    std::vector<BitRank> bv;
+    std::vector<uint64_t> zeros;
+
+    template <class V> void build(const V &s, uint32_t sigma) {
+        n = s.size(); levels = 1;
+        while ((1u << levels) < sigma) ++levels;
+        bv.assign(levels, BitRank()); zeros.assign(levels, 0);
+        std::vector<uint32_t> cur(s.begin(), s.end()), nxt(n);
+        for (uint32_t lv = 0; lv < levels; ++lv) {
+            uint32_t sh = levels - 1 - lv;
+            bv[lv].init(n);
+            uint64_t z = 0;
+            for (uint64_t i = 0; i < n; ++i) if (!((cur[i] >> sh) & 1)) ++z;
+            zeros[lv] = z;
+            uint64_t a = 0, b = z;
+            for (uint64_t i = 0; i < n; ++i) {
+                if ((cur[i] >> sh) & 1) { bv[lv].set(i); nxt[b++] = cur[i]; } else nxt[a++] = cur[i];
+            }
+            bv[lv].finish();
+            cur.swap(nxt);
+        }
+    }
+    inline uint32_t access(uint64_t i) const {
+        uint32_t c = 0;
+        for (uint32_t lv = 0; lv < levels; ++lv) {
+            const BitRank &b = bv[lv];
+            if (b.get(i)) { c = (c << 1) | 1; i = zeros[lv] + b.rank1(i); }
+            else { c <<= 1; i = b.rank0(i); }
+        }
+        return c;
+    }
+    // occurrences of c in [0, i)
+    inline uint64_t rank(uint32_t c, uint64_t i) const {
+        uint64_t s = 0;       // start of the current node's range
+        for (uint32_t lv = 0; lv < levels; ++lv) {
+            const BitRank &b = bv[lv];
+            if ((c >> (levels - 1 - lv)) & 1) { s = zeros[lv] + b.rank1(s); i = zeros[lv] + b.rank1(i); }
+            else { s = b.rank0(s); i = b.rank0(i); }
+        }
+        return i - s;
+    }
+    // (rank of s[i] in [0, i), s[i])
+    inline std::pair<uint64_t, uint32_t> inverse_select(uint64_t i) const {
+        uint32_t c = access(i);
+        return {rank(c, i), c};
+    }
+    uint64_t bytes() const { uint64_t b = 16 + zeros.size() * 8; for (auto &x : bv) b += x.bytes(); return b; }
+    void save(FILE *f) const { wr(f, n); wr(f, levels); wvec(f, zeros); for (auto &x : bv) x.save(f); }
+    void load(FILE *f) { rd(f, n); rd(f, levels); rvec(f, zeros); bv.assign(levels, BitRank()); for (auto &x : bv) x.load(f); }
+};
+
+}  // namespace katka

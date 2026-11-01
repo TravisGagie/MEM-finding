@@ -1,0 +1,374 @@
+// katka-test: checks the tool against brute force, on small data.
+//
+//   katka-test unit                                  bit structures, RMQ, grammar (random inputs)
+//   katka-test mems PREFIX reads [options]           MEMs, intervals and tag answers against a suffix array
+//       --tags FILE     also check the tag answers (count, list) of every MEM against brute force
+//       --kebab k       also check KeBaB modes, with PREFIX.k<k>.kbf
+//       --twolevel      also check two-level search (PREFIX.lvl), with and without block jumps
+//       --hpc           homopolymer-compress the reads first (index built with katka prep -U)
+//       --random n      also n random patterns made from S (mutated substrings, half reverse-complemented)
+//
+// The suffix array of S$ (libsais) gives the brute-force answers: R[a..e) occurs iff its SA interval is
+// non-empty, MEMs are the (a, e(a)) with e(a) = the largest e such that R[a..e) occurs and e(a-1) < e(a),
+// and the tags of a row are those of the genome containing SA[row].
+#include "mems.hpp"
+#include "tag_build.hpp"
+#include "rmq.hpp"
+#include "libsais.h"
+#include <map>
+#include <random>
+#include <set>
+
+using namespace katka;
+using std::string;
+using std::vector;
+
+static int failures = 0;
+#define CHECK(cond, ...) do { if (!(cond)) { ++failures; if (failures < 20) { fprintf(stderr, "FAIL: "); fprintf(stderr, __VA_ARGS__); fprintf(stderr, "\n"); } } } while (0)
+
+// ------------------------------------------------------------------------------------------------
+static int unit() {
+    std::mt19937_64 rng(7);
+    for (int it = 0; it < 200; ++it) {
+        uint64_t n = 1 + rng() % 3000;
+        vector<uint64_t> A(n);
+        uint64_t mx = 1 + rng() % 50;
+        for (auto &x : A) x = rng() % mx;
+        uint64_t k = 0;
+        succinct_rmq R; R.build(n, [&] { return A[k++]; });
+        for (int q = 0; q < 300; ++q) {
+            uint64_t l = rng() % n, r = rng() % n;
+            if (l > r) std::swap(l, r);
+            uint64_t m = R(l, r), mn = *std::min_element(A.begin() + l, A.begin() + r + 1);
+            CHECK(m >= l && m <= r && A[m] == mn, "rmq n=%lu [%lu,%lu]", n, l, r);
+        }
+        vector<uint64_t> v;
+        for (uint64_t i = 0; i < n; ++i) if (rng() % 3 == 0) v.push_back(i * 7 + rng() % 7);
+        EliasFano E; E.build(v, n * 7 + 7);
+        for (uint64_t i = 0; i < v.size(); ++i) CHECK(E.access(i) == v[i], "EF access");
+        for (uint64_t x = 0; x < n * 7 + 7; x += 3) CHECK(E.count_less(x) == (uint64_t)(std::lower_bound(v.begin(), v.end(), x) - v.begin()), "EF count_less");
+        BitRank B; B.init(n);
+        vector<int> bb(n);
+        for (uint64_t i = 0; i < n; ++i) if (rng() % 2) { B.set(i); bb[i] = 1; }
+        B.finish();
+        uint64_t c = 0, z = 0;
+        for (uint64_t i = 0; i < n; ++i) {
+            CHECK(B.rank1(i) == c, "rank1");
+            if (bb[i]) { CHECK(B.select1(c) == i, "select1"); ++c; } else { CHECK(B.select0(z) == i, "select0"); ++z; }
+        }
+        vector<uint32_t> s(n);
+        uint32_t sig = 1 + rng() % 7;
+        for (auto &x : s) x = rng() % sig;
+        WaveletMatrix W; W.build(s, std::max<uint32_t>(sig, 2));
+        vector<uint64_t> cnt(sig, 0);
+        for (uint64_t i = 0; i < n; ++i) {
+            CHECK(W.access(i) == s[i], "wm access");
+            for (uint32_t a = 0; a < sig; ++a) CHECK(W.rank(a, i) == cnt[a], "wm rank");
+            cnt[s[i]]++;
+        }
+        EFRank F; F.build(s, sig);
+        vector<uint64_t> cc(sig, 0);
+        for (uint64_t i = 0; i <= n; ++i) {
+            for (uint32_t a = 0; a < sig; ++a) { uint64_t r1, r2; F.rank2(a, i, i, r1, r2); CHECK(r1 == cc[a], "EFRank"); }
+            if (i < n) cc[s[i]]++;
+        }
+        // grammar: repetitive sequences of tags
+        vector<uint32_t> t;
+        while (t.size() < n) {
+            if (t.size() > 10 && rng() % 2) { uint64_t a = rng() % t.size(), l = 1 + rng() % std::min<uint64_t>(50, t.size() - a); for (uint64_t q = 0; q < l; ++q) t.push_back(t[a + q]); }
+            else t.push_back(rng() % 20);
+        }
+        grammar_rules Gr = repair(t, 20);
+        tag_grammar TG; TG.build(Gr);
+        CHECK(TG.rho == t.size(), "grammar length");
+        for (int q = 0; q < 50; ++q) {
+            uint64_t a = rng() % t.size(), cnt2 = 1 + rng() % (t.size() - a), i = a;
+            TG.decode(a, cnt2, [&](uint32_t g) { CHECK(g == t[i], "grammar decode at %lu", i); ++i; });
+        }
+    }
+    printf("unit tests: %s\n", failures ? "FAILED" : "passed");
+    return failures ? 1 : 0;
+}
+
+// ------------------------------------------------------------------------------------------------
+struct brute {
+    string S;                       // with the terminator (byte 1) at the end
+    vector<int32_t> SA;
+    vector<uint32_t> rowtag;        // tag of each row
+    void build(const string &prefix) {
+        u64 n = file_size(prefix + ".S");
+        S.resize(n);
+        FILE *f = open_or_die(prefix + ".S", "rb");
+        if (fread(&S[0], 1, n, f) != n) die("read S");
+        fclose(f);
+        SA.resize(n + 1);
+        vector<int32_t> sa(n);
+        libsais((const uint8_t *)S.data(), sa.data(), (int32_t)n, 0, nullptr);
+        SA[0] = (int32_t)n;
+        for (u64 i = 0; i < n; ++i) SA[i + 1] = sa[i];
+        S.push_back(1);
+    }
+    // the SA interval of X (half-open)
+    interval find(const char *X, u64 len) const {
+        auto cmp_lt = [&](int32_t p, bool upper) {       // suffix p < X (or <= X as a prefix, for upper)
+            int r = S.compare(p, len, X, len);
+            if (r == 0 && (u64)(S.size() - p) < len) r = -1;
+            return upper ? r <= 0 : r < 0;
+        };
+        u64 lo = std::partition_point(SA.begin(), SA.end(), [&](int32_t p) { return cmp_lt(p, false); }) - SA.begin();
+        u64 hi = std::partition_point(SA.begin(), SA.end(), [&](int32_t p) { return cmp_lt(p, true); }) - SA.begin();
+        return {lo, hi};
+    }
+    bool occurs(const char *X, u64 len) const { interval I = find(X, len); return I.sp < I.ep; }
+    // all MEMs of R[0..n) (over A/C/G/T): (a, e)
+    vector<std::pair<u64, u64>> mems(const char *R, u64 n) const {
+        vector<std::pair<u64, u64>> out;
+        u64 e = 0, prev = 0;
+        for (u64 a = 0; a < n; ++a) {
+            if (e < a) e = a;
+            while (e < n && occurs(R + a, e + 1 - a)) ++e;
+            if (e > a && (a == 0 || prev < e)) out.push_back({a, e});
+            prev = e;
+        }
+        return out;
+    }
+};
+
+struct config {
+    string name;
+    const rlcsa *csa = nullptr;
+    const lookup_table *T = nullptr;
+    const two_level *TL = nullptr;
+    bool jumps = true;
+};
+
+static vector<mem> run_find(const stepper &base, const config &c, const string &read, const mem_options &opt) {
+    stepper S = base;
+    if (c.csa) S.csa = c.csa;
+    segment_search Q; Q.S = &S; Q.T = c.T; Q.TL = c.TL; Q.jumps = c.jumps;
+    vector<mem> out;
+    find_mems(Q, read, opt, [&](const mem &M) { out.push_back(M); });
+    return out;
+}
+
+static bool same(const vector<mem> &x, const vector<mem> &y) {
+    if (x.size() != y.size()) return false;
+    for (size_t i = 0; i < x.size(); ++i) if (x[i].a != y[i].a || x[i].e != y[i].e || !(x[i].I == y[i].I)) return false;
+    return true;
+}
+
+static int mems_test(int argc, char **argv) {
+    if (argc < 4) die("usage: katka-test mems PREFIX reads [--tags FILE] [--kebab k] [--twolevel] [--hpc] [--random n]");
+    const string prefix = argv[2], readfile = argv[3];
+    string tagfile; uint32_t kk = 0; bool tl = false, hpc = false; int nrand = 0;
+    for (int i = 4; i < argc; ++i) {
+        string a = argv[i];
+        if (a == "--tags") tagfile = argv[++i];
+        else if (a == "--kebab") kk = std::stoul(argv[++i]);
+        else if (a == "--twolevel") tl = true;
+        else if (a == "--hpc") hpc = true;
+        else if (a == "--random") nrand = std::stoi(argv[++i]);
+        else die("unknown option " + a);
+    }
+    brute BF; BF.build(prefix);
+    rlbwt B;
+    { FILE *f = open_or_die(prefix + ".rlbwt", "rb"); rmagic(f, "KTRLBW01", prefix + ".rlbwt"); B.load(f); fclose(f); }
+    // the RLBWT against the suffix array
+    CHECK(B.n == BF.SA.size(), "BWT length");
+    {
+        u64 cnt[256] = {0};
+        for (u64 i = 0; i < B.n; ++i) {
+            unsigned char c = BF.SA[i] == 0 ? 1 : (unsigned char)BF.S[BF.SA[i] - 1];
+            if (i % 37 == 0 || i < 300) {
+                CHECK(B.at(i) == c, "BWT[%lu]", i);
+                for (unsigned char d : {(unsigned char)1, (unsigned char)'A', (unsigned char)'C', (unsigned char)'G', (unsigned char)'T', (unsigned char)'X'})
+                    CHECK(B.rank(i, d) == cnt[d], "rank(%lu, %c)", i, d);
+            }
+            cnt[c]++;
+        }
+    }
+    rlcsa X, Y;
+    X.load(prefix + ".csa"); Y.load(prefix + ".efcsa");
+    stepper base; base.bwt = &B;
+    lookup_table LT; LT.build(base, 6);
+    two_level L2;
+    vector<config> cfgs = {{"rlbwt"}, {"csa", &X}, {"efcsa", &Y}, {"rlbwt+F6", nullptr, &LT}, {"csa+F6", &X, &LT}};
+    if (tl) {
+        L2.load(prefix + ".lvl");
+        cfgs.push_back({"twolevel", &X, nullptr, &L2, false});
+        cfgs.push_back({"twolevel+jumps", &X, nullptr, &L2, true});
+        cfgs.push_back({"twolevel+jumps/rlbwt", nullptr, nullptr, &L2, true});
+    }
+    tag_array T;
+    vector<uint32_t> rowtag;
+    if (!tagfile.empty()) {
+        T.load(tagfile, true); T.bwt = &B;
+        // the tag of each row, from the genome table (by genome index, or by tag column if the array has fewer tags)
+        genome_table G; G.load(prefix + ".tbl");
+        u64 ntag;
+        vector<uint32_t> byidx = G.tags(false), bycol = G.tags(true, &ntag);
+        u64 mx = 0;
+        for (u64 r = 0; r < T.rho; ++r) mx = std::max<u64>(mx, T.tag(r));
+        const vector<uint32_t> &gt = mx < ntag && ntag < G.start.size() ? bycol : byidx;
+        rowtag.resize(B.n);
+        for (u64 i = 0; i < B.n; ++i) {
+            u64 p = BF.SA[i] == (int32_t)(BF.S.size() - 1) ? BF.S.size() - 2 : BF.SA[i];
+            u64 g = std::upper_bound(G.start.begin(), G.start.end(), p) - G.start.begin() - 1;
+            rowtag[i] = gt[g];
+        }
+        for (u64 i = 0; i < B.n; i += 1 + i % 13) CHECK(T.tag(T.run_of(i)) == rowtag[i], "tag of row %lu", i);
+    }
+    kmer_filter KF;
+    if (kk && !KF.load(prefix + ".k" + std::to_string(kk) + ".kbf")) die("cannot load the KeBaB filter");
+
+    // patterns: the reads, then random ones
+    vector<string> pats;
+    {
+        FILE *f = open_or_die(readfile, "rb"); fclose(f);
+        std::ifstream in(readfile);
+        string line, cur;
+        bool fasta = in.peek() == '>';
+        u64 ln = 0;
+        while (std::getline(in, line)) {
+            if (fasta) { if (!line.empty() && line[0] == '>') { if (!cur.empty()) pats.push_back(cur); cur.clear(); } else cur += line; }
+            else if (ln++ % 4 == 1) pats.push_back(line);
+        }
+        if (!cur.empty()) pats.push_back(cur);
+    }
+    std::mt19937_64 rng(11);
+    for (int i = 0; i < nrand; ++i) {
+        u64 len = 50 + rng() % 400, a = rng() % (BF.S.size() - len - 1);
+        string p = BF.S.substr(a, len);
+        for (auto &c : p) { if (rng() % 60 == 0) c = "ACGT"[rng() % 4]; }
+        if (rng() % 2) p = reverse_complement(p);
+        pats.push_back(p);
+    }
+    for (auto &p : pats) {
+        for (auto &c : p) c = (char)toupper((unsigned char)c);
+        if (hpc) p.erase(std::unique(p.begin(), p.end()), p.end());
+    }
+
+    u64 nmems = 0, nchecked = 0;
+    for (size_t pi = 0; pi < pats.size(); ++pi) {
+        const string &P = pats[pi];
+        // brute force: the MEMs of every A/C/G/T run
+        vector<std::pair<u64, u64>> all;
+        for (u64 i = 0; i < P.size();) {
+            while (i < P.size() && base_code(P[i]) < 0) ++i;
+            u64 r0 = i;
+            while (i < P.size() && base_code(P[i]) >= 0) ++i;
+            for (auto [a, e] : BF.mems(P.data() + r0, i - r0)) all.push_back({r0 + a, r0 + e});
+        }
+        auto check_intervals = [&](const vector<mem> &got, const char *what) {
+            for (auto &M : got) {
+                string rc = reverse_complement(P.substr(M.a, M.e - M.a));
+                interval I = BF.find(rc.data(), rc.size());
+                CHECK(I == M.I, "%s: pattern %zu, MEM [%lu,%lu): interval [%lu,%lu) != brute [%lu,%lu)", what, pi, M.a, M.e, M.I.sp, M.I.ep, I.sp, I.ep);
+            }
+        };
+        auto as_set = [](const vector<mem> &v) { std::set<std::pair<u64, u64>> s; for (auto &M : v) s.insert({M.a, M.e}); return s; };
+        for (u64 L : {1ul, 12ul, 25ul, 40ul}) {
+            std::set<std::pair<u64, u64>> want;
+            for (auto [a, e] : all) if (e - a >= L) want.insert({a, e});
+            for (int fb = 0; fb < 2; ++fb) {
+                mem_options o; o.L = L; o.fb = fb;
+                vector<mem> ref = run_find(base, cfgs[0], P, o);
+                CHECK(as_set(ref) == want && ref.size() == want.size(), "%s L=%lu pattern %zu: %zu MEMs, brute %zu", fb ? "FB" : "BML", L, pi, ref.size(), want.size());
+                check_intervals(ref, fb ? "FB" : "BML");
+                nmems += ref.size(); ++nchecked;
+                for (size_t c = 1; c < cfgs.size(); ++c)
+                    CHECK(same(run_find(base, cfgs[c], P, o), ref), "%s L=%lu pattern %zu: %s differs from plain search", fb ? "FB" : "BML", L, pi, cfgs[c].name.c_str());
+            }
+            if (kk && L >= kk) {
+                for (int mode = 0; mode < 2; ++mode) {
+                    mem_options o; o.L = L; o.filter = &KF; (mode ? o.inline_check : o.pseudo) = true;
+                    for (auto &cf : cfgs) {
+                        vector<mem> got = run_find(base, cf, P, o);
+                        CHECK(as_set(got) == want && got.size() == want.size(), "KeBaB %s L=%lu pattern %zu (%s): %zu MEMs, brute %zu", mode ? "inline" : "pseudo", L, pi, cf.name.c_str(), got.size(), want.size());
+                    }
+                }
+            }
+        }
+        // adaptive L and top t
+        u64 maxlen = 0;
+        for (auto [a, e] : all) maxlen = std::max(maxlen, e - a);
+        vector<u64> lens;
+        for (auto [a, e] : all) lens.push_back(e - a);
+        std::sort(lens.rbegin(), lens.rend());
+        std::set<std::pair<u64, u64>> allset(all.begin(), all.end());
+        for (int kb = 0; kb < (kk ? 2 : 1); ++kb) {
+            mem_options o; o.L = 1; o.adaptive = true;
+            if (kb) { o.filter = &KF; o.pseudo = true; o.L = kk; }
+            vector<mem> got = run_find(base, cfgs[0], P, o);
+            std::set<std::pair<u64, u64>> gs = as_set(got);
+            for (auto &M : got) CHECK(allset.count({M.a, M.e}), "adaptive: [%lu,%lu) is not a MEM", M.a, M.e);
+            if (maxlen >= o.L) for (auto [a, e] : all) if (e - a == maxlen) CHECK(gs.count({a, e}), "adaptive%s: longest MEM [%lu,%lu) missing (pattern %zu)", kb ? "+KeBaB" : "", a, e, pi);
+            check_intervals(got, "adaptive");
+            for (size_t c = 1; c < cfgs.size(); ++c) CHECK(same(run_find(base, cfgs[c], P, o), got), "adaptive: %s differs", cfgs[c].name.c_str());
+            for (u64 t : {1ul, 3ul, 10ul}) {
+                mem_options q = o; q.adaptive = false; q.top = t;
+                vector<mem> top = run_find(base, cfgs[0], P, q);
+                vector<u64> tl;
+                for (auto &M : top) { tl.push_back(M.e - M.a); CHECK(allset.count({M.a, M.e}), "top: [%lu,%lu) is not a MEM", M.a, M.e); }
+                std::sort(tl.rbegin(), tl.rend());
+                vector<u64> want;
+                for (u64 x : lens) if (x >= q.L && want.size() < t) want.push_back(x);
+                CHECK(tl == want, "top %lu%s pattern %zu: lengths differ (%zu vs %zu)", t, kb ? "+KeBaB" : "", pi, tl.size(), want.size());
+                check_intervals(top, "top");
+                for (size_t c = 1; c < cfgs.size(); ++c) CHECK(same(run_find(base, cfgs[c], P, q), top), "top: %s differs", cfgs[c].name.c_str());
+            }
+        }
+        // tags of the MEMs of length >= 12
+        if (!tagfile.empty()) {
+            mem_options o; o.L = 12;
+            for (auto &M : run_find(base, cfgs[1], P, o)) {
+                std::map<u64, u64> want;
+                for (u64 r = M.I.sp; r < M.I.ep; ++r) want[rowtag[r]]++;
+                vector<std::pair<u64, u64>> got;
+                T.count(M.I.sp, M.I.ep, got);
+                bool okc = got == vector<std::pair<u64, u64>>(want.begin(), want.end());
+                CHECK(okc, "count: pattern %zu MEM [%lu,%lu)", pi, M.a, M.e);
+                if (T.has_rmq) {
+                    vector<u64> lst;
+                    T.list(M.I.sp, M.I.ep, lst);
+                    std::sort(lst.begin(), lst.end());
+                    vector<u64> wl;
+                    for (auto &x : want) wl.push_back(x.first);
+                    CHECK(lst == wl, "list: pattern %zu MEM [%lu,%lu)", pi, M.a, M.e);
+                }
+            }
+        }
+        // two-level search: every longest-suffix query against plain search, on both strands
+        if (tl) {
+            stepper S = base; S.csa = &X;
+            segment_search Q0, Q1, Q2;
+            Q0.S = Q1.S = Q2.S = &S;
+            Q1.TL = Q2.TL = &L2; Q1.jumps = false;
+            for (u64 i = 0; i < P.size();) {
+                while (i < P.size() && base_code(P[i]) < 0) ++i;
+                u64 r0 = i;
+                while (i < P.size() && base_code(P[i]) >= 0) ++i;
+                u64 n = i - r0;
+                if (!n) continue;
+                Q0.prepare(P.data() + r0, n); Q1.prepare(P.data() + r0, n); Q2.prepare(P.data() + r0, n);
+                for (int q = 0; q < 60; ++q) {
+                    u64 end = 1 + rng() % n, lo = q % 3 ? 0 : rng() % end;
+                    int dir = q & 1;
+                    interval I0, I1, I2;
+                    u64 j0 = Q0.back(dir, lo, end, I0), j1 = Q1.back(dir, lo, end, I1), j2 = Q2.back(dir, lo, end, I2);
+                    CHECK(j0 == j1 && I0 == I1, "two-level (parse) differs: pattern %zu dir %d [%lu,%lu)", pi, dir, lo, end);
+                    CHECK(j0 == j2 && I0 == I2, "two-level (blocks) differs: pattern %zu dir %d [%lu,%lu)", pi, dir, lo, end);
+                }
+            }
+        }
+    }
+    printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
+    return failures ? 1 : 0;
+}
+
+int main(int argc, char **argv) {
+    if (argc >= 2 && string(argv[1]) == "unit") return unit();
+    if (argc >= 2 && string(argv[1]) == "mems") return mems_test(argc, argv);
+    fputs("usage: katka-test unit | katka-test mems PREFIX reads [options]\n", stderr);
+    return 1;
+}
