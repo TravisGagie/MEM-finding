@@ -52,7 +52,15 @@ On the 2 Mbp × 16 chromosome-like collection, BML with L = 1000 (same MEMs in e
 
 The sample takes 8.2 MB (2.5 million positions, against r = 3.8 million) on top of the 64 MB text.
 
-The paper's code is at https://github.com/regindex/STPD-index. It couldn't be built here, because its CMake fetches dependencies from `chromium.googlesource.com`, which this cloud environment blocks.
+**Against the paper's code** (https://github.com/regindex/STPD-index, `stpd-sampling -c`, `tests/regress_stpd.sh`): our pruned sample of rev(T) is exactly their st-colex⁻ sampling of T, position for position. The only difference is their position 0 (the first prefix), which a search never needs. This holds on their `data/yeast.txt` (12.2 million characters: 5,479,329 positions, 0.654 r) and on a chromosome-like text. Building the sample took 4.7 s here (BWT 0.7 s, then the LF pass and comparisons), against 28 s for their `stpd-sampling`, which builds the suffix tree.
+
+To build their code, allow `chromium.googlesource.com` (its CMake fetches dependencies there), and add the generated libdivsufsort include directory to the compiler flags:
+
+```
+cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-I$PWD/_deps/sdsl-build/external/libdivsufsort/include"
+```
+
+The first `cmake` run creates that directory. The plain `cmake ..` failed with "divsufsort.h: No such file or directory".
 
 ### sdsl-lite
 

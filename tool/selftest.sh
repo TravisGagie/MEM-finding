@@ -13,9 +13,10 @@
 #      lexicographically smallest occurrence, and the sample's size against the paper's definition;
 #   5. the command line: threads, two-level search with tags, a BWT with one terminator per dataset, the
 #      presets;
-#   6. if KATKA_OLD (katka-readable's bin/), RZ_OLD (a build of katka/rz-index) or CHR19_OLD
-#      (chr19/twolevel's build/) is set, the regressions against the old code (tests/regress_katka.sh,
-#      tests/regress_digest.sh, tests/regress_chr19.sh).
+#   6. if KATKA_OLD (katka-readable's bin/), RZ_OLD (a build of katka/rz-index), CHR19_OLD
+#      (chr19/twolevel's build/) or STPD_OLD (a built clone of regindex/STPD-index) is set, the
+#      regressions against that code (tests/regress_katka.sh, tests/regress_digest.sh,
+#      tests/regress_chr19.sh, tests/regress_stpd.sh).
 # Everything is written to selftest/ (ignored by git).
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -116,5 +117,11 @@ grep -q "{0:" a.out && echo "  species tags present"
 
 if [ -n "${KATKA_OLD:-}" ]; then step "regression against katka-readable"; "$HERE/tests/regress_katka.sh" "$KATKA_OLD" "$D" "$W/regress_katka"; fi
 if [ -n "${RZ_OLD:-}" ]; then step "regression against rz-index digests"; "$HERE/tests/regress_digest.sh" "$RZ_OLD" "$D" "$W/regress_digest"; fi
+if [ -n "${STPD_OLD:-}" ]; then            # a clone of https://github.com/regindex/STPD-index, built in build/
+  step "regression against STPD-index (the paper's st-colex- sampling)"
+  "$HERE/tests/regress_stpd.sh" "$STPD_OLD/build/CLI" "$STPD_OLD/data/yeast.txt" "$W/regress_stpd_yeast"
+  python3 -c "import sys; print(''.join(l.strip() for l in open(sys.argv[1]) if not l.startswith('>')).replace('N', ''))" "$D/chr/h0.fa" > chrT.txt
+  "$HERE/tests/regress_stpd.sh" "$STPD_OLD/build/CLI" chrT.txt "$W/regress_stpd_chr"
+fi
 if [ -n "${CHR19_OLD:-}" ]; then step "regression against chr19/twolevel"; "$HERE/tests/regress_chr19.sh" "$CHR19_OLD" "$D/chr" "$W/regress_chr19"; fi
 echo "self-test passed"

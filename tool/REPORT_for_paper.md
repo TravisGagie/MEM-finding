@@ -117,6 +117,7 @@ This is a backend from *Compressing Suffix Trees by Path Decompositions* (Becker
 - **Sample:** the sample positions are BWT run starts. A run start x is needed iff lcp(SA[y], SA[x]) < lcp(SA[x−1], SA[x]), where y is the previous row with the same BWT character.
 - **Construction:** the sample is built from the r-index's LF pass plus text comparisons, without a suffix tree.
 - **Size:** it is exactly 2 smaller than the paper's |st-colex⁻| computed by definition on every test collection, the 2 being boundary entries. It holds about 0.66 r positions there.
+- **Against the paper's code:** it is, position for position, the st-colex⁻ sampling computed by the paper's code (`stpd-sampling -c` of github.com/regindex/STPD-index) on the reversed text, except for their position 0. On their yeast text (12.2 million characters) both have 5,479,329 positions (0.654 r), apart from that position 0. Ours took 4.7 s to build, from the BWT runs, against 28 s for theirs, which builds the suffix tree. Both timings are from the cloud container.
 - **Correctness:** it is checked to give the same MEMs and intervals as plain search, with every search ending at the lexicographically smallest occurrence.
 - **Speed:** on the synthetic chromosome-like collection, BML with L = 1000 took 0.20 s without intervals and 1.2 s with them, against 2.1 s for plain search and 0.40 s for two-level search with blocks.
 

@@ -193,11 +193,13 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
 - **Regressions**, if `KATKA_OLD` (katka-readable's `bin/`), `RZ_OLD` (a build of `katka/rz-index`) or `CHR19_OLD` (`chr19/twolevel/build/`) is set:
   - `tests/regress_katka.sh`: the same text, table, KeBaB filter and listings, byte for byte, as `katka-classify`. It covers counting, listing and range answers, sampled, per-species and grammar tags, `-X`, `-K`, `-D`, `-U`, a per-dataset BWT and 4 threads;
   - `tests/regress_digest.sh`: the same digested text, table and byte map as `rz-prep -B`, and the same listings, byte for byte, as `rz-classify -B` with tags, for L = 11 to 30, with and without a lookup table;
+  - `tests/regress_stpd.sh` (with `STPD_OLD`, a built clone of https://github.com/regindex/STPD-index): our pruned STPD sample of rev(T) is, position for position, the paper's st-colex⁻ sampling of T (`stpd-sampling -c`), except for their position 0, on their yeast text and on a chromosome-like text;
   - `tests/regress_chr19.sh`: the same MEMs, with the same numbers of occurrences, as `query_twolevel`, for BML and FB with L = 100 and 1000.
 
 ```
 make -C ../katka-readable SDSL=/path/to/sdsl
 (cd ../chr19/twolevel && cmake -S . -B build && cmake --build build --target build_twolevel query_twolevel build_index)
 make -C ../katka/rz-index SDSL=/path/to/sdsl rz-prep rz-build rz-classify rz-csabuild rz-tagbuild
-KATKA_OLD=../katka-readable/bin RZ_OLD=../katka/rz-index CHR19_OLD=../chr19/twolevel/build ./selftest.sh
+git clone https://github.com/regindex/STPD-index ../../STPD-index    # builds with CMake; see NOTES.md
+KATKA_OLD=../katka-readable/bin RZ_OLD=../katka/rz-index CHR19_OLD=../chr19/twolevel/build STPD_OLD=../../STPD-index ./selftest.sh
 ```

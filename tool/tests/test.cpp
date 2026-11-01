@@ -514,8 +514,33 @@ static int stpd_size(const string &prefix) {
     return 0;
 }
 
+// PREFIX.stpd, built on S = rev(T), against the st-colex- sampling of T from the paper's code
+// (STPD-index's stpd-sampling -c: 5-byte little-endian positions, 0-based ends of the sampled prefixes):
+// our position b in S is their n - b - 1.  Their sampling also has 0 (the first prefix), which a search
+// never needs.
+static int stpd_vs(const string &prefix, const string &colex) {
+    FILE *f = open_or_die(colex, "rb");
+    std::set<u64> A;
+    unsigned char b[5];
+    while (fread(b, 1, 5, f) == 5) { u64 x = 0; for (int i = 4; i >= 0; --i) x = x << 8 | b[i]; A.insert(x); }
+    fclose(f);
+    stpd_index D; D.load(prefix + ".stpd", prefix + ".S");
+    const u64 n = D.n - 1;
+    std::set<u64> B;
+    for (u64 i = 0; i < D.pos.size(); ++i) B.insert(n - D.pos[i] - 1);
+    u64 common = 0;
+    for (u64 x : B) common += A.count(x);
+    std::set<u64> onlyA;
+    for (u64 x : A) if (!B.count(x)) onlyA.insert(x);
+    bool ok = common == B.size() && (onlyA.empty() || (onlyA.size() == 1 && *onlyA.begin() == 0));
+    printf("STPD-index st-colex-: %zu positions; ours: %zu; common %lu; only theirs: %zu%s -> %s\n", A.size(), B.size(), common, onlyA.size(),
+           onlyA.size() == 1 && *onlyA.begin() == 0 ? " (position 0)" : "", ok ? "the same" : "DIFFERENT");
+    return ok ? 0 : 1;
+}
+
 int main(int argc, char **argv) {
     if (argc >= 2 && string(argv[1]) == "unit") return unit();
+    if (argc == 4 && string(argv[1]) == "stpd-vs") return stpd_vs(argv[2], argv[3]);
     if (argc == 3 && string(argv[1]) == "stpd-size") return stpd_size(argv[2]);
     if (argc >= 2 && string(argv[1]) == "mems") return mems_test(argc, argv);
     fputs("usage: katka-test unit | katka-test mems PREFIX reads [options]\n", stderr);
