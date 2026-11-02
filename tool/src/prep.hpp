@@ -12,7 +12,7 @@
 //   hpc      : homopolymer compression: collapse every run of equal characters of each genome (before
 //              taking the reverse complement, with which it commutes)
 // writes prefix.S (no terminator), prefix.tbl (index, tag, name, length, start in S) and prefix.info.
-// This is KATKA's katka-prep, unchanged except for prefix.info.
+// This is KATKA's katka-prep, unchanged except for prefix.info and streaming genome by genome (same output).
 #pragma once
 #include "digest.hpp"
 #include <algorithm>
@@ -27,20 +27,25 @@ inline char clean_base(char c) {
     switch (c) { case 'A': case 'a': return 'A'; case 'C': case 'c': return 'C'; case 'G': case 'g': return 'G'; case 'T': case 't': return 'T'; default: return 'X'; }
 }
 
-inline std::vector<std::pair<std::string, std::string>> read_genomes(const std::string &path, bool split) {
-    gzFile f = gzopen(path.c_str(), "rb");
-    if (!f) die("cannot open " + path);
-    std::vector<std::pair<std::string, std::string>> out;
+// Calls f(id, genome) for each genome of a FASTA file, in order, as soon as it is complete, so memory is
+// bounded by the largest genome rather than by the file (a file of many genomes may be larger than RAM).
+// Without split the whole file is one genome, its records joined by X; with split, consecutive records with
+// the same sample ID form one genome, also joined by X.
+template <class F> inline void for_each_genome(const std::string &path, bool split, F &&f) {
+    gzFile in = gzopen(path.c_str(), "rb");
+    if (!in) die("cannot open " + path);
+    gzbuffer(in, 1 << 20);
     std::vector<char> buf(1 << 20);
-    bool header = false, bol = true;
-    std::string hdr;
-    int got;
+    bool header = false, bol = true, have = false;
+    std::string hdr, id, g;
+    auto emit = [&]() { if (have) f(id, g); g.clear(); };
     auto new_record = [&]() {
-        std::string id = split ? hdr.substr(0, hdr.find_first_of(". \t")) : "";
-        if (out.empty() || (split && out.back().first != id)) out.push_back({id, std::string()});
-        else if (!out.back().second.empty() || split) out.back().second.push_back('X');
+        std::string nid = split ? hdr.substr(0, hdr.find_first_of(". \t")) : "";
+        if (!have || (split && id != nid)) { emit(); id = nid; have = true; }
+        else if (!g.empty() || split) g.push_back('X');
     };
-    while ((got = gzread(f, buf.data(), buf.size())) > 0) {
+    int got;
+    while ((got = gzread(in, buf.data(), buf.size())) > 0) {
         for (int i = 0; i < got; ++i) {
             char c = buf[i];
             if (bol && c == '>') { header = true; hdr.clear(); bol = false; continue; }
@@ -48,13 +53,14 @@ inline std::vector<std::pair<std::string, std::string>> read_genomes(const std::
             bol = false;
             if (header) { hdr.push_back(c); continue; }
             if (c == '\r' || c == ' ' || c == '\t') continue;
-            if (out.empty()) out.push_back({split ? "-" : "", std::string()});
-            out.back().second.push_back(clean_base(c));
+            if (!have) { id = split ? "-" : ""; have = true; }
+            g.push_back(clean_base(c));
         }
     }
-    gzclose(f);
-    if (out.empty() && !split) out.push_back({"", std::string()});
-    return out;
+    if (got < 0) die("cannot read " + path);
+    gzclose(in);
+    if (!have && !split) { id = ""; have = true; }
+    emit();
 }
 
 inline void write_info(const std::string &prefix, bool hpc, int dk = 0, int dw = 0) {
@@ -100,7 +106,7 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
         if (o.hpc) die("homopolymer compression cannot be combined with digests");
         if (o.dk < 1 || o.dk > 4 || o.dw < o.dk) die("--digest k,w: need 1 <= k <= 4 and w >= k");
         auto lst = read_list(listfile);
-        M.build(o.dk, o.dw, [&](auto f) { for (auto &[tag, path] : lst) for (auto &[id, g] : read_genomes(path, o.split)) f(g); });
+        M.build(o.dk, o.dw, [&](auto f) { for (auto &[tag, path] : lst) for_each_genome(path, o.split, [&](const std::string &, std::string &g) { f(g); }); });
         M.save(out + ".map");
     }
     uint64_t asym = 0;
@@ -117,9 +123,9 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
         std::string tag = "-", path = line;
         size_t tab = line.find('\t');
         if (tab != std::string::npos) { tag = line.substr(0, tab); path = line.substr(tab + 1); }
-        for (auto &[id, g] : read_genomes(path, o.split)) {
+        for_each_genome(path, o.split, [&](const std::string &id, std::string &g) {
             std::string name = o.split ? path + "#" + id : path;
-            if (g.empty()) { fprintf(stderr, "warning: empty genome %s\n", name.c_str()); continue; }
+            if (g.empty()) { fprintf(stderr, "warning: empty genome %s\n", name.c_str()); return; }
             if (o.hpc) { raw += g.size(); g.erase(std::unique(g.begin(), g.end()), g.end()); }
             std::string rc;
             if (o.dk) {
@@ -127,7 +133,7 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
                 std::string d = M.digest(g);
                 if (M.digest(reverse_complement(g)) != M.rc(d)) ++asym;     // the digest must be strand-symmetric
                 g.swap(d);
-                if (g.empty()) { fprintf(stderr, "warning: empty digest %s\n", name.c_str()); continue; }
+                if (g.empty()) { fprintf(stderr, "warning: empty digest %s\n", name.c_str()); return; }
                 rc = M.rc(g);
             } else rc = reverse_complement(g);
             tbl << idx << "\t" << tag << "\t" << name << "\t" << g.size() << "\t" << pos << "\n";
@@ -146,7 +152,7 @@ inline void prep(const std::string &listfile, const std::string &out, const prep
             }
             pos += 2 * (g.size() + 1);
             ++idx;
-        }
+        });
     }
     fclose(fs);
     if (fd) fclose(fd);
