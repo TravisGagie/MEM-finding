@@ -63,3 +63,57 @@ In all, 600,809,096 pseudo-MEMs, 1,032.7 per read; the searched counts above are
   counts and backward steps are identical, so their times differ only by noise. NOTES predicted this: a
   pseudo-MEM shorter than the current L is skipped, so the batch rule differs only in when it checks.
 - **The exact reference without the filter (d)** takes 1.4 to 2.0 times longer than the KeBaB rules.
+
+# The check rule (`--kebab-check T t`) and KeBaB's pipeline (`--kebab-top t --fixed-L`), 2026-11-03
+
+The tool was at dc63572 (`tool/NOTES.md`, "KeBaB: `--kebab-check T t` and `--kebab-top t --fixed-L`"). Same
+machine, reads, index and options as above (`-U -D 14 -c --csa -j 12 --stats`, k = 20, one run at a time, 11 GB
+cgroup). Script: `check_run.sh`; log: `check_run.log`; stderr per run: `check_logs/`.
+
+## Check rule, T = 2t, L = 20
+
+| run | t | T | wall | user CPU | peak | searched / read | fallbacks (all "fewer than t long MEMs") | backward steps / read | accuracy (prop / even) | t longest lengths differ from (c) / (d) | tie sets differ |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| check | 1 | 2 | 103.3 s | 1,009 s | 7.34 GB | 1.15 | 13,840 (2.38%) | 743 | 99.61% / 99.27% | 0 / 0 | 1,386 (0.24%) |
+| check, `--strict` | 1 | 2 | 97.7 s | 990 s | 7.35 GB | 1.15 | 17,213 (2.96%) | 794 | 99.61% / 99.27% | 0 / 0 | 0 |
+| check | 3 | 6 | 110.3 s | 1,139 s | 7.35 GB | 3.41 | 9,026 (1.55%) | 1,538 | 99.61% / 99.27% | 0 / 0 | 610 (0.10%) |
+| check, `--strict` | 3 | 6 | 112.3 s | 1,149 s | 7.35 GB | 3.41 | 10,729 (1.84%) | 1,590 | 99.61% / 99.27% | 0 / 0 | 0 |
+| check | 5 | 10 | 122.2 s | 1,275 s | 7.35 GB | 5.62 | 8,946 (1.54%) | 2,185 | 99.61% / 99.27% | 0 / 0 | 454 (0.08%) |
+| check, `--strict` | 5 | 10 | 125.4 s | 1,294 s | 7.35 GB | 5.62 | 10,127 (1.74%) | 2,238 | 99.61% / 99.27% | 0 / 0 | 0 |
+
+How the columns were measured:
+- **Fallback reasons:** every fallback was for too few long MEMs; none was for too few pseudo-MEMs (at most T).
+- **"Searched / read"** counts the pseudo-MEMs before any fallback. A fallback runs BML on the whole read, which
+  shows in the backward steps.
+- **Length comparison:** made with `topt_lengths.py`, which compares the first t of the sorted lengths, against
+  (c) and (d) above.
+- **Tie sets:** `compare_longest_t.py` (t longest *with ties*) reports exactly the "tie sets differ" counts.
+  Without `--strict`, a MEM tied for t-th place at the bound's length can be left out, as `NOTES.md` says. The
+  lengths of the t longest are never wrong.
+- **With `--strict`:** the output equals the exact references (c) and (d) in every read, spans included.
+
+Against the batch rule above:
+- **Searched:** the check rule searches fewer pseudo-MEMs before deciding (1.15 against 1.29 at t = 1; 5.62
+  against 6.07 at t = 5).
+- **Fallback cost:** instead of a second batch, it falls back to BML on the whole read in 1.5–3.0% of reads.
+  That costs more backward steps (794 against 388 at t = 1, strict) and 5–10% more time.
+
+## KeBaB's pipeline: every MEM of length ≥ 25 in the t longest pseudo-MEMs (the journal's fixed L = 25)
+
+L counts homopolymer-compressed characters, as in every Zymo run here (about 34 bases).
+
+| run | wall | user CPU | peak | pseudo-MEMs searched / read | backward steps / read | MEMs | unclassified | accuracy, every MEM votes (prop / even) |
+|---|---|---|---|---|---|---|---|---|
+| `--kebab-top 1 --fixed-L` | 87.5 s | 895 s | 7.34 GB | 1.00 | 322 | 758,336 | 6,105 (1.05%) | 98.66% / 98.37% |
+| `--kebab-top 3 --fixed-L` | 98.0 s | 1,021 s | 7.35 GB | 3.00 | 836 | 2,195,477 | 2,674 (0.46%) | 99.23% / 99.19% |
+| `--kebab-top 5 --fixed-L` | 109.7 s | 1,141 s | 7.34 GB | 5.00 | 1,281 | 3,587,812 | 1,612 (0.28%) | 99.40% / 99.40% |
+| all MEMs ≥ 25 (`-L 25 -K 20`) | 468.9 s | 5,130 s | 7.36 GB | all | — | 108,366,876 | 17 (0.003%) | 99.58% / 99.69% |
+
+- **Scoring:** both columns are `katka-readable/scripts/credit_schemes.py`; `score_spu2.py` agrees with the
+  proportional figure.
+- **Filtration:** there are 1,032.7 pseudo-MEMs per read, so t = 1, 3 and 5 search 0.10%, 0.29% and 0.48% of
+  them. `--stats` doesn't report the fraction of read characters inside pseudo-MEMs, so that ratio isn't given.
+- **Speed:** searching only the t longest pseudo-MEMs is 4.3–5.4 times faster than all MEMs ≥ 25.
+- **Accuracy:** it loses 0.18–0.92 points, down to 98.66% at t = 1, against the 99.61% of the exact longest-MEM
+  rules at about the same speed. The journal reports no loss for t = 10, 20, 30 with Tagger, L = 25 in bases;
+  smaller t was not tested there.

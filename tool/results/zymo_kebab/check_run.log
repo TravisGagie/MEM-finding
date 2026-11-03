@@ -1,0 +1,144 @@
+== e.2.1 18:25:35
+reads=581802 MEMs=591459 without MEMs=0 | threads=12 wall 94.28 s, 1944.5 us/read
+kebab check (T = 2, t = 1): fallbacks 13840 of 581802 reads (0 with at most T pseudo-MEMs, 13840 with fewer than t long MEMs)
+kebab (check, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 667535 (1.15 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 13840, backward steps 743.2 per read
+e.2.1: 103.29 s wall, 1009.03 s user, peak 7344416 KB
+e.2.1 exit 0
+== es.2.1 18:27:18
+reads=581802 MEMs=592877 without MEMs=0 | threads=12 wall 89.27 s, 1841.1 us/read
+kebab check (T = 2, t = 1, strict): fallbacks 17213 of 581802 reads (0 with at most T pseudo-MEMs, 17213 with fewer than t long MEMs)
+kebab (check, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 667535 (1.15 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 17213, backward steps 793.5 per read
+es.2.1: 97.65 s wall, 990.27 s user, peak 7346460 KB
+es.2.1 exit 0
+== f.1 18:28:56
+reads=581802 MEMs=758336 without MEMs=6105 | threads=12 wall 78.22 s, 1613.4 us/read
+kebab (top, fixed L = 25, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 581802 (1.00 per read), backward steps 321.7 per read
+f.1: 87.54 s wall, 894.81 s user, peak 7344372 KB
+f.1 exit 0
+== e.6.3 18:30:24
+reads=581802 MEMs=1779648 without MEMs=0 | threads=12 wall 101.77 s, 2099.1 us/read
+kebab check (T = 6, t = 3): fallbacks 9026 of 581802 reads (0 with at most T pseudo-MEMs, 9026 with fewer than t long MEMs)
+kebab (check, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1985116 (3.41 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 9026, backward steps 1537.8 per read
+e.6.3: 110.25 s wall, 1139.46 s user, peak 7346444 KB
+e.6.3 exit 0
+== es.6.3 18:32:14
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 102.95 s, 2123.3 us/read
+kebab check (T = 6, t = 3, strict): fallbacks 10729 of 581802 reads (0 with at most T pseudo-MEMs, 10729 with fewer than t long MEMs)
+kebab (check, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1985116 (3.41 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 10729, backward steps 1590.3 per read
+es.6.3: 112.32 s wall, 1149.07 s user, peak 7347812 KB
+es.6.3 exit 0
+== f.3 18:34:06
+reads=581802 MEMs=2195477 without MEMs=2674 | threads=12 wall 88.65 s, 1828.4 us/read
+kebab (top, fixed L = 25, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1745406 (3.00 per read), backward steps 836.2 per read
+f.3: 98.02 s wall, 1021.23 s user, peak 7346852 KB
+f.3 exit 0
+== e.10.5 18:35:44
+reads=581802 MEMs=2968983 without MEMs=0 | threads=12 wall 113.78 s, 2346.7 us/read
+kebab check (T = 10, t = 5): fallbacks 8946 of 581802 reads (0 with at most T pseudo-MEMs, 8946 with fewer than t long MEMs)
+kebab (check, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3268918 (5.62 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 8946, backward steps 2185.4 per read
+e.10.5: 122.19 s wall, 1274.62 s user, peak 7345844 KB
+e.10.5 exit 0
+== es.10.5 18:37:47
+reads=581802 MEMs=2969535 without MEMs=0 | threads=12 wall 116.07 s, 2394.0 us/read
+kebab check (T = 10, t = 5, strict): fallbacks 10127 of 581802 reads (0 with at most T pseudo-MEMs, 10127 with fewer than t long MEMs)
+kebab (check, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3268918 (5.62 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 10127, backward steps 2238.0 per read
+es.10.5: 125.38 s wall, 1293.90 s user, peak 7346472 KB
+es.10.5 exit 0
+== f.5 18:39:52
+reads=581802 MEMs=3587812 without MEMs=1612 | threads=12 wall 100.54 s, 2073.7 us/read
+kebab (top, fixed L = 25, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 2909010 (5.00 per read), backward steps 1281.2 per read
+f.5: 109.72 s wall, 1140.64 s user, peak 7344248 KB
+f.5 exit 0
+== g.L25 18:41:42
+reads=581802 MEMs=108366876 without MEMs=17 | threads=12 wall 460.49 s, 9497.9 us/read
+g.L25: 468.85 s wall, 5130.48 s user, peak 7364408 KB
+g.L25 exit 0
+== scoring and comparisons 18:49:31
+-- e.2.1: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- e.2.1 against c.1
+reads 581802, t = 1: lengths of the t longest differ in 1386 (0.2382%), of which 0 have a reference longest MEM shorter than 20; spans differ in 1386 (0.2382%); reference longest shorter than 20: 0 reads
+-- e.2.1 against d.1
+reads 581802, t = 1: lengths of the t longest differ in 1386 (0.2382%), of which 0 have a reference longest MEM shorter than 20; spans differ in 1386 (0.2382%); reference longest shorter than 20: 0 reads
+-- es.2.1: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- es.2.1 against c.1
+reads 581802, t = 1: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- es.2.1 against d.1
+reads 581802, t = 1: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- e.6.3: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- e.6.3 against c.3
+reads 581802, t = 3: lengths of the t longest differ in 610 (0.1048%), of which 0 have a reference longest MEM shorter than 20; spans differ in 610 (0.1048%); reference longest shorter than 20: 0 reads
+-- e.6.3 against d.3
+reads 581802, t = 3: lengths of the t longest differ in 610 (0.1048%), of which 0 have a reference longest MEM shorter than 20; spans differ in 610 (0.1048%); reference longest shorter than 20: 0 reads
+-- es.6.3: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- es.6.3 against c.3
+reads 581802, t = 3: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- es.6.3 against d.3
+reads 581802, t = 3: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- e.10.5: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- e.10.5 against c.5
+reads 581802, t = 5: lengths of the t longest differ in 454 (0.0780%), of which 0 have a reference longest MEM shorter than 20; spans differ in 454 (0.0780%); reference longest shorter than 20: 0 reads
+-- e.10.5 against d.5
+reads 581802, t = 5: lengths of the t longest differ in 454 (0.0780%), of which 0 have a reference longest MEM shorter than 20; spans differ in 454 (0.0780%); reference longest shorter than 20: 0 reads
+-- es.10.5: maxmem_roc (longest MEMs vote)
+   10  100.00    0.00    99.61    99.27
+-- es.10.5 against c.5
+reads 581802, t = 5: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- es.10.5 against d.5
+reads 581802, t = 5: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- f.1: every MEM votes
+reads 581802, unclassified 6105 (1.05%); 758336 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     98.663%
+  even     98.372%
+reads 581802 accuracy 98.663% unclassified 6105 (1.049%)
+-- f.3: every MEM votes
+reads 581802, unclassified 2674 (0.46%); 2195477 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.233%
+  even     99.194%
+reads 581802 accuracy 99.233% unclassified 2674 (0.460%)
+-- f.5: every MEM votes
+reads 581802, unclassified 1612 (0.28%); 3587812 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.395%
+  even     99.401%
+reads 581802 accuracy 99.395% unclassified 1612 (0.277%)
+-- g.L25: every MEM votes
+reads 581802, unclassified 17 (0.00%); 108366876 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.578%
+  even     99.693%
+reads 581802 accuracy 99.578% unclassified 17 (0.003%)
+== compressing 19:21:44
+total 767300
+-rw-rw-r-- 1 travis travis       622 Nov  3 18:37 e.10.5.err
+-rw-rw-r-- 1 travis travis   4086719 Nov  3 18:37 e.10.5.tsv.zst
+-rw-rw-r-- 1 travis travis  20420549 Nov  3 18:37 e.10.5.zst
+-rw-rw-r-- 1 travis travis       618 Nov  3 18:27 e.2.1.err
+-rw-rw-r-- 1 travis travis   3649373 Nov  3 18:27 e.2.1.tsv.zst
+-rw-rw-r-- 1 travis travis   5343031 Nov  3 18:27 e.2.1.zst
+-rw-rw-r-- 1 travis travis       619 Nov  3 18:32 e.6.3.err
+-rw-rw-r-- 1 travis travis   3914083 Nov  3 18:32 e.6.3.tsv.zst
+-rw-rw-r-- 1 travis travis  13121626 Nov  3 18:32 e.6.3.zst
+-rw-rw-r-- 1 travis travis       634 Nov  3 18:39 es.10.5.err
+-rw-rw-r-- 1 travis travis   4088086 Nov  3 18:39 es.10.5.tsv.zst
+-rw-rw-r-- 1 travis travis  20425178 Nov  3 18:39 es.10.5.zst
+-rw-rw-r-- 1 travis travis       625 Nov  3 18:28 es.2.1.err
+-rw-rw-r-- 1 travis travis   3621168 Nov  3 18:28 es.2.1.tsv.zst
+-rw-rw-r-- 1 travis travis   5355008 Nov  3 18:28 es.2.1.zst
+-rw-rw-r-- 1 travis travis       631 Nov  3 18:34 es.6.3.err
+-rw-rw-r-- 1 travis travis   3918040 Nov  3 18:34 es.6.3.tsv.zst
+-rw-rw-r-- 1 travis travis  13135628 Nov  3 18:34 es.6.3.zst
+-rw-rw-r-- 1 travis travis       429 Nov  3 18:30 f.1.err
+-rw-rw-r-- 1 travis travis   6545158 Nov  3 18:30 f.1.zst
+-rw-rw-r-- 1 travis travis       432 Nov  3 18:35 f.3.err
+-rw-rw-r-- 1 travis travis  15642209 Nov  3 18:35 f.3.zst
+-rw-rw-r-- 1 travis travis       435 Nov  3 18:41 f.5.err
+-rw-rw-r-- 1 travis travis  24116112 Nov  3 18:41 f.5.zst
+-rw-rw-r-- 1 travis travis       300 Nov  3 18:49 g.L25.err
+-rw-rw-r-- 1 travis travis 638242919 Nov  3 18:49 g.L25.zst
+-rw-rw-r-- 1 travis travis      8207 Nov  3 19:21 run.log
+-rwxrwxr-x 1 travis travis      1837 Nov  3 18:25 run.sh
+/dev/nvme0n1p2  228G  200G   17G  93% /
+== done 19:33:15
