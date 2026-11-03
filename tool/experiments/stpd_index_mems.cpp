@@ -40,7 +40,10 @@ using u64 = uint64_t;
 static double now() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
 static char comp(char c) { switch (c) { case 'A': return 'T'; case 'C': return 'G'; case 'G': return 'C'; case 'T': return 'A'; default: return c; } }
 
-struct counters { u64 searches = 0, jumps = 0, failed_checks = 0, chars = 0; };
+struct counters {
+    u64 searches = 0, jumps = 0, failed_checks = 0, chars = 0, checked_chars = 0, copied = 0;
+    double t_lcp = 0, t_search = 0, t_check = 0;   // time in their LCP, their binary search, our check
+};
 
 template <class Index> struct engine {
     const Index &I;
@@ -53,6 +56,7 @@ template <class Index> struct engine {
     long sample_for(u64 e) {
         const auto &S = I.S; const auto &O = I.O;
         long a;
+        double t0 = now();
         if ((long)e >= (long)S.len) a = S.binary_search_with_tabluation(Y, 0, e);
         else {                                       // short: a binary search over the samples
             u64 lo = 0, hi = S.S;
@@ -65,8 +69,11 @@ template <class Index> struct engine {
             }
             a = lo < S.S ? (long)(S.samples.get_value(lo) >> S.log_l) : -1;
         }
+        double t1 = now(); cnt.t_search += t1 - t0;
         if (a < 0) return -1;
-        if (O.LCS(Y, e - 1, a) < e) { ++cnt.failed_checks; return -1; }
+        u64 l = O.LCS(Y, e - 1, a);
+        cnt.t_check += now() - t1; cnt.checked_chars += std::min<u64>(l + 1, e);
+        if (l < e) { ++cnt.failed_checks; return -1; }
         return a;
     }
     // the length of the longest prefix of X[s..s+cap) that occurs in T (X a whole segment string)
@@ -76,12 +83,15 @@ template <class Index> struct engine {
         u64 have = std::min<u64>(cap, 4096);
         Y.assign(X, s, have);
         u64 i = 0, t = 0;                            // Y[0..i) occurs ending at text position t (exclusive)
+        cnt.copied += have;
         for (;;) {
+            double t0 = now();
             u64 f = O.LCP(Y, i, t);
+            cnt.t_lcp += now() - t0;
             i += f; t += f; cnt.chars += f;
             if (i == have && have < cap) {           // the copy ran out: extend it and go on
                 have = std::min<u64>(cap, 2 * have);
-                Y.assign(X, s, have);
+                Y.assign(X, s, have); cnt.copied += have;
                 continue;
             }
             if (i >= have) return have;
@@ -180,7 +190,9 @@ template <class Index> static int run(const std::string &idxfile, const std::str
     std::cout << out;
     std::cerr << "stpd-index-mems: " << pats.size() << " patterns, " << nm << " MEMs (L = " << L << ", " << (use_fb ? "forward-backward" : "BML")
               << "); finding them " << tfind << " s (" << E.cnt.searches << " longest-prefix searches, " << E.cnt.jumps << " jumps, "
-              << E.cnt.failed_checks << " candidates rejected by the check)";
+              << E.cnt.failed_checks << " candidates rejected by the check; time in their LCP " << E.cnt.t_lcp << " s, their binary search "
+              << E.cnt.t_search << " s, the check " << E.cnt.t_check << " s over " << E.cnt.checked_chars << " characters; " << E.cnt.copied
+              << " characters copied)";
     if (locate) std::cerr << "; locating " << nocc << " occurrences " << tloc << " s";
     if (!pieces.empty()) std::cerr << "; " << njunction << " MEMs whose first occurrence crosses a junction";
     std::cerr << "\n";

@@ -23,7 +23,7 @@
 # Output in WORK: their MEMs and ours (TSV), summary.txt with times, sizes and the comparison.
 set -euo pipefail
 STPD=$(cd "$1" && pwd); LIST=$(cd "$(dirname "$2")" && pwd)/$(basename "$2"); PAT=$(cd "$(dirname "$3")" && pwd)/$(basename "$3")
-W=$4; L=${5:-1000}
+mkdir -p "$4"; W=$(cd "$4" && pwd); L=${5:-1000}   # (absolute: the script cds into it)
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 K=$HERE/bin/katka; DRV=$HERE/bin/stpd-index-mems
 mkdir -p "$W"; cd "$W"

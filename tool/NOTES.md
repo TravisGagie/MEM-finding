@@ -78,7 +78,14 @@ One addition to their algorithm was necessary: their binary search returns a can
 
 Their text has no separators, so a match can run across the junction between two pieces; the script flags MEMs whose first occurrence crosses one.
 
-**katka's locating.** `find --stpd --locate` lists every occurrence of each MEM by φ⁻¹ from the first, checking the text at the end of each doubling batch, then binary-searching the batch that overshot, as in their paper. φ⁻¹ adds 2 numbers per BWT run to `PREFIX.stpd`. Tested against the suffix array: 347 million occurrences in the self-test, all identical. Counts equal ep − sp for every MEM.
+**Their forward–backward search** (2026-11-03): the desktop stopped it after 54 minutes on chromosome 19, while their BML took 45 s. It runs correctly; the slowness is in their code, not in the driver.
+- **Where the time goes:** on the 2 Mbp × 16 synthetic collection (L = 1000; the same 1,996 MEMs as BML and as katka), their BML takes 11.6 s and their FB 74.6 s. Of that, 99.6% is in their `binary_search_with_tabluation`: the driver's check takes 0.1 s, their LCP extensions 0.09 s, and the string copies are negligible.
+- **Why per jump:** each probe of their binary search compares the pattern with a sample backwards from the end, over the whole matched prefix (`LCS_char`). So a jump costs O(matched length × log samples), about 110 µs per jump here, for BML and FB alike.
+- **Why FB is slower:** FB makes 7.8 times as many longest-prefix searches as BML (77,720 against 9,949) and 7 times as many jumps (709,296 against 101,433). Each search starts again from the left and re-crosses the overlapping parts of consecutive MEMs.
+- **Why chromosome 19 is worse:** MEMs are much longer there, so each jump costs more as well.
+- **katka:** its STPD search keeps the common prefix shared with each bound of the binary search (the lcp-skip), so a probe doesn't recompare what is known to match. Its FB takes 0.61 s on the same data (729,026 jumps, about 0.8 µs each), and its BML 0.21 s.
+
+**katka's locating.** `find --stpd --locate` (since 2026-11-03 it computes no intervals unless tags are asked for: the desktop found 132 of its 135 s going to plain-search intervals) lists every occurrence of each MEM by φ⁻¹ from the first, checking the text at the end of each doubling batch, then binary-searching the batch that overshot, as in their paper. φ⁻¹ adds 2 numbers per BWT run to `PREFIX.stpd`. Tested against the suffix array: 347 million occurrences in the self-test, all identical. Counts equal ep − sp for every MEM.
 
 **Tested here** (the self-test, with `STPD_OLD` set): on the chromosome-like collection with L = 100, their BML, their forward–backward search, and katka's plain, two-level, STPD, STPD with two-level intervals and STPD with locate searches all give the same 556 MEMs. Their occurrence counts and katka's equal ep − sp.
 

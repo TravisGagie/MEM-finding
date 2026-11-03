@@ -375,7 +375,8 @@ static const char *FIND_USAGE =
     "                      at most r positions; the intervals of reported MEMs by backward search\n"
     "    --no-intervals    with --stpd: do not compute intervals (mems format prints - -; no tags)\n"
     "    --locate          with --stpd: locate every occurrence of each MEM by phi^-1 steps checked against the\n"
-    "                      text (doubling batches, then a binary search), and print their number (mems format)\n"
+    "                      text (doubling batches, then a binary search), and print their number (mems format);\n"
+    "                      no intervals are computed unless tags are asked for (the mems format prints - -)\n"
     "                      (--stpd --twolevel: STPD finds the MEMs, two-level search their intervals)\n"
     "  answers (Cliffy's listing format, with counts)\n"
     "    -c, --count       each tag with its number of occurrences (proportional credit)\n"
@@ -639,6 +640,9 @@ static int cmd_find(int argc, char **argv) {
     }
     if (!K.intervals && (!use_stpd || K.mode != NONE)) die("--no-intervals needs --stpd and no tags (--format mems or --no-tags)");
     if (K.locate && !use_stpd) die("--locate needs --stpd");
+    // locating lists the occurrences by phi^-1 from the first one and counts them, so the intervals (a
+    // backward search over every MEM) are needed only for tags
+    if (K.locate && K.mode == NONE) K.intervals = false;
     two_level L2;
     if (twolevel) {
         L2.load(prefix + ".lvl");
