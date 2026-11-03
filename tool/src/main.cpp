@@ -403,6 +403,15 @@ static const char *FIND_USAGE =
     "    -L n              MEMs of at least n bases (with -X or --top: the starting value; default 1)\n"
     "    -X, --adaptive    adaptive L: keep L equal to the longest MEM found so far\n"
     "    --top t           report only the t longest MEMs (L = 1 + the shortest of the t kept)\n"
+    "    --longest t       report the t longest MEMs with ties: every MEM at least as long as the t-th longest\n"
+    "                      (with -K: pseudo-MEMs longest first, until the next is shorter than L; exact if\n"
+    "                      L >= k; overrides -X)\n"
+    "    --kebab-top t     with -K: --longest t over the t longest pseudo-MEMs only (KeBaB's heuristic)\n"
+    "    --kebab-batch t   with -K: --longest t over batches of pseudo-MEMs (2t, then 4t, 8t, ...) until t\n"
+    "                      MEMs are longer than the next pseudo-MEM; BML on the whole read if they run out\n"
+    "                      with fewer than t MEMs of length >= k and L < k (exact)\n"
+    "    --read-stats FILE with --longest and -K: per read, name, pseudo-MEMs, searched, batches, fallback\n"
+    "                      (0/1), backward steps, MEMs reported (TSV, in input order)\n"
     "    --fb              forward-backward search instead of BML\n"
     "    -D d              ignore MEMs with fewer than d distinct 3-mers\n"
     "    -U / --no-hpc     homopolymer-compress the reads (default: as the index was built)\n"
@@ -462,9 +471,12 @@ struct finder {
         else { snprintf(b, sizeof b, "%lu,%lu", tl.front(), tl.back()); out += b; }
     }
 
-    // the output of one read; returns its number of MEMs
-    u64 run(segment_search &Q, const string &name, const string &read, string &line) const {
+    bool read_stats = false;
+
+    // the output of one read; returns its number of MEMs (with read_stats, its statistics line in *sl)
+    u64 run(segment_search &Q, const string &name, const string &read, string &line, string *sl = nullptr) const {
         line.clear();
+        const search_counters before = Q.cnt;
         static thread_local string h;
         static thread_local std::vector<u64> pos;
         if (hpc) {
@@ -473,7 +485,7 @@ struct finder {
             pos.push_back(read.size());
         }
         u64 nm = 0;
-        char b[96];
+        char b[160];
         if (!mems_format) line = ">" + name + "\n";
         find_mems(Q, hpc ? h : read, opt, [&](const mem &M) {
             u64 first = hpc ? pos[M.a] : M.a, last = hpc ? pos[M.e] - 1 : M.e - 1;
@@ -490,6 +502,12 @@ struct finder {
             ++nm;
         });
         if (!mems_format) line += "\n";
+        if (sl) {
+            const search_counters &c = Q.cnt;
+            snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n", c.kb_pseudo - before.kb_pseudo, c.kb_searched - before.kb_searched,
+                     c.kb_batches - before.kb_batches, c.kb_fallbacks - before.kb_fallbacks, c.char_steps - before.char_steps, nm);
+            *sl = name + b;
+        }
         return nm;
     }
 };
@@ -544,7 +562,7 @@ struct read_parser {
 struct run_stats { u64 reads = 0, mems = 0, unclassified = 0; search_counters sc; };
 
 // threads take chunks of reads and write their outputs back in input order
-static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads) {
+static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr) {
     const size_t CHUNK = 256;
     std::mutex in_m, out_m, st_m;
     std::condition_variable out_cv;
@@ -552,7 +570,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
     bool eof = false;
     run_stats total;
     auto work = [&]() {
-        std::vector<string> names, seqs, lines;
+        std::vector<string> names, seqs, lines, slines;
         run_stats st;
         string name, seq;
         segment_search Q;
@@ -568,15 +586,16 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
                 }
                 my = next_in++;
             }
-            lines.resize(names.size());
+            lines.resize(names.size()); slines.resize(names.size());
             for (size_t i = 0; i < names.size(); ++i) {
-                u64 m = K.run(Q, names[i], seqs[i], lines[i]);
+                u64 m = K.run(Q, names[i], seqs[i], lines[i], sout ? &slines[i] : nullptr);
                 ++st.reads; st.mems += m; st.unclassified += m == 0;
             }
             {
                 std::unique_lock<std::mutex> lk(out_m);
                 out_cv.wait(lk, [&] { return next_out == my; });
                 for (size_t i = 0; i < names.size(); ++i) fputs(lines[i].c_str(), out);
+                if (sout) for (size_t i = 0; i < names.size(); ++i) fputs(slines[i].c_str(), sout);
                 ++next_out;
             }
             out_cv.notify_all();
@@ -597,10 +616,12 @@ static int cmd_find(int argc, char **argv) {
     string tagfile, kbffile, format = "listing";
     int nthreads = 1, ft = 0, hpc = -1, csa = 0;
     uint32_t kebab_k = 0;
-    bool twolevel = false, stats = false, use_stpd = false, poracle = false;
+    bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false;
+    string readstats;
     int mode = -1;
     static option longopts[] = {
-        {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
+        {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"longest", 1, 0, 18}, {"kebab-top", 1, 0, 19}, {"kebab-batch", 1, 0, 20},
+        {"read-stats", 1, 0, 21}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
         {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
@@ -611,6 +632,10 @@ static int cmd_find(int argc, char **argv) {
             case 'L': K.opt.L = std::stoull(optarg); break;
             case 'X': K.opt.adaptive = true; break;
             case 1: K.opt.top = std::stoull(optarg); break;
+            case 18: K.opt.longest = std::stoull(optarg); K.opt.kebab_rule = mem_options::STREAM; break;
+            case 19: K.opt.longest = std::stoull(optarg); K.opt.kebab_rule = mem_options::TOP; kebab_rule_set = true; break;
+            case 20: K.opt.longest = std::stoull(optarg); K.opt.kebab_rule = mem_options::BATCH; kebab_rule_set = true; break;
+            case 21: readstats = optarg; break;
             case 2: K.opt.fb = true; break;
             case 'D': K.opt.min3 = std::stoi(optarg); break;
             case 'U': hpc = 1; break;
@@ -647,6 +672,10 @@ static int cmd_find(int argc, char **argv) {
     K.hpc = hpc < 0 ? read_info_hpc(prefix) : hpc == 1;
     if (hpc == 1 && !read_info_hpc(prefix) && file_exists(prefix + ".info")) fprintf(stderr, "warning: -U, but the index was built without homopolymer compression\n");
     if (K.opt.adaptive && K.opt.top) die("-X and --top are exclusive");
+    if (K.opt.longest && K.opt.top) die("--top and --longest/--kebab-top/--kebab-batch are exclusive");
+    if (K.opt.longest) K.opt.adaptive = false;
+    if (kebab_rule_set && !K.opt.pseudo) die("--kebab-top and --kebab-batch need -K");
+    if (!readstats.empty() && !(K.opt.longest && K.opt.pseudo)) die("--read-stats needs --longest, --kebab-top or --kebab-batch, with -K");
 
     double t0 = now();
     rlbwt B; load_rlbwt(B, prefix + ".rlbwt");
@@ -665,7 +694,7 @@ static int cmd_find(int argc, char **argv) {
     if (kebab_k) {
         if (kbffile.empty()) kbffile = prefix + ".k" + std::to_string(kebab_k) + ".kbf";
         if (!KF.load(kbffile)) die("cannot load " + kbffile + " (katka index --kebab " + std::to_string(kebab_k) + ")");
-        if (KF.k > K.opt.L && !K.opt.adaptive && !K.opt.top && K.opt.pseudo) die("-K: the filter's k exceeds L");
+        if (KF.k > K.opt.L && !K.opt.adaptive && !K.opt.top && !K.opt.longest && K.opt.pseudo) die("-K: the filter's k exceeds L");
         K.opt.filter = &KF;
     }
     digest_map DM;
@@ -718,7 +747,10 @@ static int cmd_find(int argc, char **argv) {
     read_parser P(readfile);
     FILE *out = outfile == "-" ? stdout : open_or_die(outfile, "w");
     double t1 = now();
-    run_stats st = find_all(K, P, out, nthreads);
+    FILE *sout = nullptr;
+    if (!readstats.empty()) { sout = open_or_die(readstats, "w"); fputs("read\tpseudo_mems\tsearched\tbatches\tfallback\tbackward_steps\tmems\n", sout); }
+    run_stats st = find_all(K, P, out, nthreads, sout);
+    if (sout) fclose(sout);
     double wall = now() - t1;
     if (out != stdout) fclose(out);
     fprintf(stderr, "reads=%lu MEMs=%lu without MEMs=%lu | threads=%d wall %.2f s, %.1f us/read\n", st.reads, st.mems, st.unclassified, nthreads, wall,
@@ -726,6 +758,11 @@ static int cmd_find(int argc, char **argv) {
     if (stats)
         fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
                 st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
+    if (stats && K.opt.longest && K.opt.pseudo)
+        fprintf(stderr, "kebab (%s, t = %lu): pseudo-MEMs %lu (%.2f per read), searched %lu (%.2f per read), batches %lu, reads with a second batch %lu, whole-read fallbacks %lu, backward steps %.1f per read\n",
+                K.opt.kebab_rule == mem_options::TOP ? "top" : K.opt.kebab_rule == mem_options::BATCH ? "batch" : "streaming", K.opt.longest,
+                st.sc.kb_pseudo, (double)st.sc.kb_pseudo / std::max<u64>(1, st.reads), st.sc.kb_searched, (double)st.sc.kb_searched / std::max<u64>(1, st.reads),
+                st.sc.kb_batches, st.sc.kb_multibatch, st.sc.kb_fallbacks, (double)st.sc.char_steps / std::max<u64>(1, st.reads));
     if (stats && poracle) {
         const std::atomic<u64> *t = parse_text::totals();
         fprintf(stderr, "parse oracle seeks: same phrase %lu, next/previous phrase %lu, predecessor queries %lu\n", t[0].load(), t[1].load(), t[2].load());

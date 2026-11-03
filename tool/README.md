@@ -81,6 +81,10 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `-L n` | MEMs of at least n bases; with `-X` or `--top`, this is the starting value (default 1) |
 | `-X`, `--adaptive` | BML with adaptive L: keep L equal to the length of the longest MEM found so far. All the longest MEMs, ties included, are reported, plus the shorter ones found before L grew (as KATKA does) |
 | `--top t` | report only the t longest MEMs: keep the t longest found so far and set L to one more than the shortest of them |
+| `--longest t` | the t longest MEMs with ties: every MEM at least as long as the t-th longest (L is raised to the t-th longest found so far). With `-K`, the streaming rule: pseudo-MEMs longest first, until the next is shorter than L (exact if L ≥ k). Overrides `-X` |
+| `--kebab-top t` | with `-K`: `--longest t` over the t longest pseudo-MEMs only (KeBaB's heuristic; no guarantee) |
+| `--kebab-batch t` | with `-K`: `--longest t` over batches of pseudo-MEMs (the 2t longest, then 4t, 8t, ...), stopping once t MEMs passing `-D` are longer than the next pseudo-MEM; if they run out with fewer than t MEMs of length ≥ k and L < k, BML on the whole read (exact) |
+| `--read-stats FILE` | with the three above: per read, pseudo-MEMs, those searched, batches, fallback, backward steps, MEMs (TSV) |
 | `--fb` | forward–backward search (all MEMs of at least L) instead of BML |
 | `-D d` | low-complexity filter: ignore MEMs with fewer than d distinct 3-mers |
 | `-U`, `--no-hpc` | homopolymer-compress the reads, or don't (default: as the index was built). Spans are reported in the original read |

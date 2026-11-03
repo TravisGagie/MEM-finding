@@ -266,6 +266,53 @@ A parse-level jump replaces up to |P_i| − k character-level jumps, each of whi
 
 Open points: an id-level pruning rule equivalent to the character-level one (the same proof should go through with Z's LCP in phrases); and how often Z[u − 1] ≠ a on human haplotypes, i.e. whether parse-level jumps are rare enough. `--stats` on the two-level index already counts parse steps, which bounds this.
 
+### KeBaB stopping rules for the journal revision (2026-11-03)
+
+Three rules, all with the t longest MEMs *with ties* (`--longest t`: every MEM at least as long as the t-th longest; L is raised to the t-th longest found so far, not one more, so ties are found). Pseudo-MEMs are sorted longest first. Inside them only matches of length ≥ k are reported: a shorter match that ends at a pseudo-MEM's boundary need not be a MEM. MEMs dropped by `-D` are not kept and do not count anywhere.
+- **Streaming** (`-K k --longest t`): search until the next pseudo-MEM is shorter than L. Exact when L ≥ k. `-K --top t` also streams, but `--top` keeps exactly t (the first found among ties), so it is not tie-complete.
+- **Heuristic** (`-K k --kebab-top t`): only the t longest pseudo-MEMs, then stop. Pseudo-MEMs are at least k long by construction, so a read whose longest MEM is shorter than k gets nothing.
+- **Batch** (`-K k --kebab-batch t`): search the 2t longest pseudo-MEMs, then batches of 4t, 8t, .... After each batch, λ is the length of the next pseudo-MEM (k − 1 if none is left). Stop once at least t MEMs are strictly longer than λ. If the pseudo-MEMs run out first (fewer than t MEMs of length ≥ k), run BML on the whole read, but only if L < k: with L ≥ k, every MEM the fallback could find lies in a pseudo-MEM already searched.
+
+A pseudo-MEM shorter than the current L is skipped (no backward steps) and not counted as searched. So with the zymo preset the batch rule does essentially the streaming rule's work and differs only in when it checks.
+
+**Tests** (`katka-test mems`, brute force on the self-test data; t = 1, 3, 5; `-D` 0 and 14; plain and homopolymer-compressed):
+- `--longest` without a filter at L = 1 is exact.
+- KeBaB streaming at L = k is exact.
+- KeBaB batch at L = k and at L = 1 is exact. The L = 1 case covers 447 whole-read fallbacks and 326 second batches.
+- The heuristic reports only true MEMs, but differs from the t longest in 613 of 4,080 runs (synthetic reads, many shorter than k).
+- On the self-test reads, `--kebab-batch 3 -L 1` gives byte-identical output to the exact reference `--longest 3 -L 1`.
+
+`scripts/compare_longest_t.py run.txt ref.txt reads.fq t [k]` compares two listings read by read, using the t longest with ties at compressed lengths. It reports the reads whose sorted lengths differ (a longest MEM missed), the reads whose spans differ, and the reads whose reference longest MEM is shorter than k.
+
+**For the desktop (Zymo, `~/zymo/hpc/zy`, `~/zymo/all.fq`; one run at a time, 12 threads, in the 11 GB cgroup as in `results/zymo/run_scripts/runs2.sh`).** After `git pull origin tool && make -C tool` and `tool/selftest.sh`, for t in 1, 3 and 5:
+
+```
+K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+$K find $Z -L 20 -K 20 --kebab-top $t   --read-stats a.$t.tsv $H $R a.$t      # (a) heuristic
+$K find $Z -L 20 -K 20 --kebab-batch $t --read-stats b.$t.tsv $H $R b.$t      # (b) batch rule
+$K find $Z -L 1  -K 20 --kebab-batch $t --read-stats b1.$t.tsv $H $R b1.$t    # (b') batch rule with L = 1 (the fallback can run)
+$K find $Z -L 20 -K 20 --longest $t     --read-stats c.$t.tsv $H $R c.$t      # (c) streaming rule
+$K find $Z -L 1        --longest $t                         $H $R d.$t      # (d) exact reference, no filter
+```
+
+These answer the desktop's points:
+- (d) uses `--longest t` for every t. For t = 1 its longest MEMs are those of `-X -L 1`, and for t > 1 it is tie-complete, unlike `--top`.
+- (c) runs for every t.
+- `-D 14` is part of every rule's guarantee.
+- The pseudo-MEMs are all at least k long.
+
+Report for each run:
+- time and peak memory;
+- accuracy with `maxmem_roc.py`, which votes with the longest MEMs only, for every t (a t-longest scorer would be an analysis script under `results/`);
+- the `kebab (...)` line of `--stats`: pseudo-MEMs and searched per read, batches, reads with a second batch, fallbacks, backward steps per read.
+
+For item 3, run:
+- `python3 tool/scripts/compare_longest_t.py a.$t c.$t $R $t`: the heuristic against the exact rule at the same L = 20. This is the number that says how often the heuristic misses.
+- The same comparison for `b.$t` against `c.$t`, which should give 0.
+- `a.$t`, `b1.$t` and `c.$t` against `d.$t`. Against (d), runs at L = 20 also differ on reads whose t longest include MEMs shorter than 20; the script counts those reads separately.
+
+Put the logs, the `--stats` lines and the script outputs in `tool/results/zymo_kebab/`, then commit and push. Compress the listings with zstd and don't commit them.
+
 ### sdsl-lite
 
 The tool has no sdsl dependency, only zlib and the bundled libsais (the auto-mode permission check refused to build sdsl at first). Its own versions replace sdsl's `sd_vector` (Elias–Fano), `wt_huff` (a wavelet matrix), `rank_support_v5` and `rmq_succinct_sct` (`src/rmq.hpp`, a min-tree in balanced parentheses). They are checked against brute force in `katka-test unit`.

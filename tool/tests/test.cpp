@@ -288,7 +288,7 @@ static int mems_test(int argc, char **argv) {
         if (hpc) p.erase(std::unique(p.begin(), p.end()), p.end());
     }
 
-    u64 nmems = 0, nchecked = 0;
+    u64 nmems = 0, nchecked = 0, nlongest = 0, ntop = 0, ntop_differ = 0, kb_multi = 0, kb_fall = 0;
     for (size_t pi = 0; pi < pats.size(); ++pi) {
         const string &P = pats[pi];
         if (digest) {
@@ -408,6 +408,51 @@ static int mems_test(int argc, char **argv) {
                 for (size_t c = 1; c < cfgs.size(); ++c) CHECK(same(run_find(base, cfgs[c], P, q), top), "top: %s differs", cfgs[c].name.c_str());
             }
         }
+        // the t longest with ties (--longest), and the KeBaB rules: streaming and batch exact, top (KeBaB's
+        // heuristic) only true MEMs
+        for (int min3 : {0, 14})
+            for (u64 t : {1ul, 3ul, 5ul}) {
+                auto want_longest = [&](u64 L) {
+                    vector<std::pair<u64, u64>> ok;
+                    for (auto [a, e] : all) if (e - a >= L && (!min3 || distinct_3mers(P.data() + a, e - a) >= min3)) ok.push_back({a, e});
+                    vector<u64> ls;
+                    for (auto [a, e] : ok) ls.push_back(e - a);
+                    std::sort(ls.rbegin(), ls.rend());
+                    u64 lt = ls.size() >= t ? ls[t - 1] : 0;
+                    std::set<std::pair<u64, u64>> w;
+                    for (auto [a, e] : ok) if (e - a >= lt) w.insert({a, e});
+                    return w;
+                };
+                auto run_check = [&](mem_options q, const std::set<std::pair<u64, u64>> &w, const char *what) {
+                    vector<mem> got = run_find(base, cfgs[0], P, q);
+                    CHECK(as_set(got) == w && got.size() == w.size(), "%s t=%lu min3=%d L=%lu pattern %zu: %zu MEMs, brute %zu", what, t, min3, q.L, pi, got.size(), w.size());
+                    check_intervals(got, what);
+                    for (size_t c = 1; c < cfgs.size(); ++c) CHECK(same(run_find(base, cfgs[c], P, q), got), "%s: %s differs", what, cfgs[c].name.c_str());
+                    ++nlongest;
+                    return got;
+                };
+                mem_options q; q.L = 1; q.longest = t; q.min3 = min3;
+                run_check(q, want_longest(1), "longest");
+                if (!kk) continue;
+                q.filter = &KF; q.pseudo = true;
+                for (u64 L : {(u64)kk, 1ul}) {
+                    q.L = L;
+                    const auto w = want_longest(L);
+                    if (L >= kk) { q.kebab_rule = mem_options::STREAM; run_check(q, w, "KeBaB streaming"); }
+                    q.kebab_rule = mem_options::BATCH;
+                    segment_search Qs;                       // (for the batch and fallback counts)
+                    {
+                        stepper S2 = base; Qs.S = &S2;
+                        find_mems(Qs, P, q, [](const mem &) {});
+                        kb_multi += Qs.cnt.kb_multibatch; kb_fall += Qs.cnt.kb_fallbacks;
+                    }
+                    run_check(q, w, "KeBaB batch");
+                    q.kebab_rule = mem_options::TOP;
+                    vector<mem> got = run_find(base, cfgs[0], P, q);
+                    for (auto &M : got) CHECK(allset.count({M.a, M.e}), "KeBaB top: [%lu,%lu) is not a MEM", M.a, M.e);
+                    ++ntop; ntop_differ += as_set(got) != w;
+                }
+            }
         // tags of the MEMs of length >= 12
         if (!tagfile.empty()) {
             mem_options o; o.L = 12;
@@ -489,6 +534,8 @@ static int mems_test(int argc, char **argv) {
         }
         printf("STPD (text and parse oracle): %lu longest-suffix searches checked (start and lex-smallest occurrence), %lu occurrences located by phi^-1 checked against SA\n", nq, nloc);
     }
+    printf("longest t (t = 1, 3, 5; -D 0 and 14): %lu exact runs checked (no filter, KeBaB streaming, KeBaB batch: %lu second batches, %lu whole-read fallbacks); KeBaB top: %lu of %lu runs differ from the t longest\n",
+           nlongest, kb_multi, kb_fall, ntop_differ, ntop);
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
 }

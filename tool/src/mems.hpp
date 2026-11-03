@@ -23,6 +23,19 @@
 //                (b) inline: the window check above, testing the window's k-mers lazily from its right end
 //                and stopping at the first that fails (O(k + 1/p) hash steps per failed window, for a
 //                fraction p of failing k-mers), before any backward step
+//   longest t    the t longest MEMs with ties: every MEM at least as long as the t-th longest (keeping, once
+//                t are found, L = the length of the t-th longest so far, so ties are found too)
+//   KeBaB + longest t, three rules for which pseudo-MEMs (sorted longest first) to search with BML:
+//                (in pseudo-MEMs, L is at least k: a shorter match there need not be a MEM)
+//                streaming: until the next one is shorter than L (exact if L >= k: every MEM of length >= k
+//                  lies in a pseudo-MEM, and is no longer than it);
+//                top (KeBaB's heuristic, --kebab-top): only the t longest pseudo-MEMs (no guarantee);
+//                batch (--kebab-batch): the 2t longest, then batches of doubling size (4t, 8t, ...); after
+//                  each, with lambda the length of the next pseudo-MEM (k - 1 if none is left), stop if at
+//                  least t MEMs found are longer than lambda (exact: the MEMs not yet found are at most
+//                  lambda long; strictly longer, so ties are complete); if the pseudo-MEMs run out with
+//                  fewer than t MEMs of length >= k, BML on the whole read (only if L < k: with L >= k,
+//                  every MEM it could find lies in a pseudo-MEM already searched)
 //   min3         ignore MEMs with fewer than min3 distinct 3-mers (they do not raise L either)
 // Forward-backward search (fb_segment), as in KATKA's -W: from x, search forward to the largest e such
 // that R[x..e) occurs (a MEM, as x is left-maximal by construction); report it if e - x >= L; then the
@@ -136,6 +149,8 @@ struct mem_options {
     u64 L = 1;
     bool adaptive = false;          // -X
     u64 top = 0;                    // keep the t longest (0: off)
+    u64 longest = 0;                // the t longest with ties (0: off)
+    enum { STREAM, TOP, BATCH } kebab_rule = STREAM;   // with pseudo and longest
     int min3 = 0;                   // -D
     const kmer_filter *filter = nullptr;
     bool pseudo = false;            // KeBaB pseudo-MEMs (-K)
@@ -186,6 +201,7 @@ inline void segments(const std::string &read, const kmer_filter *F, std::vector<
 struct read_state {
     u64 L;
     std::vector<mem> kept;          // top t: a min-heap by length (then by position, for determinism)
+    std::vector<mem> best;          // longest t: every MEM found at least as long as the t-th longest so far
     static bool longer(const mem &x, const mem &y) { return x.e - x.a != y.e - y.a ? x.e - x.a > y.e - y.a : x.a < y.a; }
 };
 
@@ -194,6 +210,19 @@ template <class F>
 inline void found(const char *R, u64 r0, u64 a, u64 e, const interval &J, const mem_options &opt, read_state &st, F report, u64 occ = 0) {
     if (opt.min3 && distinct_3mers(R + a, e - a) < opt.min3) return;
     mem M{r0 + a, r0 + e, J, occ};
+    if (opt.longest) {
+        st.best.push_back(M);
+        if (st.best.size() >= opt.longest) {
+            static thread_local std::vector<u64> lens;
+            lens.clear();
+            for (auto &x : st.best) lens.push_back(x.e - x.a);
+            std::nth_element(lens.begin(), lens.begin() + (opt.longest - 1), lens.end(), std::greater<u64>());
+            const u64 lt = lens[opt.longest - 1];       // the t-th longest so far
+            st.best.erase(std::remove_if(st.best.begin(), st.best.end(), [&](const mem &x) { return x.e - x.a < lt; }), st.best.end());
+            st.L = std::max(st.L, lt);
+        }
+        return;
+    }
     if (opt.top) {
         if (st.kept.size() < opt.top) { st.kept.push_back(M); std::push_heap(st.kept.begin(), st.kept.end(), read_state::longer); }
         else if (e - a > st.kept.front().e - st.kept.front().a) {
@@ -331,20 +360,65 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
         return;
     }
     segments(read, opt.pseudo ? opt.filter : nullptr, segs, &Q.cnt.kmer_tests);
-    const bool longest_first = (opt.adaptive || opt.top) && opt.pseudo;
+    const bool longest_first = (opt.adaptive || opt.top || opt.longest) && opt.pseudo;
     if (longest_first)
         std::stable_sort(segs.begin(), segs.end(), [](const std::pair<u64, u64> &p, const std::pair<u64, u64> &q) { return p.second > q.second; });
     read_state st;
     st.L = opt.L;
-    for (auto [r0, n] : segs) {
-        if (n < st.L) { if (longest_first) break; continue; }
+    auto search = [&](u64 r0, u64 n) {
         Q.prepare(read.data() + r0, n);
         if (opt.fb) fb_segment(Q, r0, opt, st, report);
         else bml_segment(Q, r0, opt, st, report);
+    };
+    if (opt.longest && opt.pseudo) {
+        const u64 t = opt.longest, ns = segs.size(), k = opt.filter->k;
+        Q.cnt.kb_pseudo += ns;
+        // inside pseudo-MEMs, only matches of length >= k are sure to be MEMs (one that ends at a pseudo-MEM's
+        // boundary could extend past it if shorter than k): shorter MEMs come only from the whole-read fallback
+        st.L = std::max<u64>(st.L, k);
+        auto search_pseudo = [&](u64 i) {                // (one shorter than L holds no MEM of length >= L)
+            if (segs[i].second < st.L) return;
+            ++Q.cnt.kb_searched;
+            search(segs[i].first, segs[i].second);
+        };
+        if (opt.kebab_rule == mem_options::STREAM) {
+            for (u64 i = 0; i < ns && segs[i].second >= st.L; ++i) search_pseudo(i);
+        } else if (opt.kebab_rule == mem_options::TOP) {
+            for (u64 i = 0; i < ns && i < t; ++i) search_pseudo(i);
+        } else {
+            u64 i = 0, size = 2 * t, batches = 0;
+            for (;;) {
+                const u64 end = std::min(ns, i + size);
+                for (; i < end; ++i) search_pseudo(i);
+                ++batches;
+                const u64 lambda = i < ns ? segs[i].second : k - 1;
+                u64 longer = 0;
+                for (auto &M : st.best) longer += M.e - M.a > lambda;
+                if (longer >= t) break;
+                if (i >= ns) {                           // the pseudo-MEMs ran out (and fewer than t are >= k)
+                    if (opt.L < k) {
+                        ++Q.cnt.kb_fallbacks;
+                        st = read_state(); st.L = opt.L;
+                        segments(read, nullptr, segs);
+                        for (auto [r0, n] : segs) if (n >= st.L) search(r0, n);
+                    }
+                    break;
+                }
+                size *= 2;
+            }
+            Q.cnt.kb_batches += batches;
+            Q.cnt.kb_multibatch += batches > 1;
+        }
+    } else {
+        for (auto [r0, n] : segs) {
+            if (n < st.L) { if (longest_first) break; continue; }
+            search(r0, n);
+        }
     }
-    if (opt.top) {
-        std::sort(st.kept.begin(), st.kept.end(), [](const mem &x, const mem &y) { return x.a < y.a; });
-        for (auto &M : st.kept) report(M);
+    if (opt.top || opt.longest) {
+        std::vector<mem> &v = opt.top ? st.kept : st.best;
+        std::sort(v.begin(), v.end(), [](const mem &x, const mem &y) { return x.a < y.a; });
+        for (auto &M : v) report(M);
     }
 }
 

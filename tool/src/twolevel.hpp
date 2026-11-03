@@ -269,9 +269,14 @@ inline void parse_pattern(const two_level &L, const char *Pc, uint64_t len, patt
 struct search_counters {
     u64 searches = 0, char_steps = 0, parse_steps = 0, block_steps = 0, kmer_tests = 0, kmer_restarts = 0;
     u64 stpd_jumps = 0, stpd_compares = 0;     // STPD: binary searches over the sample, and text comparisons
+    // KeBaB with --longest (mems.hpp): pseudo-MEMs in the reads, pseudo-MEMs searched (BML run on them),
+    // batches, reads that needed a second batch, reads that ran the whole-read fallback
+    u64 kb_pseudo = 0, kb_searched = 0, kb_batches = 0, kb_multibatch = 0, kb_fallbacks = 0;
     void add(const search_counters &o) {
         searches += o.searches; char_steps += o.char_steps; parse_steps += o.parse_steps; block_steps += o.block_steps;
         kmer_tests += o.kmer_tests; kmer_restarts += o.kmer_restarts; stpd_jumps += o.stpd_jumps; stpd_compares += o.stpd_compares;
+        kb_pseudo += o.kb_pseudo; kb_searched += o.kb_searched; kb_batches += o.kb_batches; kb_multibatch += o.kb_multibatch;
+        kb_fallbacks += o.kb_fallbacks;
     }
 };
 
