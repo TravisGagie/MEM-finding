@@ -157,17 +157,20 @@ struct reader {
     }
 };
 
-// the MEM spans of a listing file: name -> [a, b] (inclusive)
-static std::map<string, vector<std::pair<u64, u64>>> read_listing(const string &f) {
-    std::map<string, vector<std::pair<u64, u64>>> m;
+// the MEM spans of a listing file, record by record in file order (= the order of the reads): (name,
+// [a, b] inclusive).  Records are paired with reads by position, not by name, since names can repeat
+// (e.g. reads of several regions or mates in one file); main checks that the names agree.
+static vector<std::pair<string, vector<std::pair<u64, u64>>>> read_listing(const string &f) {
+    vector<std::pair<string, vector<std::pair<u64, u64>>>> m;
     std::ifstream in(f);
     if (!in) die("cannot open " + f);
-    string line, name;
+    string line;
     while (std::getline(in, line)) {
-        if (!line.empty() && line[0] == '>') { name = line.substr(1); m[name]; continue; }
+        if (!line.empty() && line[0] == '>') { m.push_back({line.substr(1), {}}); continue; }
+        if (m.empty()) continue;
         for (size_t p = line.find('['); p != string::npos; p = line.find('[', p + 1)) {
             u64 a, b;
-            if (sscanf(line.c_str() + p, "[%lu,%lu]", &a, &b) == 2) m[name].push_back({a, b});
+            if (sscanf(line.c_str() + p, "[%lu,%lu]", &a, &b) == 2) m.back().second.push_back({a, b});
         }
     }
     return m;
@@ -205,6 +208,9 @@ int main(int argc, char **argv) {
     vector<string> names, seqs;
     { reader R(readfile); string nm, sq; while (names.size() < maxreads && R.next(nm, sq)) { names.push_back(nm); seqs.push_back(sq); } }
     auto listing = read_listing(listfile);
+    if (listing.size() < names.size()) die("the listing has " + std::to_string(listing.size()) + " records for " + std::to_string(names.size()) + " reads");
+    for (u64 r = 0; r < names.size(); ++r)
+        if (listing[r].first != names[r]) die("listing record " + std::to_string(r) + " is " + listing[r].first + ", read " + std::to_string(r) + " is " + names[r] + ": the listing must be of these reads, in order");
     // BML with threshold L on the reads, recording each search's stretch (needed for d)
     rlbwt B;
     { FILE *f = open_or_die(prefix + ".rlbwt", "rb"); rmagic(f, "KTRLBW01", prefix + ".rlbwt"); B.load(f); fclose(f); }
@@ -246,8 +252,8 @@ int main(int argc, char **argv) {
             }
         }
         nmems_bml += found.size();
-        auto it = listing.find(names[r]);
-        if (it != listing.end()) { nmems_list += it->second.size(); if (it->second != found) ++mem_mismatch; }
+        nmems_list += listing[r].second.size();
+        if (listing[r].second != found) ++mem_mismatch;
     }
     B = rlbwt(); X = rlcsa();                       // the index is not needed any more: free it for the k-mer tables
     printf("text: %lu characters; reads: %zu; BML with L = %lu: %lu MEMs, %lu backward steps (%.1f s)\n", n, seqs.size(), L, nmems_bml, total_steps, now() - t0);
@@ -294,10 +300,8 @@ int main(int argc, char **argv) {
             vector<u64> lenb(12, 0), stepb(12, 0), cntb(12, 0);
             vector<char> start;
             for (u64 r = 0; r < seqs.size(); ++r) {
-                auto it = listing.find(names[r]);
-                if (it == listing.end()) continue;
                 block_starts(K, seqs[r].data(), seqs[r].size(), start);
-                for (auto [a, b] : it->second) {
+                for (auto [a, b] : listing[r].second) {
                     u64 e = b + 1;
                     if (e > seqs[r].size()) continue;
                     cross_cost c = crossing(start, a, e, k);

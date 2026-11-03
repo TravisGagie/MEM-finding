@@ -130,6 +130,8 @@ It reports, for each k:
 - (c) the steps to cross the listing's MEMs, against their lengths;
 - (d) BML's backward steps (L = 30, run by the tool itself on the same reads, over PREFIX.rlbwt or PREFIX.csa), split into failed windows, ends of searches, and inside long crossings. The split accounts for every step BML takes.
 
+**Fixed 2026-11-03:** listing records are now paired with reads by position (with a check that the names agree), not by name. On SILVA, names repeat across regions and mates, and the desktop had to make them unique (`results/silva_blocks/README.md`).
+
 **Tested here** (in `selftest.sh`): the hash table against direct counts, and the block count and distinct k-mers against a Python brute force. The program checks that BML's MEMs equal the listing's.
 
 On the synthetic reads (40-bp MEMs, k = 8), crossings would cost 0.68 steps per character and BML 1.14 times fewer steps, with 54% of its steps in failed windows. With k = 12 and 16, these short MEMs contain too few block starts to save anything, although blocks in the text are long. On the chromosome-like queries (k = 8), BML would take 2.0 times fewer steps.
