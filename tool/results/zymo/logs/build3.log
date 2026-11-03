@@ -1,0 +1,12 @@
+== convert 10:23:11
+n = 39277433153, runs = 448723822, start width 8 bytes, tags used = 7, wrote 5384685896 bytes
+convert: 16.71 s wall, peak 4703584 KB
+convert exit 0
+-rw-rw-r-- 1 travis travis 5384685896 Nov  2 10:23 zy.sp.tagruns.conv
+/dev/nvme0n1p2  228G  208G  8.4G  97% /
+== check 10:23:27
+BWT n = 39277433153, R = 338097187, datasets K = 7; file n = 39277433153, runs = 448723822
+checked 35000000 distinct rows (31546395 runs) from 7 datasets: 0 mismatches
+check: 119.45 s wall, peak 7006820 KB
+check exit 0
+== done 10:25:27

@@ -1,0 +1,129 @@
+== L30 credit_schemes 22:21:04
+reads 581802, unclassified 2212 (0.38%); 89640946 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.433%
+  even     99.538%
+  one      99.438%
+  cliffs   99.576%
+  range    99.538%
+== L30 score_spu2 22:27:35
+reads 581802 accuracy 99.433% unclassified 2212 (0.380%)
+  Bacillus_subtilis         98199 reads  99.616%
+  Enterococcus_faecalis    100515 reads  99.196%
+  Escherichia_coli          72886 reads  99.634%
+  Listeria_monocytogenes   104783 reads  99.571%
+  Pseudomonas_aeruginosa    49489 reads  99.572%
+  Salmonella_enterica       52854 reads  99.635%
+  Staphylococcus_aureus    103076 reads  99.035%
+   Staphylococcus_aureus    -> Enterococcus_faecalis    587
+   Enterococcus_faecalis    -> none                     490
+   Listeria_monocytogenes   -> none                     425
+   Staphylococcus_aureus    -> none                     377
+   Bacillus_subtilis        -> none                     357
+   Enterococcus_faecalis    -> Listeria_monocytogenes   304
+   Pseudomonas_aeruginosa   -> none                     200
+   Escherichia_coli         -> none                     197
+   Salmonella_enterica      -> none                     166
+   Escherichia_coli         -> Salmonella_enterica      59
+   Salmonella_enterica      -> Escherichia_coli         17
+   Staphylococcus_aureus    -> Escherichia_coli         11
+   Staphylococcus_aureus    -> Salmonella_enterica      9
+   Staphylococcus_aureus    -> Bacillus_subtilis        7
+   Listeria_monocytogenes   -> Staphylococcus_aureus    7
+   Salmonella_enterica      -> Pseudomonas_aeruginosa   6
+   Bacillus_subtilis        -> Escherichia_coli         6
+   Pseudomonas_aeruginosa   -> Escherichia_coli         6
+   Bacillus_subtilis        -> Staphylococcus_aureus    5
+   Bacillus_subtilis        -> Salmonella_enterica      5
+   Enterococcus_faecalis    -> Escherichia_coli         5
+   Listeria_monocytogenes   -> Bacillus_subtilis        4
+   Pseudomonas_aeruginosa   -> Salmonella_enterica      4
+   Listeria_monocytogenes   -> Escherichia_coli         4
+   Staphylococcus_aureus    -> Listeria_monocytogenes   3
+   Escherichia_coli         -> Pseudomonas_aeruginosa   3
+   Listeria_monocytogenes   -> tie                      3
+   Enterococcus_faecalis    -> Bacillus_subtilis        3
+   Listeria_monocytogenes   -> Enterococcus_faecalis    3
+   Escherichia_coli         -> Bacillus_subtilis        3
+   Enterococcus_faecalis    -> Salmonella_enterica      2
+   Escherichia_coli         -> Listeria_monocytogenes   2
+   Bacillus_subtilis        -> Enterococcus_faecalis    2
+   Enterococcus_faecalis    -> Staphylococcus_aureus    2
+   Escherichia_coli         -> Staphylococcus_aureus    2
+   Salmonella_enterica      -> Bacillus_subtilis        2
+   Listeria_monocytogenes   -> Salmonella_enterica      2
+   Salmonella_enterica      -> Listeria_monocytogenes   1
+   Escherichia_coli         -> Enterococcus_faecalis    1
+   Pseudomonas_aeruginosa   -> tie                      1
+   Enterococcus_faecalis    -> Pseudomonas_aeruginosa   1
+   Enterococcus_faecalis    -> tie                      1
+   Salmonella_enterica      -> Enterococcus_faecalis    1
+   Bacillus_subtilis        -> Pseudomonas_aeruginosa   1
+   Staphylococcus_aureus    -> Pseudomonas_aeruginosa   1
+   Pseudomonas_aeruginosa   -> Listeria_monocytogenes   1
+   Bacillus_subtilis        -> Listeria_monocytogenes   1
+   Listeria_monocytogenes   -> Pseudomonas_aeruginosa   1
+== X credit_schemes 22:29:59
+reads 581802, unclassified 0 (0.00%); 814201 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.565%
+  even     99.279%
+  one      99.542%
+  cliffs   99.279%
+  range    99.280%
+== X score_spu2 22:30:08
+reads 581802 accuracy 99.565% unclassified 0 (0.000%)
+  Bacillus_subtilis         98199 reads  99.734%
+  Enterococcus_faecalis    100515 reads  99.254%
+  Escherichia_coli          72886 reads  99.684%
+  Listeria_monocytogenes   104783 reads  99.621%
+  Pseudomonas_aeruginosa    49489 reads  99.840%
+  Salmonella_enterica       52854 reads  99.516%
+  Staphylococcus_aureus    103076 reads  99.459%
+   Enterococcus_faecalis    -> Listeria_monocytogenes   450
+   Staphylococcus_aureus    -> Enterococcus_faecalis    307
+   Salmonella_enterica      -> Escherichia_coli         181
+   Escherichia_coli         -> Salmonella_enterica      151
+   Listeria_monocytogenes   -> Escherichia_coli         138
+   Staphylococcus_aureus    -> Escherichia_coli         124
+   Enterococcus_faecalis    -> Escherichia_coli         119
+   Bacillus_subtilis        -> Escherichia_coli         91
+   Listeria_monocytogenes   -> Staphylococcus_aureus    69
+   Listeria_monocytogenes   -> Salmonella_enterica      65
+   Enterococcus_faecalis    -> Salmonella_enterica      58
+   Staphylococcus_aureus    -> Salmonella_enterica      56
+   Listeria_monocytogenes   -> Enterococcus_faecalis    55
+   Salmonella_enterica      -> Pseudomonas_aeruginosa   52
+   Enterococcus_faecalis    -> Bacillus_subtilis        51
+   Listeria_monocytogenes   -> Bacillus_subtilis        50
+   Bacillus_subtilis        -> Salmonella_enterica      48
+   Enterococcus_faecalis    -> Staphylococcus_aureus    45
+   Escherichia_coli         -> Pseudomonas_aeruginosa   42
+   Staphylococcus_aureus    -> Bacillus_subtilis        36
+   Pseudomonas_aeruginosa   -> Salmonella_enterica      34
+   Bacillus_subtilis        -> Staphylococcus_aureus    32
+   Pseudomonas_aeruginosa   -> Escherichia_coli         32
+   Bacillus_subtilis        -> Pseudomonas_aeruginosa   30
+   Bacillus_subtilis        -> Enterococcus_faecalis    28
+   Bacillus_subtilis        -> Listeria_monocytogenes   22
+   Staphylococcus_aureus    -> Listeria_monocytogenes   19
+   Enterococcus_faecalis    -> Pseudomonas_aeruginosa   16
+   Staphylococcus_aureus    -> tie                      13
+   Escherichia_coli         -> Enterococcus_faecalis    12
+   Enterococcus_faecalis    -> tie                      11
+   Listeria_monocytogenes   -> tie                      10
+   Listeria_monocytogenes   -> Pseudomonas_aeruginosa   10
+   Bacillus_subtilis        -> tie                      10
+   Escherichia_coli         -> tie                      8
+   Salmonella_enterica      -> Staphylococcus_aureus    8
+   Escherichia_coli         -> Bacillus_subtilis        7
+   Escherichia_coli         -> Listeria_monocytogenes   6
+   Pseudomonas_aeruginosa   -> Bacillus_subtilis        6
+   Salmonella_enterica      -> Bacillus_subtilis        6
+   Salmonella_enterica      -> Enterococcus_faecalis    4
+   Escherichia_coli         -> Staphylococcus_aureus    4
+   Salmonella_enterica      -> Listeria_monocytogenes   3
+   Staphylococcus_aureus    -> Pseudomonas_aeruginosa   3
+   Pseudomonas_aeruginosa   -> tie                      3
+   Pseudomonas_aeruginosa   -> Enterococcus_faecalis    2
+   Salmonella_enterica      -> tie                      2
+   Pseudomonas_aeruginosa   -> Listeria_monocytogenes   2
+== done 22:30:11

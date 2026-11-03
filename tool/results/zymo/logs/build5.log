@@ -1,0 +1,10 @@
+== index-kebab 11:09:34
+RLBWT: n=39277433153 r=338097187, 1024.495 MB (140.7 s)
+KeBaB k=20: 39276642918 k-mers, ~209891454 distinct; 5.13 bits/k-mer, h=4, 0.135 GB, 2428 s
+index built in 2568.5 s
+index-kebab: 2568.56 s wall, peak 6062312 KB
+index-kebab exit 0
+-rw-rw-r-- 1 travis travis 134540632 Oct 11 11:05 katka/zy.k20.kbf
+-rw-rw-r-- 1 travis travis 134540632 Nov  2 11:52 zy.k20.kbf
+KeBaB filter: byte-identical to KATKA's
+== done 11:52:23

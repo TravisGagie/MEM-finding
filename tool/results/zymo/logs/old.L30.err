@@ -1,0 +1,2 @@
+reads=581802 MEMs=89640946 unclassified=2212 | threads=12 wall 562.19 s, 1035 reads/s, 11595.5 us/read
+old.L30: 571.41 s wall, 6384.43 s user, peak 7945856 KB

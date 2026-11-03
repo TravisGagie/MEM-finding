@@ -1,0 +1,3 @@
+KeBaB filter /home/travis/zymo/hpc/katka/zy.k20.kbf: k=20, h=4, 0.135 GB
+reads=581802 MEMs=814201 unclassified=0 | threads=12 wall 79.89 s, 7283 reads/s, 1647.7 us/read
+old.X: 88.95 s wall, 893.37 s user, peak 8044644 KB

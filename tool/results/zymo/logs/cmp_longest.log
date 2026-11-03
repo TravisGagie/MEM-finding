@@ -1,0 +1,8 @@
+== same longest MEMs, KeBaB vs no KeBaB 22:38:15
+581802 reads: 0 with different longest MEMs
+== maxmem_roc on the no-KeBaB run 22:39:28
+reads 581802 (581802 positive, 0 yeast); longest MEM, median: positive 223, yeast 0 bases
+    t   sens    spec   species acc (prop / even)
+   10  100.00    0.00    99.61    99.27
+   12  100.00    0.00    99.61    99.27
+== done 22:40:40

@@ -1,0 +1,4 @@
+preset zymo (noisy long reads, few taxa): -U -X -L 20 -K 20 -D 14 --count --csa
+index loaded in 9.0 s
+reads=581802 MEMs=814201 without MEMs=0 | threads=12 wall 81.09 s, 1672.5 us/read
+new.X: 90.45 s wall, 919.18 s user, peak 7343576 KB

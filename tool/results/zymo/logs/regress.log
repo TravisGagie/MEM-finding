@@ -1,0 +1,34 @@
+== old.L30 17:46:57
+reads=581802 MEMs=89640946 unclassified=2212 | threads=12 wall 562.19 s, 1035 reads/s, 11595.5 us/read
+old.L30: 571.41 s wall, 6384.43 s user, peak 7945856 KB
+old.L30 exit 0
+== new.L30 17:56:28
+index loaded in 8.6 s
+reads=581802 MEMs=89640946 without MEMs=2212 | threads=12 wall 556.56 s, 11479.4 us/read
+new.L30: 565.52 s wall, 6371.56 s user, peak 7214684 KB
+new.L30 exit 0
+SAME: old.L30 new.L30 (1837518643 bytes)
+== new.X 18:05:56
+preset zymo (noisy long reads, few taxa): -U -X -L 20 -K 20 -D 14 --count --csa
+index loaded in 9.0 s
+reads=581802 MEMs=814201 without MEMs=0 | threads=12 wall 81.09 s, 1672.5 us/read
+new.X: 90.45 s wall, 919.18 s user, peak 7343576 KB
+new.X exit 0
+== old.X 18:07:26
+KeBaB filter /home/travis/zymo/hpc/katka/zy.k20.kbf: k=20, h=4, 0.135 GB
+reads=581802 MEMs=814201 unclassified=0 | threads=12 wall 79.89 s, 7283 reads/s, 1647.7 us/read
+old.X: 88.95 s wall, 893.37 s user, peak 8044644 KB
+old.X exit 0
+SAME: old.X new.X (28090295 bytes)
+/dev/nvme0n1p2  228G  171G   46G  80% /
+== compressing 18:08:55
+total 1054480
+-rw-rw-r-- 1 travis travis       167 Nov  2 18:05 new.L30.err
+-rw-rw-r-- 1 travis travis 532942667 Nov  2 18:05 new.L30.zst
+-rw-rw-r-- 1 travis travis       236 Nov  2 18:07 new.X.err
+-rw-rw-r-- 1 travis travis   6937404 Nov  2 18:07 new.X.zst
+-rw-rw-r-- 1 travis travis       159 Nov  2 17:56 old.L30.err
+-rw-rw-r-- 1 travis travis 532942667 Nov  2 17:56 old.L30.zst
+-rw-rw-r-- 1 travis travis       221 Nov  2 18:08 old.X.err
+-rw-rw-r-- 1 travis travis   6937404 Nov  2 18:08 old.X.zst
+== done 18:20:45

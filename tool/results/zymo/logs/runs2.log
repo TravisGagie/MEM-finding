@@ -1,0 +1,28 @@
+== new.X.nokebab 22:33:28
+index loaded in 8.7 s
+reads=581802 MEMs=3993026 without MEMs=0 | threads=12 wall 116.97 s, 2412.5 us/read
+new.X.nokebab: 126.07 s wall, 1344.12 s user, peak 7197848 KB
+new.X.nokebab exit 0
+DIFFERENT from the KeBaB run
+zstd: error 70 : Write error : cannot write block : Broken pipe 
+== new.p720.L30 22:35:34
+index loaded in 2.1 s
+reads=592047 MEMs=3301364 without MEMs=28159 | threads=12 wall 87.83 s, 1780.2 us/read
+new.p720.L30: 89.99 s wall, 1032.21 s user, peak 1683736 KB
+new.p720.L30 exit 0
+prefix test, 720 bases, L = 30, -D 14: 581802 bacterial, 10245 yeast prefixes
+  sensitivity 96.88%  specificity 97.90%
+total 1093916
+-rw-rw-r-- 1 travis travis       167 Nov  2 18:05 new.L30.err
+-rw-rw-r-- 1 travis travis 532942667 Nov  2 18:05 new.L30.zst
+-rw-rw-r-- 1 travis travis       236 Nov  2 18:07 new.X.err
+-rw-rw-r-- 1 travis travis       168 Nov  2 22:35 new.X.nokebab.err
+-rw-rw-r-- 1 travis travis  23122776 Nov  2 22:35 new.X.nokebab.zst
+-rw-rw-r-- 1 travis travis   6937404 Nov  2 18:07 new.X.zst
+-rw-rw-r-- 1 travis travis       169 Nov  2 22:37 new.p720.L30.err
+-rw-rw-r-- 1 travis travis  17245950 Nov  2 22:37 new.p720.L30.zst
+-rw-rw-r-- 1 travis travis       159 Nov  2 17:56 old.L30.err
+-rw-rw-r-- 1 travis travis 532942667 Nov  2 17:56 old.L30.zst
+-rw-rw-r-- 1 travis travis       221 Nov  2 18:08 old.X.err
+-rw-rw-r-- 1 travis travis   6937404 Nov  2 18:08 old.X.zst
+== done 22:37:55

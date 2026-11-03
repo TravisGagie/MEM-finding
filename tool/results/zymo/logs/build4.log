@@ -1,0 +1,19 @@
+== index-tags 10:25:50
+RLBWT: n=39277433153 r=338097187, 1024.495 MB (140.4 s)
+tag array: n=39277433153, 448723822 tag runs, 687.420 MB (11.7 s)
+index built in 152.4 s
+index-tags: 152.49 s wall, peak 6973200 KB
+index-tags exit 0
+-rw-rw-r-- 1 travis travis 5384685896 Nov  2 10:23 zy.sp.tagruns
+-rw-rw-r-- 1 travis travis  687420273 Nov  2 10:28 zy.tag
+/dev/nvme0n1p2  228G  204G   12G  95% /
+== info 10:28:23
+.S              39277.433 MB
+.bwt            39277.433 MB
+.rlbwt           1024.495 MB
+.csa             5563.002 MB
+.tag              687.420 MB
+homopolymer-compressed: yes
+info: 0.00 s wall, peak 4356 KB
+info exit 0
+== done 10:28:23

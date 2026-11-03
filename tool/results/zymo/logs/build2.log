@@ -1,0 +1,17 @@
+== prep 10:12:48
+preset zymo (noisy long reads, few taxa): -d -s -U
+genomes=14280 |S|=39277433146 datasets=7 homopolymer-compressed: 26870582823 bases -> 19638716573 per strand (0.730863)
+prep: 310.71 s wall, peak 23616 KB
+prep exit 0
+-rw-rw-r-- 1 travis travis 39277433146 Nov  2 10:17 zy.S
+/dev/nvme0n1p2  228G  197G   20G  91% /
+== index-csa 10:17:59
+RLBWT: n=39277433153 r=338097187, 1024.495 MB (128.5 s)
+explicit RLCSA: 5563.002 MB
+index built in 262.4 s
+index-csa: 262.72 s wall, peak 6587476 KB
+index-csa exit 0
+-rw-rw-r-- 1 travis travis 5563002461 Nov  2 10:22 zy.csa
+-rw-rw-r-- 1 travis travis 1024495060 Nov  2 10:20 zy.rlbwt
+/dev/nvme0n1p2  228G  203G   14G  94% /
+== done 10:22:22

@@ -1,0 +1,3 @@
+index loaded in 8.7 s
+reads=581802 MEMs=3993026 without MEMs=0 | threads=12 wall 116.97 s, 2412.5 us/read
+new.X.nokebab: 126.07 s wall, 1344.12 s user, peak 7197848 KB
