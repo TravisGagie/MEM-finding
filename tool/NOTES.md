@@ -229,7 +229,7 @@ PIN=9 ~/rz/MEM-finding/tool/experiments/parse_oracle_chr19.sh ~/tool/chr19/c33 ~
 
 It needs `c33.rlbwt` too (for `find`), but not `c33.bwt`. Each oracle is built in `poracle33/k51s12/` and `poracle33/k31s8/` next to links to c33's files, so c33 is not changed. Single-threaded, it runs `--stpd --no-intervals` and `--stpd --locate` at L = 1000 and 100, and FB at L = 1000, each with the text and with each oracle. It cmps every oracle output against the text's and writes `poracle33/summary.txt` (sizes, times, peaks, seek counts). The plain-text runs hold the 4.07 GB text. The oracle runs should take about 1 GB. Copy `summary.txt` and the `*.log` files to `tool/results/chr19/poracle33/` and push.
 
-### STPD over the parse (sketch, not implemented)
+### STPD over the parse (sketch; implemented below)
 
 The idea is to run STPD search over the parse Z (phrase ids, the oracle's `ids`) for the whole phrases of the pattern, and over characters only at its two ends. The setting, as in two-level search: a pattern piece X = X_l · P_1 ⋯ P_h · X_r, where:
 - X_r starts at X's last closed syncmer, so it is a prefix of a phrase;
@@ -312,6 +312,113 @@ For item 3, run:
 - `a.$t`, `b1.$t` and `c.$t` against `d.$t`. Against (d), runs at L = 20 also differ on reads whose t longest include MEMs shorter than 20; the script counts those reads separately.
 
 Put the logs, the `--stats` lines and the script outputs in `tool/results/zymo_kebab/`, then commit and push. Compress the listings with zstd and don't commit them.
+
+### STPD over the parse (implemented 2026-11-03)
+
+`katka index --stpd-parse PREFIX` and `katka find --stpd-parse` (`src/pstpd.hpp`, and `ps_back`, `ps_extend`, `ps_locate` in `src/mems.hpp`). It is built on an existing two-level index; only its B and its dictionary's hash table are loaded.
+
+**Components:**
+
+| component | file | what it is |
+|---|---|---|
+| plain parse | `.ptxt` | Z[0..m): phrase ids packed at ⌈log₂(σ+1)⌉ bits |
+| boundaries | `.ptxt` | Elias–Fano over the phrase starts b_0 < ⋯ < b_{m−1} (parse position → text position, and back by predecessor) |
+| dictionary strings | `.ptxt` | the phrases concatenated in id order, with packed offsets |
+| parse sample | `.pstpd` | the right-to-left STPD sample of Z$ (holding lexicographically smallest occurrences): parse positions SA_Z[x] − 1 for the needed run starts x of BWT_Z, sorted by parse suffix |
+| entry table | `.pstpd` | entry[y] = SA_Z[C[y]], for the σ ids, and C (the first parse row of each id) |
+| parse φ⁻¹ | `.pstpd` | for `--locate`: SA_Z at the ends of BWT_Z's runs → SA_Z at the next run's start |
+| character-level sample | `.stpd` | `index --stpd`; for 32 individuals or more, `index --stpd --parse-oracle` builds it reading the text through `.ptxt` (byte-identical, about 3.5 times slower, without holding the text) |
+| right end | `.csa` or `.rlbwt`, `.lvl` | backward steps (RLCSA with `--csa`), then B (rank) |
+| pattern phrases | `.lvl` | the dictionary's hash table (phrase → id, and its reverse complement's id) |
+
+`index --stpd-parse` builds the parse sample with a suffix array of the parse (libsais_int, 8 bytes per phrase) and one pass over its rows. `find --stpd-parse` prints every component's size.
+
+**Search** (the longest suffix of X[lo..e) that occurs, X = P or rc(P)). The state is a match X[j..e) and its smallest occurrence, held either as a text position t (characters) or as a parse position u (the parse):
+1. **Right end.** Let q = S[r] be the last syncmer start of X with q + k ≤ e. If q ≥ lo, take backward steps from e down to q. Then ρ = rank_B(sp) + 1 is the first parse row; y = the id with C[y] ≤ ρ < C[y+1], which in fact satisfies C[y] = ρ (checked at run time); and u = entry[y]. If there is no such q, start with characters from t = SA[0].
+2. **Middle.** While the pattern phrase to the left, a = pid[i−1] = id(X[S[i−1]..S[i]+k)), exists, is in the dictionary, and S[i−1] ≥ lo:
+   - if Z[u−1] = a, then u − 1 (one read of the packed parse);
+   - otherwise binary-search the parse sample for the smallest sampled suffix in the range of (a, pid[i], …, pid[r−1]; X[q..e)). Comparisons read Z by ids (with the lcp skip), then the next phrase's string against X[q..e).
+3. **Left end.** Set t = b_u (one select) and run character-level STPD with the character-level sample. Its text reads go through `.ptxt`.
+4. **Back into the parse.** In the character stage, whenever j reaches a syncmer start S[i′] whose left phrase can be matched, set u = pred(t). So BML's extension to the left (after a window search) runs over phrases again.
+
+`--locate`: start φ⁻¹ over the parse from the smallest occurrence of the MEM's core X[S[i₀]..e), where i₀ is its first syncmer. Use doubling batches with checks on phrase ids and the right end's characters, then a binary search in the last batch. Then check the left end's characters X[j..S[i₀]) through the oracle, and map each occurrence to its sequence with the sequence starts from `PREFIX.tbl`. A MEM with no core falls back to character-level locating.
+
+Counters (`--stats`): right-end character steps, middle phrase comparisons, parse-sample binary searches and their comparisons, left-end character steps (and character-level STPD jumps).
+
+**Correctness.** Let b_0 = 0 < b_1 < ⋯ < b_{m−1} be the boundaries of S$: 0 and the starts of closed syncmers. Phrase u is S[b_u .. b_{u+1} + k), and the last phrase runs to the end. Three facts are used, the first two already in the two-level argument:
+- (F1) Whether S[p..p+k) is a closed syncmer depends only on those k characters (canonical under reverse complement, too).
+- (F2) The dictionary is prefix-free.
+- (F3) Lemma order: for boundaries b_u, b_v, S[b_u..] < S[b_v..] if and only if Z[u..] < Z[v..], ids being lexicographic.
+
+*Lemma A (alignment).* Let q be a syncmer start of X with q + k ≤ e, and Y = X[q..e). In every occurrence S[p..p+|Y|) = Y:
+- p is a boundary;
+- for each syncmer start q′ of X with q ≤ q′ and q′ + k ≤ e, p + q′ − q is a boundary;
+- no other position in [p, p + |Y| − k] is a boundary.
+
+Proof: by F1, a k-mer inside the occurrence is a closed syncmer in S if and only if it is one in X.
+
+*Entry.* Let q = S[r] be the last syncmer start of X with q + k ≤ e, and Y = X[q..e).
+- (i) For every boundary b_u with S[b_u..] prefixed by Y, Y is a prefix of phrase Z[u]. By Lemma A, the next boundary after b_u is beyond b_u + |Y| − k, since otherwise X would have a syncmer start in (q, e − k]. So phrase u, which ends k characters after the next boundary, is longer than |Y|.
+- (ii) Conversely, if phrase Z[u] has prefix Y, so does S[b_u..]. So the parse rows whose suffixes are prefixed by Y (as characters) are those whose first id's phrase has prefix Y.
+- (iii) Those ids form a contiguous range [y₁, y₂], because the ids are lexicographic. The parse rows are sorted by first id, so the rows form [C[y₁], C[y₂ + 1]).
+- (iv) B maps the character interval of Y to these parse rows, because every occurrence of Y is at a boundary (Lemma A) and the order agrees (F3). So rank_B(sp) + 1 = C[y₁], and the parse suffix at that row, entry[y₁], is the smallest suffix of S$ prefixed by Y, at text position b_{entry[y₁]}.
+
+*Middle step.* Let R_i be the parse rows whose suffixes (as characters) are prefixed by X_i = X[S[i]..e): a contiguous range, by F3. Let u = SA_Z[min R_i], and a = pid[i−1].
+- By Lemma A, every occurrence of X_{i−1} = X[S[i−1]..e) is a boundary v whose phrase is exactly X[S[i−1]..S[i]+k), so Z[v] = a, and the next boundary is v + 1, with Z[v+1..] in R_i. Conversely, any such v is an occurrence. So R_{i−1} = LF_a(R_i), an ordinary backward step over BWT_Z on a contiguous range. If a is not in the dictionary, X_{i−1} has no occurrence.
+- The character-level STPD lemma (`stpd.hpp`) then applies to BWT_Z word for word: if BWT_Z[min R_i] = Z[u−1] = a, then u − 1 holds the smallest occurrence. Otherwise the first row x of R_i with BWT_Z[x] = a starts a run, and SA_Z[x] − 1 holds it.
+- *Pruning.* R_i is not a range of an id string. It is the set of rows whose expansions share a prefix of |X_i| characters, so it is an interval of the character LCP between boundary suffixes. Hence if lcp(SA_Z[y], SA_Z[x]) ≥ lcp(SA_Z[x−1], SA_Z[x]) in characters, then any R_i containing x − 1 and x also contains y, and x is not the first a in R_i. So the pruning rule is applied with character LCPs: the shared phrases contribute len − k each, then the LCP of the first two different phrases, which ends inside both by F2. (Id LCPs would be wrong here: two rows can share a ids and differ in the next id while both lie in R_i.)
+- *The binary search's comparisons.* Comparing Z[v..] with (a, pid[i..r−1]) id by id decides the order at the first differing id, by F2 and F3. Equality on all of them, followed by Y being a prefix of phrase Z[v + r − i + 1], is membership in R_{i−1}, by Entry (i)–(ii).
+
+*Exit.* When the middle stage stops at i with state u, every occurrence of X_i is a boundary (Lemma A). The smallest in parse order is the smallest in character order (F3). So t = b_u is the smallest suffix of S$ prefixed by X_i. That is exactly the invariant of character-level STPD for the match X[S[i]..e), so it continues correctly to the left. If the stop is a failure, X_{i−1} does not occur, so the longest suffix starts in (S[i−1], S[i]], inside the phrase, where character-level STPD finds it. Re-entry (step 4) is the same argument read backwards: at a syncmer start S[i′], the smallest occurrence t of X_{i′} is a boundary b_u (Lemma A), and u = pred(t) is the smallest in parse order (F3).
+
+*Locating.* Every occurrence of the MEM X[j..e) contains an occurrence of its core X_{i₀} at offset S[i₀] − j (Lemma A). The core's occurrences are the contiguous parse rows from its smallest one, so φ⁻¹ over the parse lists them in row order; membership is the comparison above. The left-end check keeps exactly those preceded by X[j..S[i₀]).
+
+**Tests:**
+- `katka-test mems --twolevel --stpd` adds two configurations, with the RLCSA and with the RLBWT at the right end, to every brute-force MEM check. These cover BML and FB on both strands, at L = 1, 12, 25, 40, 100 and 1000, with intervals, and the KeBaB, top-t and longest-t modes.
+- It also checks:
+  - 1,040 (chromosome-like) and 20,920 (self-test reads) longest-suffix searches against plain search, including BML's extend-left resumption;
+  - every occurrence from φ⁻¹ over the parse against the suffix array: 1.6 million and 259 million occurrences.
+- `selftest.sh` compares `find --stpd-parse` with plain search byte for byte (BML and FB, L = 1, 25, 100, 1000), and the `--locate` counts with ep − sp.
+
+**On the synthetic collection** (16 × 2 Mbp, both strands, n = 64.0 × 10⁶; m = 3.21 million phrases, σ = 456 thousand, r_Z = 514 thousand against r = 3.82 million; search time, the minimum of 3 runs; every output had the same MEMs as plain search):
+
+| | L = 1000 | L = 100 |
+|---|---|---|
+| plain search (RLCSA) | 1.38 s | 1.61 s |
+| two-level with blocks | 0.33 s | 0.45 s |
+| STPD over the parse (RLCSA at the right end) | 0.31 s | 0.53 s |
+| STPD over the parse, `--locate` | 0.42 s | 0.65 s |
+| character-level STPD, parse oracle | 0.72 s | 1.28 s |
+| character-level STPD, plain text (holds the text) | 0.18 s | 0.28 s |
+
+At L = 1000, STPD over the parse made:
+- 435 thousand right-end character steps;
+- 343 thousand middle phrase comparisons;
+- 8,293 parse-sample binary searches (165 thousand comparisons);
+- 113 thousand left-end character steps, with 6,362 character-level jumps.
+
+The character-level STPD through the oracle made 7.28 million character steps and 84,619 jumps. The right end dominates: about 55 backward steps per search, since each search starts with up to a phrase of characters.
+
+Components (MB): plain parse 7.6; boundaries 2.8; dictionary strings 33.1 (+ offsets 1.4); parse sample 1.3 (485,007 entries, 0.94 r_Z); entry table 1.3 (+ C 0.3); parse φ⁻¹ 1.8; character-level sample 8.2 (+ φ⁻¹ 15.7); RLCSA 31.6 (or RLBWT 8.7); B 0.6; dictionary hash 5.2. On this collection the dictionary dominates, because the synthetic genomes differ more than human haplotypes do. The pruning keeps 0.94 of r_Z, against 0.66 of r at the character level.
+
+**For the desktop.** Run on the 16-individual index:
+
+```
+cd ~/rz/MEM-finding && git pull origin tool && make -C tool && tool/selftest.sh
+PIN=9 ~/rz/MEM-finding/tool/experiments/stpd_parse_chr19.sh ~/tool/chr19/c33 ~/tool/chr19/queries.fa ~/tool/chr19/stpd_parse33
+```
+
+The script adds `c33.ptxt` and `c33.pstpd` next to c33 (`index --stpd-parse`, which reads only `c33.S` and `c33.lvl`), and `c33.stpd` if it is missing. It runs each step in an 11 GB cgroup. Then, single-threaded and pinned, for L = 1000 and 100, it runs:
+- plain search (the reference);
+- STPD over the parse, with `--no-intervals` and with `--locate`;
+- character-level `--stpd` with the parse oracle;
+- two-level with blocks.
+
+Each output is compared with plain search (MEMs, and the `--locate` counts against ep − sp). Times, peaks, counters and component sizes go to `stpd_parse33/summary.txt`.
+
+Then try 32 individuals: run the same command on `~/tool/chr19/c65`, with the work directory `stpd_parse65`. It needs `c65.bwt` once, to build `c65.stpd` through the parse oracle. That build holds O(r) and the oracle, not the 8 GB text; if it exceeds 11 GB, the cgroup stops it, and the summary says so.
+
+Copy the summaries and logs (not the TSVs) to `tool/results/chr19_stpd_parse/`, then commit and push.
 
 ### sdsl-lite
 

@@ -141,12 +141,13 @@ struct config {
     const two_level *TL = nullptr;
     bool jumps = true;
     const stpd_index *SP = nullptr;
+    const parse_stpd *PS = nullptr;
 };
 
 static vector<mem> run_find(const stepper &base, const config &c, const string &read, const mem_options &opt) {
     stepper S = base;
     if (c.csa) S.csa = c.csa;
-    segment_search Q; Q.S = &S; Q.T = c.T; Q.TL = c.TL; Q.jumps = c.jumps; Q.SP = c.SP;
+    segment_search Q; Q.S = &S; Q.T = c.T; Q.TL = c.TL; Q.jumps = c.jumps; Q.SP = c.SP; Q.PS = c.PS;
     vector<mem> out;
     find_mems(Q, read, opt, [&](const mem &M) { out.push_back(M); });
     return out;
@@ -238,6 +239,19 @@ static int mems_test(int argc, char **argv) {
         cfgs.push_back({"stpd/parse-oracle", &X, nullptr, nullptr, true, &SDp});
         cfgs.push_back({"stpd-all/rlbwt", nullptr, nullptr, nullptr, true, &SDall});
         if (tl) cfgs.push_back({"stpd+twolevel", &X, nullptr, &L2, true, &SD});
+    }
+    // STPD over the parse: the two-level index's parse as the oracle (and its own character-level copy of
+    // the sample), on the RLCSA and on the RLBWT at the right end
+    stpd_index SDq;
+    parse_text PTq;
+    parse_stpd PSq;
+    if (stpd && tl) {
+        SDq.load(prefix + ".stpd", "");
+        PTq.build(prefix + ".S", L2.K, L2.SM, prefix + ".ptxt.tmp");
+        SDq.PT = &PTq;
+        PSq.build(PTq);
+        cfgs.push_back({"stpd-parse", &X, nullptr, &L2, true, &SDq, &PSq});
+        cfgs.push_back({"stpd-parse/rlbwt", nullptr, nullptr, &L2, true, &SDq, &PSq});
     }
     tag_array T;
     vector<uint32_t> rowtag;
@@ -357,7 +371,7 @@ static int mems_test(int argc, char **argv) {
                 CHECK(I == M.I, "%s: pattern %zu, MEM [%lu,%lu): interval [%lu,%lu) != brute [%lu,%lu)", what, pi, M.a, M.e, M.I.sp, M.I.ep, I.sp, I.ep);
             }
         };
-        for (u64 L : {1ul, 12ul, 25ul, 40ul}) {
+        for (u64 L : {1ul, 12ul, 25ul, 40ul, 100ul, 1000ul}) {
             std::set<std::pair<u64, u64>> want;
             for (auto [a, e] : all) if (e - a >= L) want.insert({a, e});
             for (int fb = 0; fb < 2; ++fb) {
@@ -531,6 +545,51 @@ static int mems_test(int argc, char **argv) {
                 }
                 }
             }
+        }
+        if (tl) {      // STPD over the parse: longest suffixes and every occurrence (phi^-1 over the parse)
+            u64 pq = 0, ploc = 0;
+            for (size_t pi = 0; pi < pats.size(); ++pi) {
+                const string &P = pats[pi];
+                for (u64 i = 0; i < P.size();) {
+                    while (i < P.size() && base_code(P[i]) < 0) ++i;
+                    u64 r0 = i;
+                    while (i < P.size() && base_code(P[i]) >= 0) ++i;
+                    u64 n = i - r0;
+                    if (!n) continue;
+                    segment_search Q0, Q1; Q0.S = Q1.S = &S; Q1.SP = &SDq; Q1.PS = &PSq; Q1.TL = &L2; Q1.locate = true;
+                    Q0.prepare(P.data() + r0, n); Q1.prepare(P.data() + r0, n);
+                    for (int q = 0; q < 30; ++q) {
+                        u64 end = 1 + rng() % n, lo = q % 3 ? 0 : rng() % end;
+                        int dir = q & 1;
+                        interval I0, I1;
+                        u64 j0 = Q0.back(dir, lo, end, I0), j1 = Q1.back(dir, lo, end, I1);
+                        CHECK(j0 == j1, "STPD over the parse: pattern %zu dir %d [%lu,%lu): j %lu vs %lu", pi, dir, lo, end, j1, j0);
+                        if (dir == 1 && j0 == j1 && j0 < end) {
+                            const u64 a = n - end, e = n - j0;
+                            Q1.ps_locate(a, e);
+                            vector<u64> got = Q1.occbuf, want;
+                            for (u64 x = I0.sp; x < I0.ep; ++x) want.push_back(BF.SA[x]);
+                            std::sort(got.begin(), got.end()); std::sort(want.begin(), want.end());
+                            CHECK(got == want, "STPD over the parse, locate: pattern %zu [%lu,%lu): %zu occurrences, SA %zu", pi, j0, end, got.size(), want.size());
+                            ploc += got.size();
+                        }
+                        ++pq;
+                    }
+                    // extend_left resumption: back to x, then extend to 0 (as BML does)
+                    for (int q = 0; q < 10; ++q) {
+                        u64 end = 1 + rng() % n, x = rng() % end;
+                        interval I0, I1;
+                        u64 j0 = Q0.back(0, x, end, I0), j1 = Q1.back(0, x, end, I1);
+                        CHECK(j0 == j1, "STPD over the parse (BML window): pattern %zu", pi);
+                        if (j0 == x && j1 == x) {
+                            u64 a0 = Q0.extend_left(0, 0, x, end, I0), a1 = Q1.extend_left(0, 0, x, end, I1);
+                            CHECK(a0 == a1, "STPD over the parse, extend_left: pattern %zu [%lu,%lu): %lu vs %lu", pi, x, end, a1, a0);
+                        }
+                        ++pq;
+                    }
+                }
+            }
+            printf("STPD over the parse: %lu longest-suffix searches checked against plain search, %lu occurrences located by phi^-1 over the parse checked against SA\n", pq, ploc);
         }
         printf("STPD (text and parse oracle): %lu longest-suffix searches checked (start and lex-smallest occurrence), %lu occurrences located by phi^-1 checked against SA\n", nq, nloc);
     }

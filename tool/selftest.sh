@@ -107,6 +107,19 @@ same a.out b.out "STPD search with the parse oracle (the text read through the t
 quiet $K find -L 1000 --format mems --stpd --locate c "$D/chr/queries.fa" d.out
 quiet $K find -L 1000 --format mems --stpd --locate --parse-oracle c "$D/chr/queries.fa" e.out
 same d.out e.out "STPD locating with the parse oracle"
+quiet $K index --stpd-parse c
+for L in 1 25 100 1000; do
+  quiet $K find -L $L --format mems --csa c "$D/chr/queries.fa" pa.out
+  quiet $K find -L $L --format mems --csa --stpd-parse c "$D/chr/queries.fa" pb.out
+  same pa.out pb.out "STPD over the parse, L = $L"
+  quiet $K find -L $L --format mems --csa --fb c "$D/chr/queries.fa" pa.out
+  quiet $K find -L $L --format mems --csa --fb --stpd-parse c "$D/chr/queries.fa" pb.out
+  same pa.out pb.out "STPD over the parse, forward-backward, L = $L"
+done
+quiet $K find -L 100 --format mems --csa c "$D/chr/queries.fa" pa.out
+quiet $K find -L 100 --format mems --csa --stpd-parse --locate c "$D/chr/queries.fa" pb.out
+paste pa.out pb.out | awk -F'\t' '$2 != $7 || $3 != $8 || $5 - $4 != $11 { bad++ } END { exit bad > 0 }' || { echo "FAILED: STPD over the parse, --locate counts"; exit 1; }
+echo "  same: STPD over the parse, --locate (occurrence counts = ep - sp)"
 quiet $K find --preset chr19 c "$D/chr/queries.fa" b.out
 same a.out b.out "preset chr19 (two-level, blocks) = plain search"
 quiet $K find --preset novel -L 200 t "$D/reads.fq" a.out

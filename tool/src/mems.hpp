@@ -44,12 +44,14 @@
 #include "digest.hpp"
 #include "kmer_filter.hpp"
 #include "stpd.hpp"
+#include "pstpd.hpp"
 #include "twolevel.hpp"
 #include <algorithm>
 
 namespace katka {
 
-struct mem { u64 a, e; interval I; u64 occ = 0; };   // occ: occurrences located (STPD with locate), else 0    // R[a..e) and the interval of rc(R[a..e)) (or of R[a..e) with FB on chr19)
+struct mem { u64 a, e; interval I; u64 occ = 0, haps = 0; };   // haps: distinct sequences among the located occurrences
+   // occ: occurrences located (STPD with locate), else 0    // R[a..e) and the interval of rc(R[a..e)) (or of R[a..e) with FB on chr19)
 
 // longest-suffix searches over one segment of a pattern and over its reverse complement
 struct segment_search {
@@ -66,6 +68,18 @@ struct segment_search {
                                           // search if TL is set too, else by plain backward search)
     search_counters cnt;
     stpd_state sst[2];
+    // STPD over the parse (PS, with SP's character-level sample and its parse oracle, and TL's B and
+    // dictionary): the state of the last search in each direction
+    const parse_stpd *PS = nullptr;
+    const std::vector<u64> *gstarts = nullptr;   // with locate: the starts of the sequences in S (haplotypes)
+    u64 last_haps = 0;
+    struct pstate {
+        int dir = -1; u64 end = 0, j = 0; bool failed = false;
+        int mode = 0;                     // 0: characters (sst[dir]); 1: parse (u, i)
+        u64 u = 0; int64_t i = 0;         // parse mode: Z[u..] is the smallest parse suffix in X[S[i]..end)'s range
+        int64_t ridx = -1;                // the last syncmer start S[ridx] with S[ridx] + k <= end
+        u64 core_u = 0; int64_t core_i = -1;   // at the last exit from parse mode
+    } pst[2];
 
     const char *R = nullptr;
     u64 n = 0;
@@ -84,6 +98,7 @@ struct segment_search {
     // the longest suffix of X[lo..end), X = R (dir 0) or rc(R) (dir 1); returns its start j and interval I
     u64 back(int dir, u64 lo, u64 end, interval &I) {
         const char *X = dir ? rc.data() : R;
+        if (PS) return ps_back(dir, lo, end);
         if (SP) {
             ++cnt.searches;
             stpd_state &st = sst[dir];
@@ -113,6 +128,12 @@ struct segment_search {
     }
     // X[j..end) occurs with interval I: extend it to the left down to lo
     u64 extend_left(int dir, u64 lo, u64 j, u64 end, interval &I) {
+        if (PS) {
+            pstate &P = pst[dir];
+            if (P.dir != dir || P.end != end || P.j != j || P.failed) return ps_back(dir, lo, end);
+            ps_extend(dir, lo);
+            return P.j;
+        }
         if (SP) {
             stpd_state &st = sst[dir];
             if (st.dir != dir || st.end != end || st.j != j) return back(dir, lo, end, I);
@@ -131,16 +152,159 @@ struct segment_search {
     // the largest e <= n such that R[a..e) occurs, with the interval of rc(R[a..e))
     // (with STPD, J is computed only by rc_interval, for the MEMs reported)
     u64 forward(u64 a, interval &J) { return n - back(1, 0, n - a, J); }
+    // ---- STPD over the parse (NOTES.md, "STPD over the parse")
+    // the longest suffix of X[lo..end): right end by backward steps to the last syncmer start, entry into
+    // the parse, then ps_extend
+    u64 ps_back(int dir, u64 lo, u64 end) {
+        const char *X = dir ? rc.data() : R;
+        const pattern_parse &pp = dir ? qi : pi;
+        const auto &S = pp.S;
+        const int64_t K = TL->K;
+        ++cnt.searches;
+        pstate &P = pst[dir];
+        P = pstate(); P.dir = dir; P.end = end; P.j = end;
+        P.ridx = (int64_t)(std::upper_bound(S.begin(), S.end(), (int64_t)end - K) - S.begin()) - 1;
+        if (P.ridx >= 0 && S[P.ridx] >= (int64_t)lo) {
+            interval J = this->S->full();
+            u64 j = end;
+            while (j > (u64)S[P.ridx]) {
+                ++cnt.ps_right;
+                if (!this->S->step(J, (unsigned char)X[j - 1])) break;
+                --j;
+            }
+            if (j > (u64)S[P.ridx]) {                      // failed at the right end
+                P.j = j; P.failed = true; P.mode = 0;
+                if (locate && dir == 1) {                    // (the smallest occurrence, for locating: forward searches only)
+                    sst[dir] = {end, end, SP->n - 1, dir};
+                    stpd_extend(*SP, X, j, sst[dir], cnt);
+                }
+                return j;
+            }
+            const u64 rho = TL->B.rank1(J.sp) + 1;          // the first parse row in X[S[ridx]..end)'s range
+            const u64 y = PS->id_of_row(rho);
+            if (PS->c_of(y) != rho) die("internal error: parse STPD entry (the range does not start an id's block)");
+            P.u = PS->entry.get(y); P.i = P.ridx; P.mode = 1; P.j = (u64)S[P.ridx];
+        } else {
+            P.mode = 0;
+            sst[dir] = {end, end, SP->n - 1, dir};          // t = SA[0], the suffix $
+        }
+        ps_extend(dir, lo);
+        return P.j;
+    }
+    // continues the search of pst[dir] down to lo
+    void ps_extend(int dir, u64 lo) {
+        const char *X = dir ? rc.data() : R;
+        const uint8_t *x = (const uint8_t *)X;
+        const pattern_parse &pp = dir ? qi : pi;
+        const auto &S = pp.S;
+        const parse_text &PT = *SP->PT;
+        pstate &P = pst[dir];
+        for (;;) {
+            if (P.mode == 1) {
+                bool fail = false;
+                const u64 xr = (u64)S[P.ridx], lr = P.end - xr;
+                while (P.i > 0 && S[P.i - 1] >= (int64_t)lo && pp.pid[P.i - 1]) {
+                    const uint32_t a = pp.pid[P.i - 1];
+                    ++cnt.ps_mid;
+                    if (P.u > 0 && PT.ids.get(P.u - 1) == a) { --P.u; --P.i; continue; }
+                    ++cnt.ps_jumps;
+                    u64 v = PS->find(PT, &pp.pid[P.i - 1], (u64)(P.ridx - P.i + 1), x + xr, lr, cnt.ps_compares);
+                    if (v == UINT64_MAX) { fail = true; break; }
+                    P.u = v; --P.i;
+                }
+                P.core_u = P.u; P.core_i = P.i;
+                sst[dir] = {P.end, (u64)S[P.i], PT.starts.access(P.u), dir};
+                P.j = (u64)S[P.i]; P.mode = 0;
+                if (fail) {                                  // the match ends inside phrase i - 1
+                    u64 c0 = cnt.char_steps;
+                    stpd_extend(*SP, X, lo, sst[dir], cnt);
+                    cnt.ps_left += cnt.char_steps - c0;
+                    P.j = sst[dir].j; P.failed = P.j > lo;
+                    return;
+                }
+            }
+            // characters: switch to the parse at a syncmer start whose phrase to the left can be matched
+            const int64_t ic = std::lower_bound(S.begin(), S.end(), (int64_t)P.j) - S.begin();
+            if (ic < (int64_t)S.size() && S[ic] == (int64_t)P.j && ic <= P.ridx && ic > 0 && S[ic - 1] >= (int64_t)lo && pp.pid[ic - 1]) {
+                const u64 t = sst[dir].t, u = PT.starts.pred_index(t);
+                if (PT.starts.access(u) != t) die("internal error: parse STPD (an occurrence of a syncmer not at a boundary)");
+                P.u = u; P.i = ic; P.mode = 1;
+                continue;
+            }
+            if (P.j <= lo) return;
+            const int64_t ii = std::min<int64_t>(ic - 1, P.ridx);
+            const u64 stop = ii >= 0 && S[ii] >= (int64_t)lo ? (u64)S[ii] : lo;
+            u64 c0 = cnt.char_steps;
+            stpd_extend(*SP, X, stop, sst[dir], cnt);
+            cnt.ps_left += cnt.char_steps - c0;
+            P.j = sst[dir].j;
+            if (P.j > stop) { P.failed = true; return; }
+        }
+    }
+    // every occurrence of rc(R[a..e)) (= X[j..end), X = rc, after the forward search), into occbuf: by
+    // phi^-1 over the parse from the smallest occurrence of its core X[S[i0]..end) (i0: its first syncmer),
+    // checking phrase ids and the right end's characters, then the left end's characters; without a core,
+    // the character-level locate.  Returns the number of occurrences.
+    u64 ps_locate(u64 a, u64 e) {
+        const pattern_parse &pp = qi;
+        const auto &S = pp.S;
+        const parse_text &PT = *SP->PT;
+        const uint8_t *x = (const uint8_t *)rc.data();
+        pstate &P = pst[1];
+        const u64 j = n - e, end = n - a;
+        occbuf.clear();
+        const int64_t i0 = std::lower_bound(S.begin(), S.end(), (int64_t)j) - S.begin();
+        if (P.end != end || P.j != j) die("internal error: parse STPD locate without its search");
+        if (P.core_i < 0 || P.core_i != i0 || i0 > P.ridx) {
+            if (sst[1].end != end || sst[1].j != j) die("internal error: parse STPD locate (character state)");
+            return SP->locate(x + j, end - j, sst[1].t, occbuf, locate_checks);
+        }
+        const u64 h = (u64)(P.ridx - i0), xr = (u64)S[P.ridx], lr = end - xr, ll = (u64)S[i0] - j;
+        const uint32_t *ids = &pp.pid[i0];
+        auto occurs = [&](u64 v) { u64 l; ++locate_checks; return parse_stpd::cmp(PT, v, ids, h, x + xr, lr, 0, l) == 0; };
+        static thread_local std::vector<u64> core;
+        core.clear();
+        core.push_back(P.core_u);
+        for (u64 batch = 1;; batch *= 2) {                  // as stpd_index::locate, over the parse
+            const u64 b0 = core.size();
+            bool last = false;
+            for (u64 q = 0; q < batch; ++q) {
+                if (core.back() == PS->last_sa) { last = true; break; }
+                core.push_back(PS->phi_inv(core.back()));
+            }
+            if (core.size() == b0) break;
+            if (!occurs(core.back())) {
+                u64 lo2 = b0, hi2 = core.size() - 1;
+                while (lo2 < hi2) { u64 mid = (lo2 + hi2) / 2; if (occurs(core[mid])) lo2 = mid + 1; else hi2 = mid; }
+                core.resize(lo2);
+                break;
+            }
+            if (last) break;
+        }
+        for (u64 v : core) {                                 // the left end
+            u64 p = PT.starts.access(v);
+            ++locate_checks;
+            if (p >= ll && PT.lce(p - ll, x + j, ll) == ll) occbuf.push_back(p - ll);
+        }
+        return occbuf.size();
+    }
     // with STPD, the interval of rc(R[a..e)) for a MEM about to be reported, by plain backward search
     void rc_interval(u64 a, u64 e, interval &J) {
         if (!SP) return;
         if (locate) {                                   // the forward search left the first occurrence of rc(R[a..e)) in sst[1]
             occbuf.clear();
-            last_occ = SP->locate((const uint8_t *)rc.data() + (n - e), e - a, sst[1].t, occbuf, locate_checks);
+            last_occ = PS ? ps_locate(a, e) : SP->locate((const uint8_t *)rc.data() + (n - e), e - a, sst[1].t, occbuf, locate_checks);
+            if (gstarts) {                          // distinct sequences among the occurrences
+                static thread_local std::vector<u64> hs;
+                hs.clear();
+                for (u64 p : occbuf) hs.push_back(std::upper_bound(gstarts->begin(), gstarts->end(), p) - gstarts->begin());
+                std::sort(hs.begin(), hs.end());
+                last_haps = std::unique(hs.begin(), hs.end()) - hs.begin();
+            }
         }
         if (!intervals) { J = {0, 0}; return; }
         // by two-level search (with blocks) if there is a two-level index, else by plain backward search
-        u64 j = TL ? search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, J, cnt) : plain_back(1, n - e, n - a, J);
+        u64 j = TL && TL->pbwt.n ? search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, J, cnt) : plain_back(1, n - e, n - a, J);
         if (j != n - e) die("internal error: STPD and backward search disagree");
     }
 };
@@ -207,9 +371,9 @@ struct read_state {
 
 // Records a MEM; returns false if it is dropped by the low-complexity filter.
 template <class F>
-inline void found(const char *R, u64 r0, u64 a, u64 e, const interval &J, const mem_options &opt, read_state &st, F report, u64 occ = 0) {
+inline void found(const char *R, u64 r0, u64 a, u64 e, const interval &J, const mem_options &opt, read_state &st, F report, u64 occ = 0, u64 haps = 0) {
     if (opt.min3 && distinct_3mers(R + a, e - a) < opt.min3) return;
-    mem M{r0 + a, r0 + e, J, occ};
+    mem M{r0 + a, r0 + e, J, occ, haps};
     if (opt.longest) {
         st.best.push_back(M);
         if (st.best.size() >= opt.longest) {
@@ -276,7 +440,7 @@ void bml_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &
         interval J;
         u64 e = Q.forward(a, J);
         Q.rc_interval(a, e, J);
-        found(R, r0, a, e, J, opt, st, report, Q.locate ? Q.last_occ : 0);
+        found(R, r0, a, e, J, opt, st, report, Q.locate ? Q.last_occ : 0, Q.last_haps);
         // the first window that ends after the MEM (L may have been raised; with top t, past e + 1)
         x = e + 1 >= st.L ? e + 1 - st.L : 0;
     }
@@ -291,7 +455,7 @@ void fb_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &s
         interval J, I;
         u64 e = Q.forward(s0, J);                           // R[s0..e) is the MEM starting at s0
         if (e <= s0) { ++s0; continue; }
-        if (e - s0 >= st.L) { Q.rc_interval(s0, e, J); found(Q.R, r0, s0, e, J, opt, st, report, Q.locate ? Q.last_occ : 0); }
+        if (e - s0 >= st.L) { Q.rc_interval(s0, e, J); found(Q.R, r0, s0, e, J, opt, st, report, Q.locate ? Q.last_occ : 0, Q.last_haps); }
         if (e >= m) break;
         u64 s2 = Q.back(0, 0, e + 1, I);                   // leftmost start of a match ending at R[e]
         s0 = s2 > e ? e + 1 : s2;

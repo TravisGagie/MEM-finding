@@ -211,11 +211,14 @@ struct two_level {
         if (has_blocks) { BS.save(f); bbwt.save(f); succp.save(f); dstart.save(f); jv.save(f); wvec(f, ccont); wvec(f, sidev); }
         fclose(f);
     }
-    void load(const std::string &path) {
+    // parse_only: keep B and the dictionary (for STPD over the parse); the parse BWT and the blocks are read
+    // and dropped
+    void load(const std::string &path, bool parse_only = false) {
         FILE *f = open_or_die(path, "rb");
         rmagic(f, "KTLVL001", path);
         rd(f, K); rd(f, SM); rd(f, n); rd(f, m); rd(f, sigma); rd(f, nblocks); rd(f, nsym); rd(f, has_blocks); rd(f, sided);
         B.load(f); pbwt.load(f); dict.load(f);
+        if (parse_only) { pbwt = EFRank(); has_blocks = 0; fclose(f); return; }
         if (has_blocks) { BS.load(f); bbwt.load(f); succp.load(f); dstart.load(f); jv.load(f); rvec(f, ccont); rvec(f, sidev); }
         fclose(f);
     }
@@ -272,7 +275,12 @@ struct search_counters {
     // KeBaB with --longest (mems.hpp): pseudo-MEMs in the reads, pseudo-MEMs searched (BML run on them),
     // batches, reads that needed a second batch, reads that ran the whole-read fallback
     u64 kb_pseudo = 0, kb_searched = 0, kb_batches = 0, kb_multibatch = 0, kb_fallbacks = 0;
+    // STPD over the parse: character steps at the right end (backward search), phrase comparisons in the
+    // middle (one per pattern phrase), parse-sample binary searches and their comparisons, and character
+    // steps of the character-level STPD at the left end
+    u64 ps_right = 0, ps_mid = 0, ps_jumps = 0, ps_compares = 0, ps_left = 0;
     void add(const search_counters &o) {
+        ps_right += o.ps_right; ps_mid += o.ps_mid; ps_jumps += o.ps_jumps; ps_compares += o.ps_compares; ps_left += o.ps_left;
         searches += o.searches; char_steps += o.char_steps; parse_steps += o.parse_steps; block_steps += o.block_steps;
         kmer_tests += o.kmer_tests; kmer_restarts += o.kmer_restarts; stpd_jumps += o.stpd_jumps; stpd_compares += o.stpd_compares;
         kb_pseudo += o.kb_pseudo; kb_searched += o.kb_searched; kb_batches += o.kb_batches; kb_multibatch += o.kb_multibatch;

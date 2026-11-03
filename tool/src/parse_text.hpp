@@ -67,6 +67,19 @@ struct parse_text {
         }
         return l;
     }
+    // the longest common prefix of S$[a..a+len) and S$[b..b+len) (with two cursors of its own)
+    u64 lce2(u64 a, u64 b, u64 len) const {
+        cursor ca, cb;
+        u64 l = 0;
+        while (l < len) {
+            seek(ca, a + l); seek(cb, b + l);
+            u64 avail = std::min({len - l, ca.e - (a + l), cb.e - (b + l)});
+            u64 q = lce_bytes(ca.p + (a + l - ca.s), cb.p + (b + l - cb.s), avail);
+            l += q;
+            if (q < avail) break;
+        }
+        return l;
+    }
     u64 bytes() const { return dict.size() + doff.bytes() + ids.bytes() + starts.bytes(); }
 
     // The same parse and ids as build_twolevel (syncmer_parse with (k, s), lexicographic ids), from S only.

@@ -107,15 +107,18 @@ struct stpd_index {
         return cmp(b, x, len, less) >= len ? b : UINT64_MAX;
     }
 
-    // build from the BWT file of S$ (one terminator) and the text
-    void build(const std::string &Sfile, const std::string &bwtfile, const rlbwt &B, bool prune) {
+    // build from the BWT file of S$ (one terminator) and the text, or (O) the text read through a parse oracle
+    void build(const std::string &Sfile, const std::string &bwtfile, const rlbwt &B, bool prune, const parse_text *O = nullptr) {
         if (B.C[2] - B.C[1] != 1) die("the STPD index needs a BWT with one terminator (BWT(S$))");
         double t0 = now();
         n = B.n; runs = B.R;
-        S.resize(n);
-        { FILE *f = open_or_die(Sfile, "rb"); if (fread(S.data(), 1, n - 1, f) != n - 1) die("cannot read " + Sfile); fclose(f); }
-        S[n - 1] = 1;
         if (file_size(Sfile) != n - 1) die(Sfile + " does not match the BWT");
+        if (O && O->n != n) die("the parse oracle does not match the BWT");
+        if (!O) {
+            S.resize(n);
+            { FILE *f = open_or_die(Sfile, "rb"); if (fread(S.data(), 1, n - 1, f) != n - 1) die("cannot read " + Sfile); fclose(f); }
+            S[n - 1] = 1;
+        }
         // SA at the first and last row of every run, by one pass of LF from the end of S$
         move_lf M; M.build(bwtfile, B);
         const u64 R = B.R;
@@ -142,7 +145,7 @@ struct stpd_index {
         std::vector<std::pair<u64, u64>> v;                     // (row of SA[x] - 1, SA[x] - 1)
         std::vector<int64_t> prev_of(256, -1);                  // the last run so far of each character
         u64 kept = 0, cand = 0;
-        auto lce_pos = [&](u64 a, u64 b) { return lce_bytes(S.data() + a, S.data() + b, n - std::max(a, b)); };
+        auto lce_pos = [&](u64 a, u64 b) { return O ? O->lce2(a, b, n - std::max(a, b)) : lce_bytes(S.data() + a, S.data() + b, n - std::max(a, b)); };
         for (u64 k = 0; k < R; ++k) {
             unsigned char c = M.head[k];
             int64_t y = prev_of[c];
