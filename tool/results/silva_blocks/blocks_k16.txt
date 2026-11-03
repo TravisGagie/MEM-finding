@@ -1,0 +1,32 @@
+text: 1173771556 characters; reads: 8000; BML with L = 30: 43414 MEMs, 5417049 backward steps (1.6 s)
+listing listing_u.out: 43414 MEMs for these reads; 0 reads whose MEMs differ from BML's (L = 30)
+
+== k = 16
+  a. distinct k-mers followed by a base: 53297379  (counts table 1.61 GB)
+  b. blocks in S: 85727319 over 1172623092 bases, 13.68 bases per block on average
+    block length       blocks                       bases in them
+      1             24519070 blocks ( 28.60%)        24519070 characters (  2.09%)
+      2              5930960 blocks (  6.92%)        11861920 characters (  1.01%)
+      3-4            7366549 blocks (  8.59%)        25245282 characters (  2.15%)
+      5-8            9953712 blocks ( 11.61%)        63992845 characters (  5.46%)
+      9-16          13481092 blocks ( 15.73%)       163135609 characters ( 13.91%)
+      17-32         14447435 blocks ( 16.85%)       332465487 characters ( 28.35%)
+      33-64          7666494 blocks (  8.94%)       337298702 characters ( 28.76%)
+      65-128         2160306 blocks (  2.52%)       181201429 characters ( 15.45%)
+      129-256         195728 blocks (  0.23%)        30767702 characters (  2.62%)
+      257-512           5944 blocks (  0.01%)         2114495 characters (  0.18%)
+      513-1024            25 blocks (  0.00%)           16263 characters (  0.00%)
+      >1024                4 blocks (  0.00%)            4288 characters (  0.00%)
+  c. the listing's MEMs: 43414, 2521516 characters; crossing them takes 1955309 steps under the model (108249 of them block steps): 0.775 steps per character (plain backward search: 1)
+     steps / length per MEM:  <0.1: 0   0.1-0.25: 161   0.25-0.5: 3649   0.5-0.75: 7682   >=0.75: 31922
+     MEM length 17-32         5299 MEMs, 0.984 steps per character
+     MEM length 33-64        26043 MEMs, 0.913 steps per character
+     MEM length 65-128       10182 MEMs, 0.677 steps per character
+     MEM length 129-256       1890 MEMs, 0.425 steps per character
+  d. BML (L = 30): its 5417049 backward steps, by where they fall:
+     in failed windows:               1318610 ( 24.3%)
+     at the ends of searches:         3341897 ( 61.7%)  (still character steps under the model)
+     inside long crossings:            756542 ( 14.0%)  -> 129623 block steps instead
+     total under the model: 4790130 steps instead of 5417049 (1.13 times fewer)
+  (k = 16: 47.6 s)
+k=16: 49.35 s wall, 48.11 s user, peak 2735736 KB

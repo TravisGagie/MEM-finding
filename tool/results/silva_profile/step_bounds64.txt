@@ -1,0 +1,4 @@
+reads 8000, total backward steps 3889139 (486.1 per read)
+  MEMs long (> 64)     12072 (1.51 per read, mean length 98.8): crossing steps 1333243 to 2163754 (166.7 to 270.5 per read, 34.3% to 55.6% of all)
+  MEMs short (30-64)   31342 (3.92 per read, mean length 42.4): crossing steps 1699391 to 2087976 (212.4 to 261.0 per read, 43.7% to 53.7% of all)
+  failed windows (the rest): 0 to 856505 (0.0 to 107.1 per read, 0.0% to 22.0% of all)
