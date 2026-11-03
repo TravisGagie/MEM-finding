@@ -120,6 +120,15 @@ quiet $K find -L 100 --format mems --csa c "$D/chr/queries.fa" pa.out
 quiet $K find -L 100 --format mems --csa --stpd-parse --locate c "$D/chr/queries.fa" pb.out
 paste pa.out pb.out | awk -F'\t' '$2 != $7 || $3 != $8 || $5 - $4 != $11 { bad++ } END { exit bad > 0 }' || { echo "FAILED: STPD over the parse, --locate counts"; exit 1; }
 echo "  same: STPD over the parse, --locate (occurrence counts = ep - sp)"
+quiet $K index --rlzap c
+for L in 1 100 1000; do
+  quiet $K find -L $L --format mems --csa c "$D/chr/queries.fa" pa.out
+  quiet $K find -L $L --format mems --csa --stpd-parse --rlzap-oracle c "$D/chr/queries.fa" pb.out
+  same pa.out pb.out "STPD over the parse through the RLZAP parse oracle, L = $L"
+done
+quiet $K find -L 100 --format mems --csa --stpd-parse --locate c "$D/chr/queries.fa" pa.out
+quiet $K find -L 100 --format mems --csa --stpd-parse --locate --rlzap-oracle c "$D/chr/queries.fa" pb.out
+same pa.out pb.out "STPD over the parse through the RLZAP parse oracle, --locate"
 quiet $K find --preset chr19 c "$D/chr/queries.fa" b.out
 same a.out b.out "preset chr19 (two-level, blocks) = plain search"
 quiet $K find --preset novel -L 200 t "$D/reads.fq" a.out

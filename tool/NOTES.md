@@ -385,6 +385,38 @@ cd ~/tool/chr19 && ~/rz/MEM-finding/tool/bin/katka index --parse-oracle c33 2>&1
 
 That rebuilds `c33.ptxt` (reading only `c33.S`). Its line gives the new dictionary size, the number of phrases with exceptions and the total. (`stpd_parse_chr19.sh` also rebuilds a `.ptxt` of the old format by itself. The `.pstpd` does not depend on the dictionary's format.)
 
+### The RLZAP parse oracle (`index --rlzap`, `find --rlzap-oracle`, 2026-11-03)
+
+`PREFIX.rptxt` is the parse oracle with the parse (ids and phrase starts) replaced by an RLZAP-style factorization (`rlz_parse` and `parse_text::make_rlz` in `src/parse_text.hpp`). The dictionary (2 bits per base) and its offsets are unchanged.
+- **The reference:** the phrases starting in S[0 .. 2(|G₁| + 1)): the first sequence of `PREFIX.tbl` and its reverse complement (CHM13 on chr19), as packed ids with their starts in Elias–Fano.
+- **The factorization:** exactly that of `results/chr19_rlz/rlz_parse.cpp`, J, D, M = 4, 4, 2 by default (`--rlzap=J,D,M`). On the self-test's chromosome-like collection it gives the same counts as that program: 5,505 factors, 11,291 literals (2,994 factors only a literal), 1,162 pointer changes, 61 explicit pointers.
+- **Factor f:** n_f literal ids, then a copy of reference phrases at a relative pointer (source = target − rel_f).
+  - Stored: the factors' first phrases (Elias–Fano over parse positions) and their text starts (Elias–Fano over S); the literal counts (Elias–Fano over their running sum); the literal ids, packed; the pointers, run-length coded (Elias–Fano over the factors where the pointer changes, and the values there).
+  - A copied phrase's start follows from the reference's starts: the phrase spacing depends only on the ids.
+- **Access:**
+  - Phrase id and text start of phrase i: the factor holding i (one predecessor query, cached per thread; consecutive phrases usually share a factor), then a literal or the reference.
+  - The phrase at text position x: the factor by its text start, then its few literals by their lengths, then a predecessor query on the reference's starts, shifted by the pointer.
+  - All of STPD over the parse (the middle stage's Z[u − 1], conversions between parse and text positions, the parse sample's comparisons, φ⁻¹ locating) and the character-level oracle go through these three accessors.
+- **Check at build time:** every phrase's id and start, and many position lookups, against the plain parse.
+- **Tests:**
+  - `katka-test` builds an RLZAP oracle and reads every position forward and backward, plus random reads and both kinds of LCE, against the text. It runs STPD over the parse through it in every brute-force MEM check.
+  - `selftest.sh` compares `find --stpd-parse --rlzap-oracle` with plain search (L = 1, 100, 1000), and its `--locate` output with the plain parse's.
+
+**On the synthetic collection** (reference: the first of 16 genomes, both strands, 200,801 phrases):
+- **The factorization:** the target's 3,012,064 phrases form 198,682 factors (15.2 phrases each), with 464,340 literals.
+- **The parse part:** 2.59 MB instead of 10.48 MB (ids 7.63 + starts 2.85). The whole oracle is 12.4 MB instead of 20.3 MB.
+
+Search time (minimum of 3 runs; every output had the same MEMs as plain search, and `--locate` the same output as with the plain parse):
+
+| | L = 1000 | L = 100 |
+|---|---|---|
+| STPD over the parse, plain parse | 0.32 s | 0.47 s |
+| STPD over the parse, RLZAP parse | 0.44 s | 0.62 s |
+| STPD over the parse, RLZAP parse, `--locate` | 0.47 s | 0.66 s |
+| character-level STPD through the RLZAP oracle | 1.46 s | 2.85 s |
+
+**For the desktop:** `experiments/stpd_parse_chr19.sh` now also builds `PREFIX.rptxt` (`index --rlzap`) and runs STPD over the parse through it, with and without `--locate`, at each L. It checks the MEMs against plain search and the `--locate` output against the plain parse's. Its summary gives the RLZAP oracle's components.
+
 ### STPD over the parse (implemented 2026-11-03)
 
 `katka index --stpd-parse PREFIX` and `katka find --stpd-parse` (`src/pstpd.hpp`, and `ps_back`, `ps_extend`, `ps_locate` in `src/mems.hpp`). It is built on an existing two-level index; only its B and its dictionary's hash table are loaded.

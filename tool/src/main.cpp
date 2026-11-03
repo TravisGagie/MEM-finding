@@ -226,6 +226,9 @@ static const char *INDEX_USAGE =
     "                      find --stpd-parse also needs PREFIX.stpd (index --stpd); alone, reads no BWT\n"
     "                      (--stpd --parse-oracle: the STPD sample is built reading the text through PREFIX.ptxt,\n"
     "                      not holding PREFIX.S: for collections whose text does not fit in memory)\n"
+    "  --rlzap[=J,D,M]     PREFIX.rptxt: the parse oracle with the parse as an RLZAP-style factorization against\n"
+    "                      the first sequence's (both strands) parse (default 4,4,2), for find --rlzap-oracle;\n"
+    "                      from PREFIX.ptxt (built first if missing); alone, reads no BWT\n"
     "  --parse-oracle      the text read through the two-level parse (PREFIX.ptxt: phrase starts, parse,\n"
     "                      dictionary), for find --stpd --parse-oracle; uses --syncmer; alone, it reads only\n"
     "                      PREFIX.S (no BWT)\n";
@@ -285,10 +288,11 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
-    bool poracle = false, pstpd = false;
+    bool poracle = false, pstpd = false, rlzap = false;
+    u64 rz_J = 4, rz_M = 2; int64_t rz_D = 4;
     std::vector<u64> lambdas;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "h", longopts, nullptr)) != -1) {
@@ -313,6 +317,10 @@ static int cmd_index(int argc, char **argv) {
             case 'Q': stpd = 2; break;
             case 'O': poracle = true; break;
             case 'Y': pstpd = true; break;
+            case 'Z':
+                rlzap = true;
+                if (optarg && sscanf(optarg, "%lu,%ld,%lu", &rz_J, &rz_D, &rz_M) != 3) die("--rlzap[=J,D,M]");
+                break;
             case 'C': { string v = optarg; if (v == "frequent") to.frequent = true; else if (v != "smallest") die("--continuation smallest|frequent"); break; }
             default: fputs(INDEX_USAGE, stderr); return 1;
         }
@@ -350,9 +358,19 @@ static int cmd_index(int argc, char **argv) {
         fprintf(stderr, "STPD over the parse: %.3f MB (+%.3f MB for locating); parse oracle %.3f MB (peak memory of this step %.2f GB)\n",
                 (PS.pos.bytes() + PS.entry.bytes() + PS.C.bytes()) / 1e6, PS.bytes_locate() / 1e6, PT.bytes() / 1e6, step_peak_gb());
     };
-    if ((poracle || pstpd) && !csa && !efcsa && !tags && !stpd && !tl && !kebab) {   // no BWT needed
+    auto build_rlzap = [&]() {
+        reset_step_peak();
+        if (!parse_text::current_format(prefix + ".ptxt")) build_parse_oracle();
+        parse_text PT; PT.load(prefix + ".ptxt");
+        genome_table G; G.load(prefix + ".tbl");
+        PT.make_rlz(2 * (G.len[0] + 1), rz_J, rz_D, rz_M);     // the reference: the first sequence, both strands
+        PT.save(prefix + ".rptxt");
+        fprintf(stderr, "RLZAP parse oracle: %.3f MB (peak memory of this step %.2f GB)\n", PT.bytes() / 1e6, step_peak_gb());
+    };
+    if ((poracle || pstpd || rlzap) && !csa && !efcsa && !tags && !stpd && !tl && !kebab) {   // no BWT needed
         if (poracle) build_parse_oracle();
         if (pstpd) build_parse_stpd();
+        if (rlzap) build_rlzap();
         fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
         return 0;
     }
@@ -428,6 +446,7 @@ static int cmd_index(int argc, char **argv) {
                 L.has_blocks ? L.bytes_blocks() / 1e6 : 0.0, step_peak_gb());
     }
     if (pstpd) build_parse_stpd();
+    if (rlzap) build_rlzap();
     fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
     return 0;
 }
@@ -476,6 +495,7 @@ static const char *FIND_USAGE =
     "    --stpd-parse      STPD over the parse (PREFIX.lvl's B and dictionary, PREFIX.pstpd, PREFIX.ptxt as the\n"
     "                      text, PREFIX.stpd at the left end): implies --stpd --parse-oracle; with --locate,\n"
     "                      phi^-1 over the parse, and the mems format prints occurrences and distinct sequences\n"
+    "    --rlzap-oracle    with --parse-oracle or --stpd-parse: the RLZAP parse oracle PREFIX.rptxt (index --rlzap)\n"
     "    --parse-oracle    with --stpd: read the text through the two-level parse (PREFIX.ptxt, from index\n"
     "                      --parse-oracle) instead of PREFIX.S\n"
     "    --locate          with --stpd: locate every occurrence of each MEM by phi^-1 steps checked against the\n"
@@ -671,7 +691,7 @@ static int cmd_find(int argc, char **argv) {
     string tagfile, kbffile, format = "listing";
     int nthreads = 1, ft = 0, hpc = -1, csa = 0;
     uint32_t kebab_k = 0;
-    bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false, use_pstpd = false;
+    bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false, use_pstpd = false, rlzap_oracle = false;
     string readstats;
     bool fixed_L = false;
     int mode = -1;
@@ -680,7 +700,7 @@ static int cmd_find(int argc, char **argv) {
         {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -724,6 +744,7 @@ static int cmd_find(int argc, char **argv) {
             case 14: use_stpd = true; break;
             case 17: poracle = true; break;
             case 22: use_stpd = poracle = twolevel = use_pstpd = true; break;
+            case 27: rlzap_oracle = true; break;
             case 15: K.intervals = false; break;
             case 16: K.locate = true; break;
             default: fputs(FIND_USAGE, stderr); return 1;
@@ -781,10 +802,12 @@ static int cmd_find(int argc, char **argv) {
     stpd_index SD;
     parse_text PT;
     if (poracle && !use_stpd) die("--parse-oracle needs --stpd");
+    if (rlzap_oracle && !poracle) die("--rlzap-oracle goes with --stpd --parse-oracle or --stpd-parse");
     if (use_stpd) {
         SD.load(prefix + ".stpd", poracle ? string() : prefix + ".S");
         if (poracle) {
-            PT.load(prefix + ".ptxt");
+            PT.load(prefix + (rlzap_oracle ? ".rptxt" : ".ptxt"));
+            if (rlzap_oracle && !PT.rlz) die(prefix + ".rptxt is not an RLZAP parse oracle (katka index --rlzap)");
             if (PT.n != SD.n) die(prefix + ".ptxt does not match " + prefix + ".stpd");
             SD.PT = &PT;
             fprintf(stderr, "parse oracle: %lu phrases (k = %u, s = %u), %u distinct: %.3f MB (%.2f bits per character) instead of the text (%.3f MB)\n",
@@ -814,6 +837,10 @@ static int cmd_find(int argc, char **argv) {
                 die(prefix + ".pstpd, .ptxt, .lvl and .stpd do not match (katka index --stpd-parse)");
             K.PS = &PS;
             const u64 rb = csa ? X.bytes() : B.bytes();
+            if (PT.rlz)
+                fprintf(stderr, "RLZAP parse (MB): reference ids %.3f + starts %.3f, factor starts %.3f (parse) + %.3f (text), literal counts %.3f, literals %.3f, pointers %.3f: %.3f in all (instead of the plain parse and boundaries)\n",
+                        PT.Zr.ref.bytes() / 1e6, PT.Zr.refstart.bytes() / 1e6, PT.Zr.fpos.bytes() / 1e6, PT.Zr.ftext.bytes() / 1e6, PT.Zr.litcum.bytes() / 1e6,
+                        PT.Zr.lits.bytes() / 1e6, (PT.Zr.chg.bytes() + PT.Zr.relv.bytes()) / 1e6, PT.Zr.bytes() / 1e6);
             fprintf(stderr, "STPD over the parse, components (MB): plain parse %.3f, boundaries %.3f, dictionary strings %.3f (2 bits per base, with exceptions; + offsets %.3f), "
                             "parse sample %.3f (%lu of r_Z = %lu), entry table %.3f (+ C %.3f), parse phi^-1 %.3f (locating), character-level sample %.3f "
                             "(+ phi^-1 %.3f, locating), right end: %s %.3f, B %.3f, dictionary hash %.3f\n",

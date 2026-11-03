@@ -32,7 +32,7 @@ struct parse_stpd {
     inline u64 c_of(u64 y) const { return C.access(y); }
     inline u64 id_of_row(u64 rho) const { return C.count_less(rho + 1) - 1; }
     inline u64 phi_inv(u64 v) const { u64 t = ikeys.count_less(v + 1) - 1; return ivals.get(t) + (v - ikeys.access(t)); }
-    static inline u64 zat(const parse_text &PT, u64 v) { return v < PT.m ? PT.ids.get(v) : 0; }
+    static inline u64 zat(const parse_text &PT, u64 v) { return v < PT.m ? PT.zid(v) : 0; }
 
     // Compares the parse suffix Z[b..] with the pattern element string: ids e[0..h), then the characters
     // xr[0..lr) as a prefix of the next phrase's expansion.  Returns -1, 0 (Z[b..] is in the range: its
@@ -53,7 +53,7 @@ struct parse_stpd {
         if (l == lr) return 0;
         // the phrase is a proper prefix of xr: compare the expansion through the oracle (not expected:
         // a phrase ends with a syncmer, and xr holds no syncmer after its first position)
-        u64 s = PT.starts.access(b + h), l2 = PT.lce(s, xr, std::min(lr, PT.n - s));
+        u64 s = PT.start(b + h), l2 = PT.lce(s, xr, std::min(lr, PT.n - s));
         if (l2 == lr) return 0;
         return (s + l2 == PT.n || PT.at(s + l2) < xr[l2]) ? -1 : 1;
     }
@@ -79,11 +79,11 @@ struct parse_stpd {
         m = PT.m; sigma = PT.sigma; K = PT.K; SM = PT.SM;
         if (m + 1 >= (1ull << 31)) die("too many phrases for a 32-bit parse suffix array");
         std::vector<uint32_t> Z(m + 1), SA(m + 1);
-        for (u64 i = 0; i < m; ++i) Z[i] = (uint32_t)PT.ids.get(i);
+        for (u64 i = 0; i < m; ++i) Z[i] = (uint32_t)PT.zid(i);
         Z[m] = 0;
         if (libsais_int(reinterpret_cast<int32_t *>(Z.data()), reinterpret_cast<int32_t *>(SA.data()), (int32_t)(m + 1), (int32_t)sigma + 1, 0) != 0)
             die("libsais_int failed");
-        for (u64 i = 0; i < m; ++i) Z[i] = (uint32_t)PT.ids.get(i);      // (libsais_int overwrote it)
+        for (u64 i = 0; i < m; ++i) Z[i] = (uint32_t)PT.zid(i);      // (libsais_int overwrote it)
         Z[m] = 0;
         const u64 N = m + 1;
         auto bwt = [&](u64 x) -> uint32_t { return SA[x] == 0 ? 0 : Z[SA[x] - 1]; };

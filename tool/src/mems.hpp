@@ -212,14 +212,14 @@ struct segment_search {
                 while (P.i > 0 && S[P.i - 1] >= (int64_t)lo && pp.pid[P.i - 1]) {
                     const uint32_t a = pp.pid[P.i - 1];
                     ++cnt.ps_mid;
-                    if (P.u > 0 && PT.ids.get(P.u - 1) == a) { --P.u; --P.i; continue; }
+                    if (P.u > 0 && PT.zid(P.u - 1) == a) { --P.u; --P.i; continue; }
                     ++cnt.ps_jumps;
                     u64 v = PS->find(PT, &pp.pid[P.i - 1], (u64)(P.ridx - P.i + 1), x + xr, lr, cnt.ps_compares);
                     if (v == UINT64_MAX) { fail = true; break; }
                     P.u = v; --P.i;
                 }
                 P.core_u = P.u; P.core_i = P.i;
-                sst[dir] = {P.end, (u64)S[P.i], PT.starts.access(P.u), dir};
+                sst[dir] = {P.end, (u64)S[P.i], PT.start(P.u), dir};
                 P.j = (u64)S[P.i]; P.mode = 0;
                 if (fail) {                                  // the match ends inside phrase i - 1
                     u64 c0 = cnt.char_steps;
@@ -232,8 +232,8 @@ struct segment_search {
             // characters: switch to the parse at a syncmer start whose phrase to the left can be matched
             const int64_t ic = std::lower_bound(S.begin(), S.end(), (int64_t)P.j) - S.begin();
             if (ic < (int64_t)S.size() && S[ic] == (int64_t)P.j && ic <= P.ridx && ic > 0 && S[ic - 1] >= (int64_t)lo && pp.pid[ic - 1]) {
-                const u64 t = sst[dir].t, u = PT.starts.pred_index(t);
-                if (PT.starts.access(u) != t) die("internal error: parse STPD (an occurrence of a syncmer not at a boundary)");
+                const u64 t = sst[dir].t, u = PT.pred(t);
+                if (PT.start(u) != t) die("internal error: parse STPD (an occurrence of a syncmer not at a boundary)");
                 P.u = u; P.i = ic; P.mode = 1;
                 continue;
             }
@@ -288,7 +288,7 @@ struct segment_search {
             if (last) break;
         }
         for (u64 v : core) {                                 // the left end
-            u64 p = PT.starts.access(v);
+            u64 p = PT.start(v);
             ++locate_checks;
             if (p >= ll && PT.lce(p - ll, x + j, ll) == ll) occbuf.push_back(p - ll);
         }

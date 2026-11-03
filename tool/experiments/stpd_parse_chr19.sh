@@ -8,6 +8,7 @@
 #   PREFIX.stpd   the character-level sample: `index --stpd --parse-oracle`, which reads the text through
 #                 PREFIX.ptxt instead of holding it (needs PREFIX.bwt)
 #   PREFIX.ptxt, PREFIX.pstpd   `index --stpd-parse` (reads only PREFIX.S and PREFIX.lvl)
+#   PREFIX.rptxt  the RLZAP parse oracle (`index --rlzap`, against the first sequence's parse, both strands)
 # Environment: PIN (a CPU to pin the searches to), LS (thresholds, default "1000 100"), MEMMAX (default
 # 11G: each step runs in a systemd cgroup with that cap and no swap, if systemd-run works).
 # Output: WORK/summary.txt; the MEMs (TSV) and logs in WORK.
@@ -50,6 +51,13 @@ if [ ! -s "$P.pstpd" ] || [ "$(head -c 8 "$P.ptxt" 2> /dev/null)" != KTPTXT02 ];
   note "index --stpd-parse: $(grep '^parse STPD' "$W/build_pstpd.log" | sed 's/^parse STPD: //'); $(tail -1 "$W/build_pstpd.log")"
 fi
 
+if [ ! -s "$P.rptxt" ]; then
+  stamp "RLZAP parse oracle"
+  peak "$W/build_rlzap.log" $CAP $K index --rlzap "$P"
+  note "index --rlzap: $(grep '^RLZAP parse' "$W/build_rlzap.log" | sed 's/^RLZAP parse //')"
+  note "  $(grep 'sizes (MB)' "$W/build_rlzap.log" | sed 's/^ *//'); $(tail -1 "$W/build_rlzap.log")"
+fi
+
 # ---- searches (single-threaded)
 run() {   # name, options...
   local name=$1; shift
@@ -73,6 +81,10 @@ for L in $LS; do
   run "L$L.stpd-parse-locate" -L "$L" --csa --stpd-parse --locate;    same "L$L.stpd-parse-locate" "L$L.plain"
   if paste "$W/L$L.plain.tsv" "$W/L$L.stpd-parse-locate.tsv" | awk -F'\t' '$5 - $4 != $11 { bad++ } END { exit bad > 0 }'; then
     note "      L$L.stpd-parse-locate: every occurrence count equals ep - sp"; else note "      L$L.stpd-parse-locate: OCCURRENCE COUNTS DIFFER from ep - sp"; fi
+  run "L$L.stpd-parse-rlzap" -L "$L" --csa --stpd-parse --rlzap-oracle --no-intervals;  same "L$L.stpd-parse-rlzap" "L$L.plain"
+  if [ $first = 1 ]; then grep '^RLZAP parse (MB)' "$W/L$L.stpd-parse-rlzap.log" | sed 's/^/  /' | tee -a "$SUM"; fi
+  run "L$L.stpd-parse-rlzap-locate" -L "$L" --csa --stpd-parse --rlzap-oracle --locate; same "L$L.stpd-parse-rlzap-locate" "L$L.plain"
+  if cmp -s "$W/L$L.stpd-parse-locate.tsv" "$W/L$L.stpd-parse-rlzap-locate.tsv"; then note "      L$L.stpd-parse-rlzap-locate: the same output as with the plain parse"; else note "      L$L.stpd-parse-rlzap-locate: OUTPUT DIFFERS from the plain parse's"; fi
   run "L$L.stpd-oracle" -L "$L" --stpd --parse-oracle --no-intervals; same "L$L.stpd-oracle" "L$L.plain"
   run "L$L.twolevel-blocks" -L "$L" --csa --twolevel;                 same "L$L.twolevel-blocks" "L$L.plain"
   first=0

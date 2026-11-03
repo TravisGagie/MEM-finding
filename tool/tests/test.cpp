@@ -242,8 +242,8 @@ static int mems_test(int argc, char **argv) {
     }
     // STPD over the parse: the two-level index's parse as the oracle (and its own character-level copy of
     // the sample), on the RLCSA and on the RLBWT at the right end
-    stpd_index SDq;
-    parse_text PTq;
+    stpd_index SDq, SDr;
+    parse_text PTq, PTr;
     parse_stpd PSq;
     if (stpd && tl) {
         SDq.load(prefix + ".stpd", "");
@@ -252,6 +252,27 @@ static int mems_test(int argc, char **argv) {
         PSq.build(PTq);
         cfgs.push_back({"stpd-parse", &X, nullptr, &L2, true, &SDq, &PSq});
         cfgs.push_back({"stpd-parse/rlbwt", nullptr, nullptr, &L2, true, &SDq, &PSq});
+        // and through the RLZAP parse oracle (the reference: the first sequence, both strands), checked at
+        // every position, both directions, random reads and lce, against the text
+        {
+            genome_table G0; G0.load(prefix + ".tbl");
+            PTr.build(prefix + ".S", L2.K, L2.SM, prefix + ".ptxt.tmp");
+            PTr.make_rlz(2 * (G0.len[0] + 1), 4, 4, 2);
+            SDr.load(prefix + ".stpd", ""); SDr.PT = &PTr;
+            std::mt19937_64 rng(5);
+            u64 bad = 0;
+            for (u64 x = 0; x < SD.n; ++x) bad += PTr.at(x) != SD.S[x];
+            for (u64 x = SD.n; x-- > 0;) bad += PTr.at(x) != SD.S[x];
+            for (int q = 0; q < 20000; ++q) {
+                u64 a = rng() % SD.n, b = rng() % SD.n, len = std::min(SD.n - std::max(a, b), (u64)(rng() % 300));
+                bad += PTr.at(a) != SD.S[a];
+                bad += PTr.lce(a, SD.S.data() + b, len) != lce_bytes(SD.S.data() + a, SD.S.data() + b, len);
+                bad += PTr.lce2(a, b, len) != lce_bytes(SD.S.data() + a, SD.S.data() + b, len);
+            }
+            CHECK(bad == 0, "RLZAP parse oracle: %lu wrong reads", bad);
+            printf("RLZAP parse oracle: %lu factors over %lu target phrases; every position read forward and backward, 20000 random reads and lces checked\n", PTr.Zr.z, PTr.m - PTr.Zr.R);
+        }
+        cfgs.push_back({"stpd-parse/rlzap", &X, nullptr, &L2, true, &SDr, &PSq});
     }
     tag_array T;
     vector<uint32_t> rowtag;
