@@ -105,3 +105,19 @@ text. These MEMs have the same coordinates as katka's. Leaving them out, as aske
 - **`c65.lvl`:** byte-identical to the old build's (249,876,375 bytes).
 
 Log: `logs/rebuild65.log`, `logs/index.65.new.err`.
+
+## 64 individuals (129 sequences), 2026-11-03 (a73d0b5)
+
+`run_scripts/run_n.sh 129` (`logs/run129.log`):
+- **Text and build:** S has 15,897,786,190 characters. `prep` took 75 s; Big-BWT 1,190 s, peak 4.9 GB;
+  `index --preset chr19` (new build) 711 s, peak **8.31 GB**, under the 11 GB cap.
+- **Sizes:** RLBWT 254 MB, RLCSA 1,301 MB, `.lvl` 318 MB (parse 238.7, blocks 79.2).
+- **L = 1000, 16,806 MEMs:** two-level with blocks 5.65 s, no jumps 9.45 s, plain (RLCSA) 59.6 s,
+  forward-backward 5.60 s.
+- **L = 100, 27,137 MEMs:** 5.80 s, 9.74 s and 56.9 s.
+- **Correctness:** every variant equals plain search.
+
+Scaling at L = 1000, for 16, 32 and 64 individuals:
+- **two-level with blocks:** 5.66, 5.54 and 5.65 s, flat;
+- **plain search:** 40.4, 50.7 and 59.6 s;
+- **`.lvl`:** 209, 250 and 318 MB.
