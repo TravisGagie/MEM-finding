@@ -303,6 +303,7 @@ static int mems_test(int argc, char **argv) {
     }
 
     u64 nmems = 0, nchecked = 0, nlongest = 0, ntop = 0, ntop_differ = 0, kb_multi = 0, kb_fall = 0;
+    u64 kc_runs = 0, kc_fall = 0, nfixed = 0;
     for (size_t pi = 0; pi < pats.size(); ++pi) {
         const string &P = pats[pi];
         if (digest) {
@@ -465,6 +466,46 @@ static int mems_test(int argc, char **argv) {
                     vector<mem> got = run_find(base, cfgs[0], P, q);
                     for (auto &M : got) CHECK(allset.count({M.a, M.e}), "KeBaB top: [%lu,%lu) is not a MEM", M.a, M.e);
                     ++ntop; ntop_differ += as_set(got) != w;
+                    // --kebab-check T t: strict gives exactly the t longest with ties; non-strict the same lengths
+                    // of the t longest, and only MEMs among them
+                    for (u64 T : {t, 2 * t, t + 2})
+                        for (int strict = 0; strict < 2; ++strict) {
+                            mem_options c = q; c.kebab_rule = mem_options::CHECK; c.check_T = T; c.check_strict = strict;
+                            segment_search Qc; stepper S3 = base; Qc.S = &S3;
+                            vector<mem> g;
+                            find_mems(Qc, P, c, [&](const mem &M) { g.push_back(M); });
+                            kc_fall += Qc.cnt.kb_fallbacks; ++kc_runs;
+                            std::set<std::pair<u64, u64>> gs = as_set(g);
+                            if (strict) CHECK(gs == w && g.size() == w.size(), "KeBaB check T=%lu t=%lu strict L=%lu pattern %zu: %zu MEMs, brute %zu", T, t, L, pi, g.size(), w.size());
+                            else {
+                                bool sub = true;
+                                for (auto &x : gs) sub = sub && w.count(x);
+                                vector<u64> lg, lw;
+                                for (auto &x : gs) lg.push_back(x.second - x.first);
+                                for (auto &x : w) lw.push_back(x.second - x.first);
+                                std::sort(lg.rbegin(), lg.rend()); std::sort(lw.rbegin(), lw.rend());
+                                if (lg.size() > t) lg.resize(t);
+                                if (lw.size() > t) lw.resize(t);
+                                CHECK(sub && lg == lw, "KeBaB check T=%lu t=%lu L=%lu pattern %zu: not the t longest", T, t, L, pi);
+                            }
+                            for (size_t cf = 1; cf < cfgs.size(); ++cf) CHECK(same(run_find(base, cfgs[cf], P, c), run_find(base, cfgs[0], P, c)), "KeBaB check: %s differs", cfgs[cf].name.c_str());
+                        }
+                    // --kebab-top t --fixed-L: every MEM >= max(L, k) inside the t longest pseudo-MEMs
+                    if (!min3) {
+                        mem_options f; f.L = L; f.filter = &KF; f.pseudo = true; f.fixed_top = t;
+                        vector<std::pair<u64, u64>> sg;
+                        segments(P, &KF, sg);
+                        std::stable_sort(sg.begin(), sg.end(), [](const std::pair<u64, u64> &x, const std::pair<u64, u64> &y) { return x.second > y.second; });
+                        if (sg.size() > t) sg.resize(t);
+                        std::set<std::pair<u64, u64>> wf;
+                        const u64 Lf = std::max<u64>(L, kk);
+                        for (auto [a, e] : all)
+                            if (e - a >= Lf) for (auto [r0, n] : sg) if (r0 <= a && e <= r0 + n) { wf.insert({a, e}); break; }
+                        vector<mem> g = run_find(base, cfgs[0], P, f);
+                        CHECK(as_set(g) == wf && g.size() == wf.size(), "KeBaB top fixed L=%lu t=%lu pattern %zu: %zu MEMs, brute %zu", L, t, pi, g.size(), wf.size());
+                        check_intervals(g, "KeBaB top fixed");
+                        ++nfixed;
+                    }
                 }
             }
         // tags of the MEMs of length >= 12
@@ -595,6 +636,7 @@ static int mems_test(int argc, char **argv) {
     }
     printf("longest t (t = 1, 3, 5; -D 0 and 14): %lu exact runs checked (no filter, KeBaB streaming, KeBaB batch: %lu second batches, %lu whole-read fallbacks); KeBaB top: %lu of %lu runs differ from the t longest\n",
            nlongest, kb_multi, kb_fall, ntop_differ, ntop);
+    printf("KeBaB check (T = t, 2t, t + 2; strict and not): %lu runs checked, %lu fell back; KeBaB top with a fixed L: %lu runs checked\n", kc_runs, kc_fall, nfixed);
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
 }

@@ -85,6 +85,8 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--longest t` | the t longest MEMs with ties: every MEM at least as long as the t-th longest (L is raised to the t-th longest found so far). With `-K`, the streaming rule: pseudo-MEMs longest first, until the next is shorter than L (exact if L ≥ k). Overrides `-X` |
 | `--kebab-top t` | with `-K`: `--longest t` over the t longest pseudo-MEMs only (KeBaB's heuristic; no guarantee) |
 | `--kebab-batch t` | with `-K`: `--longest t` over batches of pseudo-MEMs (the 2t longest, then 4t, 8t, ...), stopping once t MEMs passing `-D` are longer than the next pseudo-MEM; if they run out with fewer than t MEMs of length ≥ k and L < k, BML on the whole read (exact) |
+| `--kebab-check T t` | with `-K`: `--longest t` over the T longest pseudo-MEMs (T ≥ t); accepted if there are at least T + 1 pseudo-MEMs and t MEMs at least as long as the (T+1)st (`--strict`: longer), else BML on the whole read (exact) |
+| `--fixed-L` | with `--kebab-top t`: every MEM of length ≥ max(L, k) in the t longest pseudo-MEMs (KeBaB's pipeline) |
 | `--read-stats FILE` | with the three above: per read, pseudo-MEMs, those searched, batches, fallback, backward steps, MEMs (TSV) |
 | `--fb` | forward–backward search (all MEMs of at least L) instead of BML |
 | `-D d` | low-complexity filter: ignore MEMs with fewer than d distinct 3-mers |

@@ -338,7 +338,7 @@ static int cmd_index(int argc, char **argv) {
         reset_step_peak();
         parse_text PT;
         bool ok = false;
-        if (file_exists(prefix + ".ptxt")) { PT.load(prefix + ".ptxt"); ok = (int32_t)PT.K == k && (int32_t)PT.SM == sm && PT.n == file_size(Sfile) + 1; }
+        if (parse_text::current_format(prefix + ".ptxt")) { PT.load(prefix + ".ptxt"); ok = (int32_t)PT.K == k && (int32_t)PT.SM == sm && PT.n == file_size(Sfile) + 1; }
         if (!ok) {
             PT = parse_text();
             PT.build(Sfile, k, sm, prefix + ".ptxt.tmp");
@@ -449,6 +449,12 @@ static const char *FIND_USAGE =
     "    --kebab-batch t   with -K: --longest t over batches of pseudo-MEMs (2t, then 4t, 8t, ...) until t\n"
     "                      MEMs are longer than the next pseudo-MEM; BML on the whole read if they run out\n"
     "                      with fewer than t MEMs of length >= k and L < k (exact)\n"
+    "    --kebab-check T t with -K: --longest t over the T longest pseudo-MEMs (T >= t), accepted if there are at\n"
+    "                      least T + 1 pseudo-MEMs and at least t MEMs are at least as long as the (T+1)st\n"
+    "                      (--strict: longer); otherwise BML on the whole read (exact)\n"
+    "    --strict          with --kebab-check: \"longer than\" (complete on ties)\n"
+    "    --fixed-L         with --kebab-top t: every MEM of length >= max(L, k) in the t longest pseudo-MEMs, as\n"
+    "                      KeBaB's pipeline (no longest-t selection)\n"
     "    --read-stats FILE with --longest and -K: per read, name, pseudo-MEMs, searched, batches, fallback\n"
     "                      (0/1), backward steps, MEMs reported (TSV, in input order)\n"
     "    --fb              forward-backward search instead of BML\n"
@@ -548,8 +554,10 @@ struct finder {
         if (!mems_format) line += "\n";
         if (sl) {
             const search_counters &c = Q.cnt;
-            snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\n", c.kb_pseudo - before.kb_pseudo, c.kb_searched - before.kb_searched,
-                     c.kb_batches - before.kb_batches, c.kb_fallbacks - before.kb_fallbacks, c.char_steps - before.char_steps, nm);
+            const char *why = c.kb_fb_few > before.kb_fb_few ? "few_pseudo_mems" : c.kb_fb_short > before.kb_fb_short ? "few_long_mems"
+                            : c.kb_fallbacks > before.kb_fallbacks ? "pseudo_mems_ran_out" : "-";
+            snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\t%lu\t%lu\t%s\n", c.kb_pseudo - before.kb_pseudo, c.kb_searched - before.kb_searched,
+                     c.kb_batches - before.kb_batches, c.kb_fallbacks - before.kb_fallbacks, c.char_steps - before.char_steps, nm, why);
             *sl = name + b;
         }
         return nm;
@@ -663,10 +671,11 @@ static int cmd_find(int argc, char **argv) {
     uint32_t kebab_k = 0;
     bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false, use_pstpd = false;
     string readstats;
+    bool fixed_L = false;
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"longest", 1, 0, 18}, {"kebab-top", 1, 0, 19}, {"kebab-batch", 1, 0, 20},
-        {"read-stats", 1, 0, 21}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
+        {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
         {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
@@ -681,6 +690,14 @@ static int cmd_find(int argc, char **argv) {
             case 19: K.opt.longest = std::stoull(optarg); K.opt.kebab_rule = mem_options::TOP; kebab_rule_set = true; break;
             case 20: K.opt.longest = std::stoull(optarg); K.opt.kebab_rule = mem_options::BATCH; kebab_rule_set = true; break;
             case 21: readstats = optarg; break;
+            case 23:                                         // --kebab-check T t
+                if (optind >= A.argc()) die("--kebab-check T t");
+                K.opt.check_T = std::stoull(optarg); K.opt.longest = std::stoull(A.argv()[optind++]);
+                K.opt.kebab_rule = mem_options::CHECK; kebab_rule_set = true;
+                if (K.opt.check_T < K.opt.longest || K.opt.longest == 0) die("--kebab-check T t needs T >= t >= 1");
+                break;
+            case 24: K.opt.check_strict = true; break;
+            case 25: fixed_L = true; break;
             case 2: K.opt.fb = true; break;
             case 'D': K.opt.min3 = std::stoi(optarg); break;
             case 'U': hpc = 1; break;
@@ -718,10 +735,15 @@ static int cmd_find(int argc, char **argv) {
     K.hpc = hpc < 0 ? read_info_hpc(prefix) : hpc == 1;
     if (hpc == 1 && !read_info_hpc(prefix) && file_exists(prefix + ".info")) fprintf(stderr, "warning: -U, but the index was built without homopolymer compression\n");
     if (K.opt.adaptive && K.opt.top) die("-X and --top are exclusive");
-    if (K.opt.longest && K.opt.top) die("--top and --longest/--kebab-top/--kebab-batch are exclusive");
+    if (fixed_L) {                                           // --kebab-top t --fixed-L: KeBaB's pipeline
+        if (K.opt.kebab_rule != mem_options::TOP || !K.opt.longest) die("--fixed-L goes with --kebab-top t");
+        K.opt.fixed_top = K.opt.longest; K.opt.longest = 0; K.opt.adaptive = false;
+    }
+    if (K.opt.check_strict && K.opt.kebab_rule != mem_options::CHECK) die("--strict goes with --kebab-check");
+    if (K.opt.longest && K.opt.top) die("--top and --longest/--kebab-top/--kebab-batch/--kebab-check are exclusive");
     if (K.opt.longest) K.opt.adaptive = false;
     if (kebab_rule_set && !K.opt.pseudo) die("--kebab-top and --kebab-batch need -K");
-    if (!readstats.empty() && !(K.opt.longest && K.opt.pseudo)) die("--read-stats needs --longest, --kebab-top or --kebab-batch, with -K");
+    if (!readstats.empty() && !((K.opt.longest || K.opt.fixed_top) && K.opt.pseudo)) die("--read-stats needs --longest, --kebab-top or --kebab-batch, with -K");
 
     double t0 = now();
     rlbwt B; load_rlbwt(B, prefix + ".rlbwt");
@@ -789,10 +811,10 @@ static int cmd_find(int argc, char **argv) {
                 die(prefix + ".pstpd, .ptxt, .lvl and .stpd do not match (katka index --stpd-parse)");
             K.PS = &PS;
             const u64 rb = csa ? X.bytes() : B.bytes();
-            fprintf(stderr, "STPD over the parse, components (MB): plain parse %.3f, boundaries %.3f, dictionary strings %.3f (+ offsets %.3f), "
+            fprintf(stderr, "STPD over the parse, components (MB): plain parse %.3f, boundaries %.3f, dictionary strings %.3f (2 bits per base, with exceptions; + offsets %.3f), "
                             "parse sample %.3f (%lu of r_Z = %lu), entry table %.3f (+ C %.3f), parse phi^-1 %.3f (locating), character-level sample %.3f "
                             "(+ phi^-1 %.3f, locating), right end: %s %.3f, B %.3f, dictionary hash %.3f\n",
-                    PT.ids.bytes() / 1e6, PT.starts.bytes() / 1e6, PT.dict.size() / 1e6, PT.doff.bytes() / 1e6, PS.pos.bytes() / 1e6, PS.pos.size(), PS.runs,
+                    PT.ids.bytes() / 1e6, PT.starts.bytes() / 1e6, PT.dict.bytes() / 1e6, PT.doff.bytes() / 1e6, PS.pos.bytes() / 1e6, PS.pos.size(), PS.runs,
                     PS.entry.bytes() / 1e6, PS.C.bytes() / 1e6, PS.bytes_locate() / 1e6, SD.bytes() / 1e6, SD.locate_bytes() / 1e6,
                     csa ? "RLCSA" : "RLBWT", rb / 1e6, L2.B.bytes() / 1e6, L2.dict.bytes() / 1e6);
         }
@@ -813,7 +835,7 @@ static int cmd_find(int argc, char **argv) {
     FILE *out = outfile == "-" ? stdout : open_or_die(outfile, "w");
     double t1 = now();
     FILE *sout = nullptr;
-    if (!readstats.empty()) { sout = open_or_die(readstats, "w"); fputs("read\tpseudo_mems\tsearched\tbatches\tfallback\tbackward_steps\tmems\n", sout); }
+    if (!readstats.empty()) { sout = open_or_die(readstats, "w"); fputs("read\tpseudo_mems\tsearched\tbatches\tfallback\tbackward_steps\tmems\tfallback_reason\n", sout); }
     run_stats st = find_all(K, P, out, nthreads, sout);
     if (sout) fclose(sout);
     double wall = now() - t1;
@@ -823,9 +845,16 @@ static int cmd_find(int argc, char **argv) {
     if (stats)
         fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
                 st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
+    if (stats && K.opt.fixed_top && K.opt.pseudo)
+        fprintf(stderr, "kebab (top, fixed L = %lu, t = %lu): pseudo-MEMs %lu (%.2f per read), searched %lu (%.2f per read), backward steps %.1f per read\n",
+                K.opt.L, K.opt.fixed_top, st.sc.kb_pseudo, (double)st.sc.kb_pseudo / std::max<u64>(1, st.reads), st.sc.kb_searched,
+                (double)st.sc.kb_searched / std::max<u64>(1, st.reads), (double)st.sc.char_steps / std::max<u64>(1, st.reads));
+    if (stats && K.opt.kebab_rule == mem_options::CHECK && K.opt.longest && K.opt.pseudo)
+        fprintf(stderr, "kebab check (T = %lu, t = %lu%s): fallbacks %lu of %lu reads (%lu with at most T pseudo-MEMs, %lu with fewer than t long MEMs)\n",
+                K.opt.check_T, K.opt.longest, K.opt.check_strict ? ", strict" : "", st.sc.kb_fallbacks, st.reads, st.sc.kb_fb_few, st.sc.kb_fb_short);
     if (stats && K.opt.longest && K.opt.pseudo)
         fprintf(stderr, "kebab (%s, t = %lu): pseudo-MEMs %lu (%.2f per read), searched %lu (%.2f per read), batches %lu, reads with a second batch %lu, whole-read fallbacks %lu, backward steps %.1f per read\n",
-                K.opt.kebab_rule == mem_options::TOP ? "top" : K.opt.kebab_rule == mem_options::BATCH ? "batch" : "streaming", K.opt.longest,
+                K.opt.kebab_rule == mem_options::TOP ? "top" : K.opt.kebab_rule == mem_options::BATCH ? "batch" : K.opt.kebab_rule == mem_options::CHECK ? "check" : "streaming", K.opt.longest,
                 st.sc.kb_pseudo, (double)st.sc.kb_pseudo / std::max<u64>(1, st.reads), st.sc.kb_searched, (double)st.sc.kb_searched / std::max<u64>(1, st.reads),
                 st.sc.kb_batches, st.sc.kb_multibatch, st.sc.kb_fallbacks, (double)st.sc.char_steps / std::max<u64>(1, st.reads));
     if (stats && use_pstpd)

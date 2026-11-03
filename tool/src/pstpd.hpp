@@ -45,8 +45,9 @@ struct parse_stpd {
         lcp = h;
         u64 z = zat(PT, b + h);
         if (z == 0) return -1;                                   // the terminator is smallest
-        const uint8_t *p = PT.dict.data() + PT.doff.get(z - 1);
+        static thread_local std::vector<uint8_t> pbuf;
         u64 lp = PT.doff.get(z) - PT.doff.get(z - 1), q = std::min(lp, lr);
+        const uint8_t *p = PT.phrase(z, 0, q, pbuf);
         u64 l = lce_bytes(p, xr, q);
         if (l < q) return p[l] < xr[l] ? -1 : 1;
         if (l == lr) return 0;
@@ -102,8 +103,15 @@ struct parse_stpd {
             u64 acc = 0;
             while (Z[a] == Z[b] && Z[a] != 0) { acc += len_of(Z[a]) - K; ++a; ++b; }
             if (Z[a] == 0 || Z[b] == 0) return acc;
-            const uint8_t *pa = PT.dict.data() + PT.doff.get(Z[a] - 1), *pb = PT.dict.data() + PT.doff.get(Z[b] - 1);
-            return acc + lce_bytes(pa, pb, std::min(len_of(Z[a]), len_of(Z[b])));
+            static thread_local std::vector<uint8_t> ba, bb;    // (in chunks: phrases can be long)
+            const u64 q = std::min(len_of(Z[a]), len_of(Z[b]));
+            for (u64 o = 0; o < q; o += 256) {
+                const u64 to = std::min(q, o + 256);
+                const uint8_t *pa = PT.phrase(Z[a], o, to, ba), *pb = PT.phrase(Z[b], o, to, bb);
+                u64 l = lce_bytes(pa, pb, to - o);
+                if (l < to - o) return acc + o + l;
+            }
+            return acc + q;
         };
         // runs, SA at their ends, phi^-1, and the sample (rows LF(x) from running counts)
         std::vector<uint64_t> rank(sigma + 1, 0);

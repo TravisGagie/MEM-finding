@@ -44,7 +44,7 @@ if [ ! -s "$P.stpd" ]; then
   peak "$W/build_stpd.log" $CAP $K index --stpd --parse-oracle "$P"
   note "index --stpd --parse-oracle: $(tail -1 "$W/build_stpd.log")"
 fi
-if [ ! -s "$P.pstpd" ]; then
+if [ ! -s "$P.pstpd" ] || [ "$(head -c 8 "$P.ptxt" 2> /dev/null)" != KTPTXT02 ]; then   # (or a .ptxt of the old format)
   stamp "STPD over the parse"
   peak "$W/build_pstpd.log" $CAP $K index --stpd-parse "$P"
   note "index --stpd-parse: $(grep '^parse STPD' "$W/build_pstpd.log" | sed 's/^parse STPD: //'); $(tail -1 "$W/build_pstpd.log")"

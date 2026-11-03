@@ -36,6 +36,11 @@
 //                  lambda long; strictly longer, so ties are complete); if the pseudo-MEMs run out with
 //                  fewer than t MEMs of length >= k, BML on the whole read (only if L < k: with L >= k,
 //                  every MEM it could find lies in a pseudo-MEM already searched)
+//                check (--kebab-check T t): the T longest pseudo-MEMs (T >= t), then accept if there are at
+//                  least T + 1 pseudo-MEMs and at least t MEMs found are at least as long as the (T+1)st
+//                  (--strict: longer), else BML on the whole read (exact; with --strict, ties complete too)
+//   KeBaB top with a fixed L (--kebab-top t --fixed-L, KeBaB's pipeline): every MEM of length >= max(L, k)
+//                in the t longest pseudo-MEMs, nothing else
 //   min3         ignore MEMs with fewer than min3 distinct 3-mers (they do not raise L either)
 // Forward-backward search (fb_segment), as in KATKA's -W: from x, search forward to the largest e such
 // that R[x..e) occurs (a MEM, as x is left-maximal by construction); report it if e - x >= L; then the
@@ -314,7 +319,10 @@ struct mem_options {
     bool adaptive = false;          // -X
     u64 top = 0;                    // keep the t longest (0: off)
     u64 longest = 0;                // the t longest with ties (0: off)
-    enum { STREAM, TOP, BATCH } kebab_rule = STREAM;   // with pseudo and longest
+    enum { STREAM, TOP, BATCH, CHECK } kebab_rule = STREAM;   // with pseudo and longest
+    u64 check_T = 0;                // CHECK: search the T longest pseudo-MEMs, then test (T >= t)
+    bool check_strict = false;      //   accept only with t MEMs longer than the (T+1)st pseudo-MEM
+    u64 fixed_top = 0;              // with pseudo, no longest: every MEM >= L in the t longest pseudo-MEMs only
     int min3 = 0;                   // -D
     const kmer_filter *filter = nullptr;
     bool pseudo = false;            // KeBaB pseudo-MEMs (-K)
@@ -524,7 +532,7 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
         return;
     }
     segments(read, opt.pseudo ? opt.filter : nullptr, segs, &Q.cnt.kmer_tests);
-    const bool longest_first = (opt.adaptive || opt.top || opt.longest) && opt.pseudo;
+    const bool longest_first = (opt.adaptive || opt.top || opt.longest || opt.fixed_top) && opt.pseudo;
     if (longest_first)
         std::stable_sort(segs.begin(), segs.end(), [](const std::pair<u64, u64> &p, const std::pair<u64, u64> &q) { return p.second > q.second; });
     read_state st;
@@ -545,7 +553,26 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
             ++Q.cnt.kb_searched;
             search(segs[i].first, segs[i].second);
         };
-        if (opt.kebab_rule == mem_options::STREAM) {
+        if (opt.kebab_rule == mem_options::CHECK) {
+            const u64 T = opt.check_T;
+            for (u64 i = 0; i < ns && i < T; ++i) search_pseudo(i);
+            Q.cnt.kb_batches += 1;
+            int why = 0;                                 // 0: accepted; 1: at most T pseudo-MEMs; 2: too few long MEMs
+            if (ns < T + 1) why = 1;
+            else {
+                const u64 lambda = segs[T].second;
+                u64 c = 0;
+                for (auto &M : st.best) c += opt.check_strict ? M.e - M.a > lambda : M.e - M.a >= lambda;
+                if (c < t) why = 2;
+            }
+            if (why) {
+                ++Q.cnt.kb_fallbacks;
+                (why == 1 ? Q.cnt.kb_fb_few : Q.cnt.kb_fb_short) += 1;
+                st = read_state(); st.L = opt.L;
+                segments(read, nullptr, segs);
+                for (auto [r0, n] : segs) if (n >= st.L) search(r0, n);
+            }
+        } else if (opt.kebab_rule == mem_options::STREAM) {
             for (u64 i = 0; i < ns && segs[i].second >= st.L; ++i) search_pseudo(i);
         } else if (opt.kebab_rule == mem_options::TOP) {
             for (u64 i = 0; i < ns && i < t; ++i) search_pseudo(i);
@@ -573,6 +600,11 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
             Q.cnt.kb_batches += batches;
             Q.cnt.kb_multibatch += batches > 1;
         }
+    } else if (opt.fixed_top && opt.pseudo) {             // KeBaB's pipeline: the t longest pseudo-MEMs, fixed L
+        Q.cnt.kb_pseudo += segs.size();
+        st.L = std::max<u64>(st.L, opt.filter->k);       // (in pseudo-MEMs, only matches >= k are sure to be MEMs)
+        for (u64 i = 0; i < segs.size() && i < opt.fixed_top; ++i)
+            if (segs[i].second >= st.L) { ++Q.cnt.kb_searched; search(segs[i].first, segs[i].second); }
     } else {
         for (auto [r0, n] : segs) {
             if (n < st.L) { if (longest_first) break; continue; }

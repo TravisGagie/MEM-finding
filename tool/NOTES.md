@@ -266,6 +266,43 @@ A parse-level jump replaces up to |P_i| − k character-level jumps, each of whi
 
 Open points: an id-level pruning rule equivalent to the character-level one (the same proof should go through with Z's LCP in phrases); and how often Z[u − 1] ≠ a on human haplotypes, i.e. whether parse-level jumps are rare enough. `--stats` on the two-level index already counts parse steps, which bounds this.
 
+### KeBaB: `--kebab-check T t` and `--kebab-top t --fixed-L` (2026-11-03)
+
+- **`--kebab-check T t`** (T ≥ t ≥ 1, with `-K k`):
+  - Search the T longest pseudo-MEMs, longest first, with the t-longest selection with ties (`--longest t`). L is carried across them: it rises to the t-th longest MEM so far, and inside pseudo-MEMs it is at least k.
+  - Accept if there are at least T + 1 pseudo-MEMs and at least t MEMs are at least as long as the (T+1)st pseudo-MEM. With `--strict`, they must be longer.
+  - Otherwise, run BML on the whole read with the same selection from L. That gives the t longest MEMs, or all of them if there are fewer than t.
+  - *Why it is exact:* every MEM not yet found lies in a pseudo-MEM beyond the T-th, so it is at most λ = |p_{T+1}| long.
+    - Without `--strict`, accepting therefore gives the right lengths for the t longest. A MEM of length exactly λ that ties the t-th place may be left out.
+    - With `--strict`, the output is exactly every MEM at least as long as the t-th longest, ties included.
+  - `--read-stats` has a new last column: the fallback's reason, `few_pseudo_mems` (at most T pseudo-MEMs) or `few_long_mems` (fewer than t MEMs reach the bound). `--stats` prints the counts of each.
+- **`--kebab-top t --fixed-L`** (KeBaB's own pipeline): report every MEM of length at least max(L, k) inside the t longest pseudo-MEMs, and nothing else. There is no longest-t selection, and `-X` is ignored. Inside a pseudo-MEM a match shorter than k need not be a MEM, hence max(L, k).
+
+**Tests** (`katka-test mems`, brute force; t = 1, 3, 5; T = t, 2t, t + 2; `-D` 0 and 14; L = k and L = 1; plain and homopolymer-compressed):
+- `--strict` gives exactly the t longest with ties.
+- Without it, the output contains only MEMs from that set and has the same t longest lengths.
+- `--fixed-L` gives exactly the MEMs of length ≥ max(L, k) contained in the t longest pseudo-MEMs.
+- Every configuration (RLCSA, RLBWT, two-level, STPD, STPD over the parse) gives the same output.
+
+On the self-test reads: 24,480 runs (6,426 fallbacks) and 2,040 runs; on the homopolymer-compressed copy, 21,600 runs (6,458 fallbacks) and 1,800 runs. All pass.
+
+**For the desktop (Zymo, as in `results/zymo_kebab/`):** for t in 1, 3 and 5, and T in t and 2t:
+
+```
+K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+$K find $Z -L 20 -K 20 --kebab-check $T $t          --read-stats e.$T.$t.tsv  $H $R e.$T.$t     # exact check rule
+$K find $Z -L 20 -K 20 --kebab-check $T $t --strict --read-stats es.$T.$t.tsv $H $R es.$T.$t    # strict (ties)
+```
+
+Report for each run:
+- time and peak memory;
+- the `kebab check` line (fallbacks and their reasons);
+- `scripts/compare_longest_t.py` against `c.$t` (the streaming rule, exact at L = 20) and against `d.$t`.
+
+The lengths should never differ from `c.$t`'s, and with `--strict` the spans shouldn't either.
+
+For the paper's pipeline, run `$K find $Z -L 20 -K 20 --kebab-top $t --fixed-L $H $R f.$t` for t = 1, 3, 5. Score it with every MEM voting, as the L = 30 threshold runs in `results/zymo/` were (`credit_schemes.py`, `score_spu2.py`), against the same scoring of `-L 20 -K 20` without `--kebab-top`. The difference is the cost of searching only the t longest pseudo-MEMs.
+
 ### KeBaB stopping rules for the journal revision (2026-11-03)
 
 Three rules, all with the t longest MEMs *with ties* (`--longest t`: every MEM at least as long as the t-th longest; L is raised to the t-th longest found so far, not one more, so ties are found). Pseudo-MEMs are sorted longest first. Inside them only matches of length ≥ k are reported: a shorter match that ends at a pseudo-MEM's boundary need not be a MEM. MEMs dropped by `-D` are not kept and do not count anywhere.
@@ -312,6 +349,33 @@ For item 3, run:
 - `a.$t`, `b1.$t` and `c.$t` against `d.$t`. Against (d), runs at L = 20 also differ on reads whose t longest include MEMs shorter than 20; the script counts those reads separately.
 
 Put the logs, the `--stats` lines and the script outputs in `tool/results/zymo_kebab/`, then commit and push. Compress the listings with zstd and don't commit them.
+
+### The parse oracle's dictionary at 2 bits per base (2026-11-03)
+
+`PREFIX.ptxt` (format `KTPTXT02`) stores the phrase dictionary packed (`packed_dict`, `src/parse_text.hpp`):
+- **the bases:** the phrases concatenated in id order at 2 bits per base, with any character other than A/C/G/T stored as A;
+- **the exceptions:** a bit vector over the phrases marking those with other characters. For each marked phrase, its runs of X as (offset, length) and the offset of $. The text has no other characters: `katka prep` writes X for every non-A/C/G/T character, and $ is the terminator.
+
+Decoding is exact (X and $ come back as themselves), so every comparison gives the same order as with the bytes. That matters: the binary searches decide less/greater at X and $ too, not only equal/unequal. Each cursor decodes a window of its current phrase into its own buffer: 64 characters to the left of the position read and 192 to its right, 4 bases per byte by table lookup, with the exception runs found by binary search. Decoding whole phrases was far too slow on phrases spanning N-separated scaffolds: one phrase of the self-test's reads collection holds thousands of X runs. The parse sample's comparisons decode only the prefix they compare. Old `.ptxt` files (`KTPTXT01`) are rebuilt by `index --stpd-parse`; `index --parse-oracle` overwrites them.
+
+**On the synthetic collection:**
+- **Size:** the dictionary dropped from 33.1 MB to 8.4 MB (33.07 million bases; 7 phrases with exceptions, 7 X runs), and the oracle from 45.0 to 20.3 MB (2.53 bits per character).
+- **Outputs:** the parse sample built from it is byte-identical. Every output of STPD over the parse (with and without `--locate`) and of `--stpd --parse-oracle`, at L = 1000 and 100, is byte-identical to the previous run and has the same MEMs as plain search. `katka-test` reads every position forward and backward, plus random reads and LCEs, against the text.
+- **Time** (minimum of 3 runs; was → now): STPD over the parse 0.31 → 0.34 s (L = 1000) and 0.53 → 0.50 s (L = 100); character-level STPD through the oracle 0.72 → 0.94 s and 1.28 → 1.39 s. The character-level search seeks at random once per comparison, and each seek decodes a window.
+
+**Expected on c33:**
+- **Dictionary:** the desktop measured 630.5 MB of phrase bytes, so about 158 MB packed, plus about 1–2 MB for the bit vector over 8.5 million phrases and the few exceptions.
+- **Offsets:** about 32 MB, unchanged.
+- **The whole oracle:** about 1.04 GB instead of 1.48 GB, with ids 661 MB and starts 192 MB. With RLZ for the parse part (the desktop's estimate), about 360 MB.
+
+**For the desktop (c33):**
+
+```
+cd ~/rz/MEM-finding && git pull origin tool && make -C tool
+cd ~/tool/chr19 && ~/rz/MEM-finding/tool/bin/katka index --parse-oracle c33 2>&1 | grep "parse oracle"
+```
+
+That rebuilds `c33.ptxt` (reading only `c33.S`). Its line gives the new dictionary size, the number of phrases with exceptions and the total. (`stpd_parse_chr19.sh` also rebuilds a `.ptxt` of the old format by itself. The `.pstpd` does not depend on the dictionary's format.)
 
 ### STPD over the parse (implemented 2026-11-03)
 

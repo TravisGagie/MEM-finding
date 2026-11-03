@@ -275,6 +275,7 @@ struct search_counters {
     // KeBaB with --longest (mems.hpp): pseudo-MEMs in the reads, pseudo-MEMs searched (BML run on them),
     // batches, reads that needed a second batch, reads that ran the whole-read fallback
     u64 kb_pseudo = 0, kb_searched = 0, kb_batches = 0, kb_multibatch = 0, kb_fallbacks = 0;
+    u64 kb_fb_few = 0, kb_fb_short = 0;        // --kebab-check fallbacks: at most T pseudo-MEMs; too few long MEMs
     // STPD over the parse: character steps at the right end (backward search), phrase comparisons in the
     // middle (one per pattern phrase), parse-sample binary searches and their comparisons, and character
     // steps of the character-level STPD at the left end
@@ -284,7 +285,7 @@ struct search_counters {
         searches += o.searches; char_steps += o.char_steps; parse_steps += o.parse_steps; block_steps += o.block_steps;
         kmer_tests += o.kmer_tests; kmer_restarts += o.kmer_restarts; stpd_jumps += o.stpd_jumps; stpd_compares += o.stpd_compares;
         kb_pseudo += o.kb_pseudo; kb_searched += o.kb_searched; kb_batches += o.kb_batches; kb_multibatch += o.kb_multibatch;
-        kb_fallbacks += o.kb_fallbacks;
+        kb_fallbacks += o.kb_fallbacks; kb_fb_few += o.kb_fb_few; kb_fb_short += o.kb_fb_short;
     }
 };
 
