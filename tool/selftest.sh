@@ -110,6 +110,13 @@ quiet $K find --preset silva t "$D/reads.fq" a.out
 quiet $K find -L 30 -c t "$D/reads.fq" b.out
 same a.out b.out "preset silva"
 
+step "order-k block feasibility (katka-blocks)"
+quiet $K find -L 30 -c --csa t "$D/reads.fq" list30.out
+"$HERE/bin/katka-blocks" t "$D/reads.fq" list30.out -k 8,12 --check > blocks.out 2>&1 || { cat blocks.out; echo "FAILED: katka-blocks"; exit 1; }
+grep -q "0 reads whose MEMs differ" blocks.out && [ "$(grep -c 'agree on succ for all k-mers: yes' blocks.out)" = 2 ] \
+  && echo "  katka-blocks: BML's MEMs equal the listing's, k-mer tables checked, every step classified" \
+  || { cat blocks.out; echo "FAILED: katka-blocks"; exit 1; }
+
 step "preset zymo (one BWT string per dataset, species tags)"
 (cd "$D" && quiet $K prep --preset zymo list.tsv "$W/z")
 quiet $K bwt -d z

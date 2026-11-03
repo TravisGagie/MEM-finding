@@ -177,6 +177,13 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
 
 ## Experiments
 
+- `bin/katka-blocks PREFIX reads listing [-k 8,12,16] [-L 30] [-n 5000] [--check]` (`experiments/blocks_feasibility.cpp`): a feasibility study of order-k character-level blocks of continuations (a character continues a block if it is the most frequent one after its preceding k-mer). For each k it reports:
+  - the number of distinct k-mers;
+  - the distribution of block lengths in S;
+  - for the listing's MEMs (the reads give their bases), the steps to cross each MEM under the blocks model, against its length;
+  - for BML with threshold L run on the same reads, the fraction of its backward steps that fall in failed windows, at the ends of searches, or inside long crossings that block steps would replace.
+
+  The model is at the top of the source file.
 - `tests/exp_kebab.sh PREFIX queries.fa [L] [k] [R]`: KeBaB then BML, plain BML, and KeBaB inside BML, on queries mostly absent from the text (Section 3.2). It reports the median time of R runs, k-mer tests, window restarts, backward steps and MEMs, and checks that all three give the same MEMs. `tests/gen_novel.py` makes synthetic queries of that kind.
 
 ## Testing

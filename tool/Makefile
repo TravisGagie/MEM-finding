@@ -9,7 +9,7 @@ LDLIBS = -lz -pthread
 HDRS = $(wildcard src/*.hpp)
 LIBSAIS = build/libsais.o build/libsais64.o
 
-all: bin/katka bin/katka-test
+all: bin/katka bin/katka-test bin/katka-blocks
 
 build/%.o: third_party/libsais/src/%.c
 	@mkdir -p build
@@ -22,6 +22,10 @@ bin/katka: src/main.cpp $(HDRS) $(LIBSAIS)
 bin/katka-test: tests/test.cpp $(HDRS) $(LIBSAIS)
 	@mkdir -p bin
 	$(CXX) $(CXXFLAGS) -Isrc tests/test.cpp $(LIBSAIS) -o $@ $(LDLIBS)
+
+bin/katka-blocks: experiments/blocks_feasibility.cpp $(HDRS) $(LIBSAIS)
+	@mkdir -p bin
+	$(CXX) $(CXXFLAGS) -Isrc experiments/blocks_feasibility.cpp $(LIBSAIS) -o $@ $(LDLIBS)
 
 clean:
 	rm -rf bin build

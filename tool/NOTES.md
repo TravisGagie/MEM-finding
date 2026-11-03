@@ -26,7 +26,8 @@ All tested with `selftest.sh` (brute force, plus both regressions):
   - It is checked against brute force, and against KATKA's original `rz-prep -B` and `rz-classify -B` (identical text, map and listings).
   - Over digests, only BML with a fixed L is supported: no adaptive L, top t, FB, KeBaB, two-level search or homopolymer compression, as in KATKA.
 - **STPD search (added 2026-11-02, at Travis's request):** a backend from *Compressing Suffix Trees by Path Decompositions* (Becker et al., ICALP 2026); see the next section.
-- **Known issue (2026-11-02, desktop): `index` keeps the RLCSA in memory through the tag step.** In `cmd_index` (`src/main.cpp`), `rlcsa X` lives until the function returns, though only the two-level step uses it after `X.save`. So `index --preset zymo` needs the RLCSA (5.6 GB on Zymo) and the tag-run construction (move structure, φ samples, run vectors: several GB more) at once, which exceeds 14 GiB. Fix: free `X` after saving it when `--twolevel` is off (or build the tags first). Until then, build the steps separately: `index --csa`, then `index --tags --by-tag --no-rmq`, then `index --kebab 20` (peaks 6.6, 7.0 and 6.1 GB on Zymo; see `results/zymo/`).
+- **Fixed 2026-11-03: `index` kept the RLCSA in memory through the tag step.** Now each step frees what it built after saving it. Only the RLBWT stays throughout, and the two-level step reloads `PREFIX.csa`, or builds it if it is missing or belongs to another BWT. Each step prints the peak memory so far. On the 64-Mb synthetic collection, `index --csa --tags --by-tag --no-rmq --kebab 20` peaked at 0.11 GB instead of 0.14 GB (the RLCSA's 32 MB), with a byte-identical tag array. On Zymo it should peak near the tag step alone (about 7 GB), not 7 GB plus 5.6 GB. The original report:
+  - **(was) Known issue (2026-11-02, desktop): `index` keeps the RLCSA in memory through the tag step.** In `cmd_index` (`src/main.cpp`), `rlcsa X` lives until the function returns, though only the two-level step uses it after `X.save`. So `index --preset zymo` needs the RLCSA (5.6 GB on Zymo) and the tag-run construction (move structure, φ samples, run vectors: several GB more) at once, which exceeds 14 GiB. Fix: free `X` after saving it when `--twolevel` is off (or build the tags first). Until then, build the steps separately: `index --csa`, then `index --tags --by-tag --no-rmq`, then `index --kebab 20` (peaks 6.6, 7.0 and 6.1 GB on Zymo; see `results/zymo/`).
 - **The inline KeBaB check is now lazy (2026-11-02, at the paper task's request):** each window's k-mers are tested from its right end leftward, with the rolling codes restarted at the window's last k-mer, stopping at the first failure. Nothing is precomputed over the pattern. `--stats` counts k-mer tests and restarts. The output is unchanged (it jumps to the same place: the first failure from the right is the rightmost one).
 - **Not in the tool, as the brief says:** the rz-index, shortcuts, the frequency-rank encoding of the parse, RLZ verification, whole-phrase matching, and the combined LCA-and-listing rule.
 
@@ -59,6 +60,39 @@ Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like
   | KeBaB inside BML | 0.110 s | 134,640 (2,093 window restarts) | 212,803 |
 
   Inside BML it tests 15 times fewer k-mers than KeBaB's separate pass. With an index this small, though, a failed window costs plain BML only about 13 cheap steps, and most of the time goes into the shared segments, so it is not faster. The case the paper describes needs a large index (cache misses per step), i.e. the desktop: for example the chromosome 19 index with queries from `tests/gen_novel.py` built on other sequence.
+
+### Order-k character-level blocks: feasibility (`katka-blocks`, 2026-11-03)
+
+`bin/katka-blocks` (`experiments/blocks_feasibility.cpp`) measures whether blocks of continuations at the character level would pay on SILVA, before anyone builds them. The model (also at the top of the source):
+
+- **Continuations:** a character continues a block if its preceding k-mer is over A/C/G/T and it is that k-mer's most frequent next character in S.
+- **Crossing a match:** with block starts s0 < s1 < … < sz whose contexts lie inside the match, crossing X[a..e) costs z block steps and (e − a) − (sz − s1) character steps on T's BWT. The character steps cover the right end, the back-up (the leftmost complete block redone, as in the back-up lemma) and the left end. With fewer than two complete blocks it costs e − a character steps, as now.
+
+It reports, for each k:
+- (a) distinct k-mers;
+- (b) block lengths in S;
+- (c) the steps to cross the listing's MEMs, against their lengths;
+- (d) BML's backward steps (L = 30, run by the tool itself on the same reads, over PREFIX.rlbwt or PREFIX.csa), split into failed windows, ends of searches, and inside long crossings. The split accounts for every step BML takes.
+
+**Tested here** (in `selftest.sh`): the hash table against direct counts, and the block count and distinct k-mers against a Python brute force. The program checks that BML's MEMs equal the listing's.
+
+On the synthetic reads (40-bp MEMs, k = 8), crossings would cost 0.68 steps per character and BML 1.14 times fewer steps, with 54% of its steps in failed windows. With k = 12 and 16, these short MEMs contain too few block starts to save anything, although blocks in the text are long. On the chromosome-like queries (k = 8), BML would take 2.0 times fewer steps.
+
+**For the desktop (SILVA):** it needs the tool's SILVA index (`bac.S`, `bac.rlbwt`, and `bac.csa` for speed), a few thousand reads, and the listing of `katka find -L 30` on exactly those reads:
+
+```
+cd ~/tool/silva                         # where katka index --preset silva built bac.*
+head -n 20000 READS.fq > blocks_reads.fq      # 5,000 reads (FASTQ: 4 lines each), e.g. one region's mate-1 reads
+$T find -L 30 -c --csa -F 10 bac blocks_reads.fq blocks_L30.listings
+~/rz/MEM-finding/tool/bin/katka-blocks bac blocks_reads.fq blocks_L30.listings -k 8,12,16 -L 30 > blocks_silva.txt 2>&1
+```
+
+For several regions, run it once per region, each with its own reads and listing. Memory:
+- the text (n bytes, about 1.2 GB);
+- the index, during the BML pass only;
+- for k = 16, a hash table of about 12 bytes × (4/3) × the number of distinct 16-mers, which briefly needs 1.5 times that while it doubles. For a few hundred million distinct 16-mers, that is up to about 10 GB.
+
+If k = 16 runs out of memory, run `-k 8,12` and report that. k = 8 and 12 use arrays of 1 MB and 268 MB. It checks that BML's MEMs equal the listing's, and says so if the listing was made with other options.
 
 ### STPD search
 
