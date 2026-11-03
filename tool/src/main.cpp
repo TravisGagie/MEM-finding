@@ -10,6 +10,7 @@
 #include "prep.hpp"
 #include "tag_build.hpp"
 #include "twolevel_build.hpp"
+#include "stpd_export.hpp"
 #include "libsais.h"
 #include "libsais64.h"
 #include <atomic>
@@ -373,6 +374,8 @@ static const char *FIND_USAGE =
     "    --stpd            STPD search (PREFIX.stpd and the text PREFIX.S): binary searches over a sample of\n"
     "                      at most r positions; the intervals of reported MEMs by backward search\n"
     "    --no-intervals    with --stpd: do not compute intervals (mems format prints - -; no tags)\n"
+    "    --locate          with --stpd: locate every occurrence of each MEM by phi^-1 steps checked against the\n"
+    "                      text (doubling batches, then a binary search), and print their number (mems format)\n"
     "                      (--stpd --twolevel: STPD finds the MEMs, two-level search their intervals)\n"
     "  answers (Cliffy's listing format, with counts)\n"
     "    -c, --count       each tag with its number of occurrences (proportional credit)\n"
@@ -396,7 +399,7 @@ struct finder {
     bool hpc = false, mems_format = false;
     const unsigned char *comp = nullptr;      // digests: complement of each symbol
     const stpd_index *SP = nullptr;
-    bool intervals = true;
+    bool intervals = true, locate = false;
 
     void answer(const interval &I, string &out) const {
         char b[48];
@@ -429,9 +432,11 @@ struct finder {
         find_mems(Q, hpc ? h : read, opt, [&](const mem &M) {
             u64 first = hpc ? pos[M.a] : M.a, last = hpc ? pos[M.e] - 1 : M.e - 1;
             if (mems_format) {
-                if (intervals) snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu\n", first, last + 1, M.I.sp, M.I.ep);
-                else snprintf(b, sizeof b, "\t%lu\t%lu\t-\t-\n", first, last + 1);
+                if (intervals) snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu", first, last + 1, M.I.sp, M.I.ep);
+                else snprintf(b, sizeof b, "\t%lu\t%lu\t-\t-", first, last + 1);
                 line += name; line += b;
+                if (locate) { snprintf(b, sizeof b, "\t%lu", M.occ); line += b; }
+                line += "\n";
             } else {
                 snprintf(b, sizeof b, "[%lu,%lu] {", first, last);
                 line += b; answer(M.I, line); line += "} ";
@@ -505,7 +510,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
         run_stats st;
         string name, seq;
         segment_search Q;
-        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp; Q.SP = K.SP; Q.intervals = K.intervals;
+        Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp; Q.SP = K.SP; Q.intervals = K.intervals; Q.locate = K.locate;
         for (;;) {
             u64 my;
             {
@@ -552,7 +557,7 @@ static int cmd_find(int argc, char **argv) {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -582,6 +587,7 @@ static int cmd_find(int argc, char **argv) {
             case 13: mode = NONE; break;
             case 14: use_stpd = true; break;
             case 15: K.intervals = false; break;
+            case 16: K.locate = true; break;
             default: fputs(FIND_USAGE, stderr); return 1;
         }
     }
@@ -632,6 +638,7 @@ static int cmd_find(int argc, char **argv) {
         fprintf(stderr, "STPD: %lu sampled positions (r = %lu), %.3f MB on top of the text\n", SD.pos.size(), SD.runs, SD.bytes() / 1e6);
     }
     if (!K.intervals && (!use_stpd || K.mode != NONE)) die("--no-intervals needs --stpd and no tags (--format mems or --no-tags)");
+    if (K.locate && !use_stpd) die("--locate needs --stpd");
     two_level L2;
     if (twolevel) {
         L2.load(prefix + ".lvl");
@@ -675,6 +682,20 @@ static int cmd_info(int argc, char **argv) {
     return 0;
 }
 
+// katka stpd-prep / stpd-export: input files for the published STPD-index (stpd_export.hpp)
+static int cmd_stpd_prep(int argc, char **argv) {
+    bool split = false; int a = 1;
+    if (a < argc && std::string(argv[a]) == "-s") { split = true; ++a; }
+    if (argc - a != 2) { fputs("usage: katka stpd-prep [-s] list.tsv OUT   (writes OUT.T, OUT.S = reverse(OUT.T), OUT.pieces, OUT.reflen)\n", stderr); return 1; }
+    stpd_prep(argv[a], argv[a + 1], split);
+    return 0;
+}
+static int cmd_stpd_export(int argc, char **argv) {
+    if (argc != 2 && !(argc == 4 && std::string(argv[2]) == "--bwt")) { fputs("usage: katka stpd-export OUT [--bwt FILE]   (after katka bwt / Big-BWT on OUT.S and katka index --stpd OUT)\n", stderr); return 1; }
+    stpd_export(argv[1], argc == 4 ? argv[3] : std::string(argv[1]) + ".bwt");
+    return 0;
+}
+
 int main(int argc, char **argv) {
     const char *usage =
         "katka: MEM-finding with BWTs of both strands (Three Examples of MEM-Finding)\n"
@@ -683,6 +704,7 @@ int main(int argc, char **argv) {
         "  katka index [--preset NAME] [options] PREFIX\n"
         "  katka find  [--preset NAME] [options] PREFIX reads out\n"
         "  katka info  PREFIX\n"
+        "  katka stpd-prep [-s] list.tsv OUT; katka stpd-export OUT   (input files for the published STPD-index)\n"
         "presets: zymo, silva, chr19, novel (katka presets lists their options)\n";
     if (argc < 2) { fputs(usage, stderr); return 1; }
     string cmd = argv[1];
@@ -692,6 +714,8 @@ int main(int argc, char **argv) {
         if (cmd == "index") return cmd_index(argc - 1, argv + 1);
         if (cmd == "find") return cmd_find(argc - 1, argv + 1);
         if (cmd == "info") return cmd_info(argc - 1, argv + 1);
+        if (cmd == "stpd-prep") return cmd_stpd_prep(argc - 1, argv + 1);
+        if (cmd == "stpd-export") return cmd_stpd_export(argc - 1, argv + 1);
         if (cmd == "presets") {
             for (auto &p : PRESETS) printf("%s: %s\n  prep:  %s\n  index: %s\n  find:  %s\n", p.name, p.use, p.prep, p.index, p.find);
             return 0;

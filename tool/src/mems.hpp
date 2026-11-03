@@ -36,7 +36,7 @@
 
 namespace katka {
 
-struct mem { u64 a, e; interval I; };    // R[a..e) and the interval of rc(R[a..e)) (or of R[a..e) with FB on chr19)
+struct mem { u64 a, e; interval I; u64 occ = 0; };   // occ: occurrences located (STPD with locate), else 0    // R[a..e) and the interval of rc(R[a..e)) (or of R[a..e) with FB on chr19)
 
 // longest-suffix searches over one segment of a pattern and over its reverse complement
 struct segment_search {
@@ -46,6 +46,9 @@ struct segment_search {
     bool jumps = true;
     const unsigned char *comp = nullptr;  // complement of each symbol (digest symbols), if not DNA
     const stpd_index *SP = nullptr;       // if set, STPD search (stpd.hpp)
+    bool locate = false;                  // with STPD: locate every occurrence of each reported MEM by phi^-1
+    u64 last_occ = 0, locate_checks = 0;  //   (the number of occurrences of the last one, and text checks so far)
+    std::vector<u64> occbuf;              //   (and their positions: of rc(MEM) in S, for BML and FB)
     bool intervals = true;                // with STPD: compute the intervals of the reported MEMs (by two-level
                                           // search if TL is set too, else by plain backward search)
     search_counters cnt;
@@ -118,6 +121,10 @@ struct segment_search {
     // with STPD, the interval of rc(R[a..e)) for a MEM about to be reported, by plain backward search
     void rc_interval(u64 a, u64 e, interval &J) {
         if (!SP) return;
+        if (locate) {                                   // the forward search left the first occurrence of rc(R[a..e)) in sst[1]
+            occbuf.clear();
+            last_occ = SP->locate((const uint8_t *)rc.data() + (n - e), e - a, sst[1].t, occbuf, locate_checks);
+        }
         if (!intervals) { J = {0, 0}; return; }
         // by two-level search (with blocks) if there is a two-level index, else by plain backward search
         u64 j = TL ? search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, J, cnt) : plain_back(1, n - e, n - a, J);
@@ -184,9 +191,9 @@ struct read_state {
 
 // Records a MEM; returns false if it is dropped by the low-complexity filter.
 template <class F>
-inline void found(const char *R, u64 r0, u64 a, u64 e, const interval &J, const mem_options &opt, read_state &st, F report) {
+inline void found(const char *R, u64 r0, u64 a, u64 e, const interval &J, const mem_options &opt, read_state &st, F report, u64 occ = 0) {
     if (opt.min3 && distinct_3mers(R + a, e - a) < opt.min3) return;
-    mem M{r0 + a, r0 + e, J};
+    mem M{r0 + a, r0 + e, J, occ};
     if (opt.top) {
         if (st.kept.size() < opt.top) { st.kept.push_back(M); std::push_heap(st.kept.begin(), st.kept.end(), read_state::longer); }
         else if (e - a > st.kept.front().e - st.kept.front().a) {
@@ -240,7 +247,7 @@ void bml_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &
         interval J;
         u64 e = Q.forward(a, J);
         Q.rc_interval(a, e, J);
-        found(R, r0, a, e, J, opt, st, report);
+        found(R, r0, a, e, J, opt, st, report, Q.locate ? Q.last_occ : 0);
         // the first window that ends after the MEM (L may have been raised; with top t, past e + 1)
         x = e + 1 >= st.L ? e + 1 - st.L : 0;
     }
@@ -255,7 +262,7 @@ void fb_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &s
         interval J, I;
         u64 e = Q.forward(s0, J);                           // R[s0..e) is the MEM starting at s0
         if (e <= s0) { ++s0; continue; }
-        if (e - s0 >= st.L) { Q.rc_interval(s0, e, J); found(Q.R, r0, s0, e, J, opt, st, report); }
+        if (e - s0 >= st.L) { Q.rc_interval(s0, e, J); found(Q.R, r0, s0, e, J, opt, st, report, Q.locate ? Q.last_occ : 0); }
         if (e >= m) break;
         u64 s2 = Q.back(0, 0, e + 1, I);                   // leftmost start of a match ending at R[e]
         s0 = s2 > e ? e + 1 : s2;

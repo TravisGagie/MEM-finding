@@ -435,7 +435,7 @@ static int mems_test(int argc, char **argv) {
     }
     if (stpd) {   // every STPD search ends at the lexicographically smallest occurrence: t = SA[sp]
         stepper S = base; S.csa = &X;
-        u64 nq = 0;
+        u64 nq = 0, nloc = 0;
         for (size_t pi = 0; pi < pats.size(); ++pi) {
             const string &P = pats[pi];
             for (u64 i = 0; i < P.size();) {
@@ -453,11 +453,20 @@ static int mems_test(int argc, char **argv) {
                     u64 j0 = Q0.back(dir, lo, end, I0), j1 = Q1.back(dir, lo, end, I1);
                     bool ok = j0 == j1 && (j0 == end || (u64)BF.SA[I0.sp] == Q1.sst[dir].t);
                     CHECK(ok, "STPD: pattern %zu dir %d [%lu,%lu): j %lu vs %lu", pi, dir, lo, end, j1, j0);
+                    if (ok && j0 < end) {          // every occurrence by phi^-1, against the suffix array
+                        vector<u64> occ; u64 checks = 0;
+                        const char *X = dir ? Q1.rc.data() : Q1.R;
+                        SD.locate((const uint8_t *)X + j0, end - j0, Q1.sst[dir].t, occ, checks);
+                        vector<u64> want;
+                        for (u64 x = I0.sp; x < I0.ep; ++x) want.push_back(BF.SA[x]);
+                        CHECK(occ == want, "STPD locate: pattern %zu dir %d [%lu,%lu): %zu occurrences, SA range %zu", pi, dir, j0, end, occ.size(), want.size());
+                        nloc += occ.size();
+                    }
                     ++nq;
                 }
             }
         }
-        printf("STPD: %lu longest-suffix searches checked (start and lex-smallest occurrence)\n", nq);
+        printf("STPD: %lu longest-suffix searches checked (start and lex-smallest occurrence), %lu occurrences located by phi^-1 checked against SA\n", nq, nloc);
     }
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
@@ -509,7 +518,7 @@ static int stpd_size(const string &prefix) {
     }
     std::set<u64> pda;
     for (u64 i = 0; i < N; ++i) pda.insert(i + best[i]);
-    FILE *f = open_or_die(prefix + ".stpd", "rb"); rmagic(f, "KTSTPD01", prefix + ".stpd");
+    FILE *f = open_or_die(prefix + ".stpd", "rb"); rmagic(f, "KTSTPD02", prefix + ".stpd");
     u64 nn, r; rd(f, nn); rd(f, r); PackedInts pos; pos.load(f); fclose(f);
     printf("|st-colex-(rev(S)$)| by definition = %zu; PREFIX.stpd sample = %lu; r = %lu\n", pda.size(), pos.size(), r);
     return 0;

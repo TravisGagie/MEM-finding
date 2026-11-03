@@ -92,6 +92,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--no-jumps` | two-level search without block steps |
 | `--stpd` | STPD search (`PREFIX.stpd`, with the text `PREFIX.S` as the oracle): binary searches over a sample of at most r text positions instead of backward steps. The intervals of the reported MEMs are then computed by backward search, so the output is the same as plain search |
 | `--no-intervals` | with `--stpd` and no tags: skip the intervals (the mems format prints `-` for them) |
+| `--locate` | with `--stpd`: locate every occurrence of each MEM (of its reverse complement, for BML and FB) by φ⁻¹ steps from the first one, checked against the text at the end of each batch of doubling size, then a binary search in the batch that overshot, as Becker et al. locate; the mems format gets a sixth column, the number of occurrences |
 | `--stpd --twolevel` | STPD finds the MEMs, and two-level search (with blocks unless `--no-jumps`) computes their intervals |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |
 | `-l`, `--list` | the distinct tags (even credit), by Muthukrishnan–Sadakane listing |
@@ -114,6 +115,12 @@ python3 scripts/score_silva.py --mode freq ...                           # SILVA
 ```
 
 The interval reported for each BML MEM is that of its reverse complement, as in KATKA: the forward search ends there. Its tags and counts are the same as the MEM's. Forward–backward search reports the same interval.
+
+### `katka stpd-prep [-s] list.tsv OUT`, `katka stpd-export OUT`
+
+These write input files for the published STPD-index (github.com/regindex/STPD-index), so that its `stpd-build` can index whole chromosome collections. Its own sampling step builds a suffix tree, at about 68 bytes per character.
+- `stpd-prep` writes `OUT.T`: their text, both strands, split at non-A/C/G/T characters and concatenated without separators. It also writes `OUT.S` = reverse(`OUT.T`), the piece starts and `OUT.reflen`, the first sequence's length on both strands, for their `-l`.
+- After the BWT of `OUT.S` and `katka index --stpd OUT`, `stpd-export` writes `OUT.T.{colex_m,rbwt,pa,lcs}`, byte-identical to their `stpd-sampling -c -P` on the texts tested. It needs O(r) memory plus the text: φ streams the prefix array, and the LCS array comes from PLCP. `stpd-build -i OUT.T` then finds these files and skips the suffix tree. `experiments/stpd_index_chr19.sh` runs the whole comparison.
 
 ### `katka info PREFIX`, `katka presets`
 
@@ -184,6 +191,11 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
   - for BML with threshold L run on the same reads, the fraction of its backward steps that fall in failed windows, at the ends of searches, or inside long crossings that block steps would replace.
 
   The model is at the top of the source file.
+- `experiments/stpd_index_chr19.sh STPDIR list.tsv patterns.fa WORK [L]`: the published STPD-index against katka, on the same patterns, with L = 1000 by default.
+  - It builds their index through `stpd-prep`/`stpd-export`, with their RLZ text oracle and r-index φ.
+  - It runs BML and forward–backward search on their longest-prefix matching (`experiments/stpd_index_mems.cpp`, compiled against their code by `experiments/build_stpd_index_mems.sh`), and their `locate_all_occurrences` for every MEM.
+  - It runs katka's plain, two-level and STPD searches (with and without intervals, with two-level intervals, with `--locate`).
+  - It compares the MEM sets and the occurrence counts, and writes times, sizes and peak memory to `WORK/summary.txt`.
 - `tests/exp_kebab.sh PREFIX queries.fa [L] [k] [R]`: KeBaB then BML, plain BML, and KeBaB inside BML, on queries mostly absent from the text (Section 3.2). It reports the median time of R runs, k-mer tests, window restarts, backward steps and MEMs, and checks that all three give the same MEMs. `tests/gen_novel.py` makes synthetic queries of that kind.
 
 ## Testing
@@ -207,7 +219,7 @@ Reading order: `bits.hpp` → `rlbwt.hpp` → `search.hpp` → `mems.hpp` → `t
 - **Regressions**, if `KATKA_OLD` (katka-readable's `bin/`), `RZ_OLD` (a build of `katka/rz-index`) or `CHR19_OLD` (`chr19/twolevel/build/`) is set:
   - `tests/regress_katka.sh`: the same text, table, KeBaB filter and listings, byte for byte, as `katka-classify`. It covers counting, listing and range answers, sampled, per-species and grammar tags, `-X`, `-K`, `-D`, `-U`, a per-dataset BWT and 4 threads;
   - `tests/regress_digest.sh`: the same digested text, table and byte map as `rz-prep -B`, and the same listings, byte for byte, as `rz-classify -B` with tags, for L = 11 to 30, with and without a lookup table;
-  - `tests/regress_stpd.sh` (with `STPD_OLD`, a built clone of https://github.com/regindex/STPD-index): our pruned STPD sample of rev(T) is, position for position, the paper's st-colex⁻ sampling of T (`stpd-sampling -c`), except for their position 0, on their yeast text and on a chromosome-like text;
+  - `tests/regress_stpd.sh` (with `STPD_OLD`, a built clone of https://github.com/regindex/STPD-index): our pruned STPD sample of rev(T) is, position for position, the paper's st-colex⁻ sampling of T (`stpd-sampling -c`), except for their position 0. `stpd-export`'s four files are byte-identical to `stpd-sampling -c -P`'s, on their yeast text and on a chromosome-like text. Then `experiments/stpd_index_chr19.sh` on the chromosome-like collection must give the same MEMs, by every method of both tools, and the same occurrence counts;
   - `tests/regress_chr19.sh`: the same MEMs, with the same numbers of occurrences, as `query_twolevel`, for BML and FB with L = 100 and 1000.
 
 ```

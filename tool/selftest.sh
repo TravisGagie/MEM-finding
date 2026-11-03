@@ -133,6 +133,11 @@ if [ -n "${STPD_OLD:-}" ]; then            # a clone of https://github.com/regin
   "$HERE/tests/regress_stpd.sh" "$STPD_OLD/build/CLI" "$STPD_OLD/data/yeast.txt" "$W/regress_stpd_yeast"
   python3 -c "import sys; print(''.join(l.strip() for l in open(sys.argv[1]) if not l.startswith('>')).replace('N', ''))" "$D/chr/h0.fa" > chrT.txt
   "$HERE/tests/regress_stpd.sh" "$STPD_OLD/build/CLI" chrT.txt "$W/regress_stpd_chr"
+  step "STPD-index's MEMs (experiments/stpd_index_chr19.sh), on the chromosome-like collection"
+  "$HERE/experiments/stpd_index_chr19.sh" "$STPD_OLD" "$D/chr/list.tsv" "$D/chr/queries.fa" "$W/stpd_index_chr" 100 > /dev/null 2>&1
+  grep -A9 "^comparison" "$W/stpd_index_chr/summary.txt" | sed 's/^/  /'
+  if grep -E "^  (ours|theirs)" "$W/stpd_index_chr/summary.txt" | grep -vq " 0 only here (0 with the first occurrence across a junction), 0 missing"; then echo "FAILED: STPD-index MEMs"; exit 1; fi
+  if grep -q "occurrence counts different from ep - sp: [1-9]" "$W/stpd_index_chr/summary.txt"; then echo "FAILED: STPD-index occurrence counts"; exit 1; fi
 fi
 if [ -n "${CHR19_OLD:-}" ]; then step "regression against chr19/twolevel"; "$HERE/tests/regress_chr19.sh" "$CHR19_OLD" "$D/chr" "$W/regress_chr19"; fi
 echo "self-test passed"

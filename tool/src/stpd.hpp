@@ -39,6 +39,42 @@ struct stpd_index {
     std::vector<uint8_t> S;           // the text S$ (the oracle), with $ = byte 1
     PackedInts pos;                   // the sample, sorted lexicographically by suffix
     u64 runs = 0;                     // r, for the statistics
+    // phi^-1 (SA[x] -> SA[x+1]), for locating every occurrence: the SA values at the ends of the BWT runs
+    // (sorted), the SA value at the start of the next run for each, and SA[n-1] (no successor)
+    EliasFano ikeys; PackedInts ivals; u64 last_sa = 0;
+
+    // phi^-1(i) = SA[ISA[i] + 1] (i != SA[n-1]): from the run end with the largest SA value <= i, as the
+    // r-index computes phi (Gagie, Navarro and Prezza)
+    inline u64 phi_inv(u64 i) const { u64 t = ikeys.count_less(i + 1) - 1; return ivals[t] + (i - ikeys.access(t)); }
+
+    // Every occurrence of x[0..len), given its first in SA order, t = SA[sp]: phi^-1 steps in batches of
+    // doubling size, checking against the text only the last position of each batch (the occurrences are a
+    // prefix of the sequence SA[sp], SA[sp+1], ...), then a binary search in the batch that overshot, as in
+    // Becker et al.'s locating with st-colex.  Appends to out; returns the number of occurrences.
+    u64 locate(const uint8_t *x, u64 len, u64 t, std::vector<u64> &out, u64 &checks) const {
+        const u64 first = out.size();
+        out.push_back(t);
+        auto occurs_at = [&](u64 p) { ++checks; return p + len <= n - 1 && lce_bytes(S.data() + p, x, len) >= len; };
+        u64 batch = 1;
+        for (;;) {
+            const u64 b0 = out.size();
+            bool end = false;
+            for (u64 q = 0; q < batch; ++q) {
+                if (out.back() == last_sa) { end = true; break; }
+                out.push_back(phi_inv(out.back()));
+            }
+            if (out.size() == b0) break;                        // the last row was reached
+            if (!occurs_at(out.back())) {                       // the boundary is in this batch: binary search
+                u64 lo = b0, hi = out.size() - 1;               // out[lo..hi]: hi fails; find the first failing
+                while (lo < hi) { u64 mid = (lo + hi) / 2; if (occurs_at(out[mid])) lo = mid + 1; else hi = mid; }
+                out.resize(lo);
+                break;
+            }
+            if (end) break;
+            batch *= 2;
+        }
+        return out.size() - first;
+    }
 
     // compares the suffix S[b..] with x[0..len): returns the length of their common prefix and, if it is
     // shorter than len, whether the suffix is smaller
@@ -89,6 +125,14 @@ struct stpd_index {
             }
         }
         for (u64 k = 0; k < R; ++k) if (ssa[k] == UINT64_MAX || esa[k] == UINT64_MAX) die("internal error: a run without samples");
+        {   // phi^-1: SA at the end of run k -> SA at the start of run k + 1
+            std::vector<std::pair<u64, u64>> kv(R - 1);
+            for (u64 k = 0; k + 1 < R; ++k) kv[k] = {esa[k], ssa[k + 1]};
+            std::sort(kv.begin(), kv.end());
+            std::vector<u64> kk(R - 1), vv(R - 1);
+            for (u64 k = 0; k + 1 < R; ++k) { kk[k] = kv[k].first; vv[k] = kv[k].second; }
+            ikeys.build(kk, n); ivals.build(vv); last_sa = esa[R - 1];
+        }
         // the needed run starts, with their rows LF(x)
         std::vector<std::pair<u64, u64>> v;                     // (row of SA[x] - 1, SA[x] - 1)
         std::vector<int64_t> prev_of(256, -1);                  // the last run so far of each character
@@ -112,13 +156,18 @@ struct stpd_index {
         std::vector<u64> p(v.size());
         for (u64 i = 0; i < v.size(); ++i) p[i] = v[i].second;
         pos.build(p);
-        fprintf(stderr, "STPD: n=%lu r=%lu, %lu run starts, %lu sampled positions (%.3f of r), %.3f MB on top of the text, %.1f s\n",
-                n, R, cand, kept, (double)kept / R, pos.bytes() / 1e6, now() - t0);
+        fprintf(stderr, "STPD: n=%lu r=%lu, %lu run starts, %lu sampled positions (%.3f of r), %.3f MB on top of the text (+%.3f MB for phi^-1), %.1f s\n",
+                n, R, cand, kept, (double)kept / R, pos.bytes() / 1e6, locate_bytes() / 1e6, now() - t0);
     }
     u64 bytes() const { return pos.bytes(); }
-    void save(const std::string &f) const { FILE *o = open_or_die(f, "wb"); wmagic(o, "KTSTPD01"); wr(o, n); wr(o, runs); pos.save(o); fclose(o); }
+    u64 locate_bytes() const { return ikeys.bytes() + ivals.bytes(); }
+    void save(const std::string &f) const {
+        FILE *o = open_or_die(f, "wb"); wmagic(o, "KTSTPD02"); wr(o, n); wr(o, runs); pos.save(o);
+        ikeys.save(o); ivals.save(o); wr(o, last_sa); fclose(o);
+    }
     void load(const std::string &f, const std::string &Sfile) {
-        FILE *i = open_or_die(f, "rb"); rmagic(i, "KTSTPD01", f); rd(i, n); rd(i, runs); pos.load(i); fclose(i);
+        FILE *i = open_or_die(f, "rb"); rmagic(i, "KTSTPD02", f); rd(i, n); rd(i, runs); pos.load(i);
+        ikeys.load(i); ivals.load(i); rd(i, last_sa); fclose(i);
         if (file_size(Sfile) != n - 1) die(Sfile + " does not match " + f);
         S.resize(n);
         FILE *s = open_or_die(Sfile, "rb");

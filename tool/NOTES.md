@@ -61,6 +61,62 @@ Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like
 
   Inside BML it tests 15 times fewer k-mers than KeBaB's separate pass. With an index this small, though, a failed window costs plain BML only about 13 cheap steps, and most of the time goes into the shared segments, so it is not faster. The case the paper describes needs a large index (cache misses per step), i.e. the desktop: for example the chromosome 19 index with queries from `tests/gen_novel.py` built on other sequence.
 
+### The published STPD-index on chromosome 19 (2026-11-03)
+
+`experiments/stpd_index_chr19.sh` compares the published code (github.com/regindex/STPD-index, Becker et al.) with katka on the chr19 question: both strands, L = 1000 (or 100), the same patterns.
+
+**Their index.** Their `stpd-build` first runs `stpd-sampling`, which builds the suffix array, the LCP array and an explicit suffix tree: about 68 bytes per character on their yeast text (0.83 GB for 12.2 million characters). Their README says it has been tested only on files of a few gigabytes. Chromosome 19 with 16 individuals on both strands is 4.07 × 10⁹ characters, so it can't run on the desktop. But `stpd-build` skips that step when `T.colex_m` exists, and builds its index by reading `T.rbwt`, `T.pa` and `T.lcs` sequentially. katka writes all four in O(r) memory plus the text:
+- `katka stpd-prep list.tsv st`: their text `st.T` (both strands, split at runs of N into A/C/G/T pieces, concatenated: their oracle accepts only A/C/G/T), `st.S` = reverse(`st.T`), the piece starts, and `st.reflen`;
+- Big-BWT on `st.S`, then `katka index --stpd st`: our sample of S is their st-colex⁻ sampling of T;
+- `katka stpd-export st`: `st.T.colex_m`, `.rbwt` (our BWT file of S$), `.pa` (SA of S$ streamed by φ) and `.lcs` (PLCP by φ in text order, kept as a 2N-bit vector).
+
+On their yeast text and on a chromosome-like text, these files are **byte-identical** to `stpd-sampling -c -P`'s (`tests/regress_stpd.sh`). Given them, `stpd-build` produces a byte-identical index. The script then runs `stpd-build -i st.T -o st.stpdi -l $(cat st.reflen)`, with their RLZ oracle (the first sequence, both strands, as the reference) and their r-index φ.
+
+**Their MEMs.** Their tools locate whole patterns; MEM finding needs only the longest prefix of a string that occurs, which their Algorithm 1 computes on the way. `experiments/stpd_index_mems.cpp` runs BML and forward–backward search on that primitive over their index of both strands, like katka's, and locates every MEM with their `locate_all_occurrences` (φ⁻¹, exponential search, LCS checks). It is compiled against their code with their flags by `experiments/build_stpd_index_mems.sh`.
+
+One addition to their algorithm was necessary: their binary search returns a candidate sample without checking it, and they check only once, at the end of a whole pattern. For MEMs, the step that fails at every MEM's end would otherwise continue from a wrong sample. So the driver checks each candidate with their `O.LCS`; when the check fails, the extended prefix doesn't occur. The number of rejected candidates is reported (2,265 of 21,398 jumps on the test data, L = 100).
+
+Their text has no separators, so a match can run across the junction between two pieces; the script flags MEMs whose first occurrence crosses one.
+
+**katka's locating.** `find --stpd --locate` lists every occurrence of each MEM by φ⁻¹ from the first, checking the text at the end of each doubling batch, then binary-searching the batch that overshot, as in their paper. φ⁻¹ adds 2 numbers per BWT run to `PREFIX.stpd`. Tested against the suffix array: 347 million occurrences in the self-test, all identical. Counts equal ep − sp for every MEM.
+
+**Tested here** (the self-test, with `STPD_OLD` set): on the chromosome-like collection with L = 100, their BML, their forward–backward search, and katka's plain, two-level, STPD, STPD with two-level intervals and STPD with locate searches all give the same 556 MEMs. Their occurrence counts and katka's equal ep − sp.
+
+**For the desktop:**
+
+1. Build their code (pinned; its CMake fetches sdsl, malloc_count and gsacak, and needs `chromium.googlesource.com`). The first `make` fails with "divsufsort.h: No such file or directory"; reconfiguring with the generated include directory fixes it:
+
+   ```
+   git clone https://github.com/regindex/STPD-index ~/rz/STPD-index && cd ~/rz/STPD-index && git checkout 8a432a4
+   mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && (make -j4 || true)
+   cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-I$PWD/_deps/sdsl-build/external/libdivsufsort/include" && make -j4
+   ```
+
+2. Add the STPD sample (with φ⁻¹) to katka's chr19 index of the same collection, e.g. 16 individuals (`c33` from "Chromosome 19" above). It rebuilds the RLBWT too, which is quick:
+
+   ```
+   cd ~/tool/chr19 && $T index --stpd c33
+   ```
+
+3. Run the comparison (single-threaded, pinned; L = 1000, then 100):
+
+   ```
+   cd ~/tool/chr19
+   BIGBWT=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt OURS=$PWD/c33 PIN=0 \
+     ~/rz/MEM-finding/tool/experiments/stpd_index_chr19.sh ~/rz/STPD-index list33.tsv queries.fa stpd33 1000
+   OURS=$PWD/c33 PIN=0 ~/rz/MEM-finding/tool/experiments/stpd_index_chr19.sh ~/rz/STPD-index list33.tsv queries.fa stpd33 100
+   ```
+
+   The second run reuses their index in `stpd33`. Results are in `stpd33/summary.txt`, which overwrites itself, so copy it between runs.
+
+**Resources.**
+- **16 individuals (N ≈ 4.07 × 10⁹):**
+  - Disk: about 60 GB in `stpd33` while building (`st.T`, `st.S` and the BWT, 4 GB each; `st.T.pa` and `st.T.lcs`, 20 GB each, which `stpd-build` deletes afterwards).
+  - Memory: `katka index --stpd` and `stpd-export` hold the text (4 GB) plus O(r) structures (a few GB); their `stpd-build` holds the text for RLZ (4 GB), a suffix array of the reference (about 1 GB) and O(r) for φ. Every step's peak is recorded in the summary.
+- **32 individuals:** twice that: the 8 GB text plus the rest may not fit in 16 GB.
+- **64 individuals:** not possible on the desktop: both katka's STPD steps and their RLZ build hold the 16 GB text.
+- **Queries:** katka `--stpd` holds the text (4 GB for 16 individuals); theirs holds their RLZ oracle.
+
 ### Order-k character-level blocks: feasibility (`katka-blocks`, 2026-11-03)
 
 `bin/katka-blocks` (`experiments/blocks_feasibility.cpp`) measures whether blocks of continuations at the character level would pay on SILVA, before anyone builds them. The model (also at the top of the source):
