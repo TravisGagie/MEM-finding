@@ -1,0 +1,9 @@
+== index-silva 23:03:09
+preset silva (short reads, many taxa): --csa --tags
+RLBWT: n=1173771557 r=68324430, 155.265 MB (6.5 s)
+explicit RLCSA: 565.231 MB
+tag array: n=1173771557, 359351512 tag runs, 1150.312 MB (338.1 s)
+index built in 348.1 s
+index-silva: 348.18 s wall, 334.59 s user, peak 6535916 KB
+index-silva exit 0
+== index-s4 23:08:57

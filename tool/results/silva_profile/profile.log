@@ -1,0 +1,25 @@
+== 23:09:34
+full 1: wall 0.43 s, 53.8 us/read
+full 2: wall 0.44 s, 54.8 us/read
+full 3: wall 0.45 s, 56.2 us/read
+full 4: wall 0.44 s, 54.6 us/read
+full 5: wall 0.44 s, 55.1 us/read
+notags 1: wall 0.41 s, 50.7 us/read
+notags 2: wall 0.40 s, 50.5 us/read
+notags 3: wall 0.40 s, 50.4 us/read
+notags 4: wall 0.40 s, 50.2 us/read
+notags 5: wall 0.40 s, 50.3 us/read
+noio 1: wall 0.01 s, 1.1 us/read
+noio 2: wall 0.01 s, 1.1 us/read
+noio 3: wall 0.01 s, 1.1 us/read
+noio 4: wall 0.01 s, 1.1 us/read
+noio 5: wall 0.01 s, 1.1 us/read
+mems 1: wall 0.41 s, 50.9 us/read
+mems 2: wall 0.41 s, 51.8 us/read
+mems 3: wall 0.44 s, 55.4 us/read
+mems 4: wall 0.45 s, 56.1 us/read
+mems 5: wall 0.45 s, 55.7 us/read
+reads=8000 MEMs=43414 without MEMs=0 | threads=1 wall 0.48 s, 60.5 us/read
+searches=152791 char_steps=3889139 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+stats run: same output
+== done 23:10:06
