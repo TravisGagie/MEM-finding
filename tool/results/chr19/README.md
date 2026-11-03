@@ -95,3 +95,13 @@ text. These MEMs have the same coordinates as katka's. Leaving them out, as aske
 
 32 individuals were not tried for STPD. At 16 individuals, `index --stpd` already peaks at 8.9 GB and
 `stpd-export` at 6.4 GB, both with a 4 GB text; with the 8 GB text they would exceed the 11 GB cap.
+
+## The new two-level build at 32 individuals (2026-11-03, a73d0b5)
+
+`run_scripts/rebuild65.sh`: Big-BWT again (c65.bwt had been deleted for disk space: 650 s, 3.5 GB), then
+`index --preset chr19 c65` with the new build (424d3be). Results:
+- **Index:** 403 s, peak **5.19 GB**, against 9.04 GB for the old build (368 s).
+- **The two-level step:** 363 s, peak 5.19 GB. The parse has 434,172,121 phrases, 9,522,052 distinct.
+- **`c65.lvl`:** byte-identical to the old build's (249,876,375 bytes).
+
+Log: `logs/rebuild65.log`, `logs/index.65.new.err`.

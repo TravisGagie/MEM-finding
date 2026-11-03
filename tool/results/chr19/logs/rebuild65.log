@@ -1,0 +1,28 @@
+== bigbwt c65 (c65.bwt was deleted for disk space) 17:21:47
+bigbwt: 650.42 s wall, peak 3469052 KB
+== index --preset chr19 c65 17:32:38
+exit 0
+preset chr19 (long accurate matches): --csa --twolevel
+RLBWT: n=8004217317 r=72587343, 217.645 MB (19.7 s)
+explicit RLCSA: 1192.675 MB (peak memory so far 1.45 GB)
+two-level: 8004217317 characters; 434172121 phrases, 9522052 distinct (673.9 MB)
+dictionary: 9521875 phrases over A/C/G/T, 1 without a reverse complement (the first phrase of S can be one)
+B: 5211939 runs, 14.73 MB
+parse BWT: 12954298 runs, 62.87 MB
+blocks: 52209743 (8.32 phrases each), 1780430 symbols; block BWT 4548667 runs
+two-level index built in 363.4 s
+two-level: parse 194.294 MB, blocks 55.582 MB (peak memory of this step 5.19 GB)
+index built in 402.9 s (peak memory 5.19 GB)
+index: 402.91 s wall, peak 5069904 KB
+-rw-rw-r-- 1 travis travis 8004217316 Nov  2 23:49 c65.S
+-rw-rw-r-- 1 travis travis 8004217317 Nov  3 17:32 c65.bwt
+-rw-rw-r-- 1 travis travis 1192674701 Nov  3 17:33 c65.csa
+-rw-rw-r-- 1 travis travis         17 Nov  2 23:49 c65.info
+-rw-rw-r-- 1 travis travis  249876375 Nov  3 17:39 c65.lvl
+-rw-rw-r-- 1 travis travis  249876375 Nov  3 17:21 c65.lvl.old
+-rw-rw-r-- 1 travis travis  249876375 Nov  3 00:05 c65.lvl.prev
+-rw-rw-r-- 1 travis travis  217645530 Nov  3 17:32 c65.rlbwt
+-rw-rw-r-- 1 travis travis       2443 Nov  2 23:49 c65.tbl
+same .lvl as the old build
+/dev/nvme0n1p2  228G  168G   49G  78% /
+== done 17:39:21
