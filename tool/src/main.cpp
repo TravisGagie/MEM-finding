@@ -15,6 +15,7 @@
 #include <atomic>
 #include <condition_variable>
 #include <getopt.h>
+#include <sys/resource.h>
 #include <map>
 #include <mutex>
 #include <thread>
@@ -168,6 +169,9 @@ static int cmd_bwt(int argc, char **argv) {
     return 0;
 }
 
+// peak resident memory of this process so far, in GB (10^9 bytes)
+static double peak_gb() { struct rusage u; getrusage(RUSAGE_SELF, &u); return u.ru_maxrss * 1024.0 / 1e9; }
+
 // ---------------------------------------------------------------------------------------------------
 // katka index
 
@@ -288,12 +292,16 @@ static int cmd_index(int argc, char **argv) {
     B.build(bwtfile);
     save_rlbwt(B, prefix + ".rlbwt");
     fprintf(stderr, "RLBWT: n=%lu r=%lu, %.3f MB (%.1f s)\n", B.n, B.R, B.bytes() / 1e6, now() - t0);
-    rlcsa X;
-    if (csa || tl) {
-        X.build(bwtfile, false);
-        if (csa) { X.save(prefix + ".csa"); fprintf(stderr, "explicit RLCSA: %.3f MB\n", X.bytes() / 1e6); }
+    // Each step frees what it built before the next one starts: only the RLBWT is kept throughout (the tags,
+    // STPD and two-level steps need it).  The two-level step reloads the RLCSA it uses for character steps.
+    if (csa) {
+        rlcsa X; X.build(bwtfile, false); X.save(prefix + ".csa");
+        fprintf(stderr, "explicit RLCSA: %.3f MB (peak memory so far %.2f GB)\n", X.bytes() / 1e6, peak_gb());
     }
-    if (efcsa) { rlcsa Y; Y.build(bwtfile, true); Y.save(prefix + ".efcsa"); fprintf(stderr, "Elias-Fano RLCSA: %.3f MB\n", Y.bytes() / 1e6); }
+    if (efcsa) {
+        rlcsa Y; Y.build(bwtfile, true); Y.save(prefix + ".efcsa");
+        fprintf(stderr, "Elias-Fano RLCSA: %.3f MB (peak memory so far %.2f GB)\n", Y.bytes() / 1e6, peak_gb());
+    }
     if (tags) {
         double t1 = now();
         genome_table G; G.load(prefix + ".tbl");
@@ -318,7 +326,7 @@ static int cmd_index(int argc, char **argv) {
         tag_array T;
         build_tag_array(TR, &B, o, T);
         T.save(tagout.empty() ? prefix + ".tag" : tagout);
-        fprintf(stderr, "tag array: n=%lu, %lu tag runs, %.3f MB (%.1f s)\n", T.n, T.rho, T.bytes() / 1e6, now() - t1);
+        fprintf(stderr, "tag array: n=%lu, %lu tag runs, %.3f MB (%.1f s; peak memory so far %.2f GB)\n", T.n, T.rho, T.bytes() / 1e6, now() - t1, peak_gb());
     }
     if (stpd) {
         stpd_index D;
@@ -328,13 +336,16 @@ static int cmd_index(int argc, char **argv) {
     if (read_info_digest(prefix) && (kebab || tl)) die("KeBaB and two-level indexing are for undigested texts");
     if (kebab) build_kebab(Sfile, kebab, eps, prefix + ".k" + std::to_string(kebab) + ".kbf");
     if (tl) {
+        rlcsa X;                                    // for the character steps: the one just built, or build it
+        if (file_exists(prefix + ".csa")) X.load(prefix + ".csa");
+        if (X.n != B.n) X.build(bwtfile, false);   // (none, or one left from another BWT)
         stepper st; st.bwt = &B; st.csa = &X;
         two_level L;
         build_twolevel(Sfile, B, st, to, L);
         L.save(prefix + ".lvl");
         fprintf(stderr, "two-level: parse %.3f MB, blocks %.3f MB\n", L.bytes_parse() / 1e6, L.has_blocks ? L.bytes_blocks() / 1e6 : 0.0);
     }
-    fprintf(stderr, "index built in %.1f s\n", now() - t0);
+    fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
     return 0;
 }
 
