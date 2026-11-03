@@ -31,12 +31,17 @@
 #pragma once
 #include "tag_build.hpp"
 #include "twolevel.hpp"
+#include "parse_text.hpp"
 
 namespace katka {
 
 struct stpd_index {
     u64 n = 0;                        // |S$|
     std::vector<uint8_t> S;           // the text S$ (the oracle), with $ = byte 1
+    const parse_text *PT = nullptr;   // or, if set (and S empty), S$ read through the two-level parse
+    // the text oracle: S$[x], and the longest common prefix of S$[b..b+len) and x[0..len)
+    inline uint8_t at(u64 x) const { return PT ? PT->at(x) : S[x]; }
+    inline u64 lce_at(u64 b, const uint8_t *x, u64 len) const { return PT ? PT->lce(b, x, len) : lce_bytes(S.data() + b, x, len); }
     PackedInts pos;                   // the sample, sorted lexicographically by suffix
     u64 runs = 0;                     // r, for the statistics
     // phi^-1 (SA[x] -> SA[x+1]), for locating every occurrence: the SA values at the ends of the BWT runs
@@ -54,7 +59,7 @@ struct stpd_index {
     u64 locate(const uint8_t *x, u64 len, u64 t, std::vector<u64> &out, u64 &checks) const {
         const u64 first = out.size();
         out.push_back(t);
-        auto occurs_at = [&](u64 p) { ++checks; return p + len <= n - 1 && lce_bytes(S.data() + p, x, len) >= len; };
+        auto occurs_at = [&](u64 p) { ++checks; return p + len <= n - 1 && lce_at(p, x, len) >= len; };
         u64 batch = 1;
         for (;;) {
             const u64 b0 = out.size();
@@ -80,8 +85,8 @@ struct stpd_index {
     // shorter than len, whether the suffix is smaller
     inline u64 cmp(u64 b, const uint8_t *x, u64 len, bool &less) const {
         u64 m = std::min<u64>(len, n - b);
-        u64 l = lce_bytes(S.data() + b, x, m);
-        less = l < len && (l == n - b || S[b + l] < x[l]);
+        u64 l = lce_at(b, x, m);
+        less = l < len && (l == n - b || at(b + l) < x[l]);
         return l;
     }
     // the sampled position starting the smallest suffix prefixed by x[0..len), or UINT64_MAX
@@ -165,9 +170,11 @@ struct stpd_index {
         FILE *o = open_or_die(f, "wb"); wmagic(o, "KTSTPD02"); wr(o, n); wr(o, runs); pos.save(o);
         ikeys.save(o); ivals.save(o); wr(o, last_sa); fclose(o);
     }
+    // with Sfile empty, the text is not loaded (set PT before searching)
     void load(const std::string &f, const std::string &Sfile) {
         FILE *i = open_or_die(f, "rb"); rmagic(i, "KTSTPD02", f); rd(i, n); rd(i, runs); pos.load(i);
         ikeys.load(i); ivals.load(i); rd(i, last_sa); fclose(i);
+        if (Sfile.empty()) return;
         if (file_size(Sfile) != n - 1) die(Sfile + " does not match " + f);
         S.resize(n);
         FILE *s = open_or_die(Sfile, "rb");
@@ -186,7 +193,7 @@ inline void stpd_extend(const stpd_index &D, const char *X, u64 lo, stpd_state &
     while (st.j > lo) {
         unsigned char c = x[st.j - 1];
         ++cnt.char_steps;
-        if (st.t > 0 && D.S[st.t - 1] == c) { --st.t; --st.j; continue; }
+        if (st.t > 0 && D.at(st.t - 1) == c) { --st.t; --st.j; continue; }
         ++cnt.stpd_jumps;
         u64 b = D.find(x + st.j - 1, st.end - st.j + 1, cnt.stpd_compares);
         if (b == UINT64_MAX) break;

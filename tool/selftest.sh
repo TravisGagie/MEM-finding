@@ -101,6 +101,12 @@ same a.out b.out "STPD search, chromosome-like"
 quiet $K find -L 1000 --format mems --stpd --no-intervals c "$D/chr/queries.fa" b.out
 cut -f1-3 a.out > a3.out; cut -f1-3 b.out > b3.out
 same a3.out b3.out "STPD search without intervals (the same MEMs)"
+quiet $K index --parse-oracle c
+quiet $K find -L 1000 --format mems --stpd --parse-oracle c "$D/chr/queries.fa" b.out
+same a.out b.out "STPD search with the parse oracle (the text read through the two-level parse)"
+quiet $K find -L 1000 --format mems --stpd --locate c "$D/chr/queries.fa" d.out
+quiet $K find -L 1000 --format mems --stpd --locate --parse-oracle c "$D/chr/queries.fa" e.out
+same d.out e.out "STPD locating with the parse oracle"
 quiet $K find --preset chr19 c "$D/chr/queries.fa" b.out
 same a.out b.out "preset chr19 (two-level, blocks) = plain search"
 quiet $K find --preset novel -L 200 t "$D/reads.fq" a.out

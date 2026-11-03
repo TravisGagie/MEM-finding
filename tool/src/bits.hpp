@@ -36,18 +36,31 @@ struct EliasFano {
     static constexpr uint64_t SAMPLE = 256;
 
     void build(const std::vector<uint64_t> &v, uint64_t universe) {
-        n = v.size(); u = universe; l = 0;
+        begin(v.size(), universe);
+        for (uint64_t x : v) push(x);
+        finish();
+    }
+    // streaming: begin(count, universe), push the values in order, finish()
+    uint64_t pushed = 0, lastv = 0;
+    void begin(uint64_t count, uint64_t universe) {
+        n = count; u = universe; l = 0; pushed = 0; lastv = 0;
         if (n && u / n > 1) while ((u / n) >> (l + 1)) ++l;
         low.assign((n * l + 63) / 64 + 1, 0);
         hbits = n + (u >> l) + 2;
         high.assign(hbits / 64 + 2, 0);
-        for (uint64_t j = 0; j < n; ++j) {
-            if (j && v[j] < v[j - 1]) throw std::runtime_error("Elias-Fano: not sorted");
-            if (v[j] >= u && u) throw std::runtime_error("Elias-Fano: value out of range");
-            if (l) set_low(j, v[j] & ((1ull << l) - 1));
-            uint64_t p = (v[j] >> l) + j;
-            high[p >> 6] |= 1ull << (p & 63);
-        }
+    }
+    inline void push(uint64_t x) {
+        const uint64_t j = pushed++;
+        if (j >= n) throw std::runtime_error("Elias-Fano: too many values");
+        if (j && x < lastv) throw std::runtime_error("Elias-Fano: not sorted");
+        if (x >= u && u) throw std::runtime_error("Elias-Fano: value out of range");
+        lastv = x;
+        if (l) set_low(j, x & ((1ull << l) - 1));
+        uint64_t p = (x >> l) + j;
+        high[p >> 6] |= 1ull << (p & 63);
+    }
+    void finish() {
+        if (pushed != n) throw std::runtime_error("Elias-Fano: too few values");
         ones.assign(hbits / 512 + 2, 0);
         for (uint64_t b = 1; b < ones.size(); ++b) {
             uint64_t c = 0;
@@ -104,8 +117,15 @@ struct EliasFano {
     inline uint64_t count_less(uint64_t x) const {
         if (x >= u) return n;
         uint64_t h = x >> l, xl = x & ((1ull << l) - 1);
-        uint64_t lo = h == 0 ? 0 : select_<false>(h - 1) - (h - 1);
-        uint64_t hi = select_<false>(h) - h;
+        uint64_t lo, hi;
+        if (h == 0) { lo = 0; hi = select_<false>(0); }
+        else {                                   // the bucket ends at the next zero after the (h-1)-th
+            uint64_t p = select_<false>(h - 1);
+            lo = p - (h - 1);
+            uint64_t q = p + 1, w = q >> 6, word = ~high[w] & (~0ull << (q & 63));
+            while (!word) word = ~high[++w];
+            hi = ((w << 6) + __builtin_ctzll(word)) - h;
+        }
         while (hi - lo > 8) {
             uint64_t mid = (lo + hi) >> 1;
             if (get_low(mid) < xl) lo = mid + 1; else hi = mid;

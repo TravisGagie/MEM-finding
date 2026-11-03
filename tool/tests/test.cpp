@@ -212,11 +212,30 @@ static int mems_test(int argc, char **argv) {
         cfgs.push_back({"twolevel+jumps", &X, nullptr, &L2, true});
         cfgs.push_back({"twolevel+jumps/rlbwt", nullptr, nullptr, &L2, true});
     }
-    stpd_index SD, SDall;
+    stpd_index SD, SDall, SDp;
+    parse_text PT;
     if (stpd) {
         SD.load(prefix + ".stpd", prefix + ".S");
         SDall.build(prefix + ".S", prefix + ".bwt", B, false);
+        // the same sample with the text read through a parse (short phrases: many boundary crossings)
+        SDp.load(prefix + ".stpd", "");
+        PT.build(prefix + ".S", 12, 3, prefix + ".ptxt.tmp");
+        SDp.PT = &PT;
+        {
+            std::mt19937_64 rng(11);
+            u64 bad = 0;
+            for (u64 x = 0; x < SD.n; ++x) bad += PT.at(x) != SD.S[x];               // forward
+            for (u64 x = SD.n; x-- > 0;) bad += PT.at(x) != SD.S[x];                 // backward
+            for (int q = 0; q < 20000; ++q) {                                         // random, and lce
+                u64 a = rng() % SD.n, b = rng() % SD.n, len = std::min(SD.n - std::max(a, b), (u64)(rng() % 300));
+                bad += PT.at(a) != SD.S[a];
+                bad += PT.lce(a, SD.S.data() + b, len) != lce_bytes(SD.S.data() + a, SD.S.data() + b, len);
+            }
+            CHECK(bad == 0, "parse oracle: %lu wrong reads", bad);
+            printf("parse oracle (12,3): %lu phrases; every position read forward and backward, 20000 random reads and lce checked\n", PT.m);
+        }
         cfgs.push_back({"stpd", &X, nullptr, nullptr, true, &SD});
+        cfgs.push_back({"stpd/parse-oracle", &X, nullptr, nullptr, true, &SDp});
         cfgs.push_back({"stpd-all/rlbwt", nullptr, nullptr, nullptr, true, &SDall});
         if (tl) cfgs.push_back({"stpd+twolevel", &X, nullptr, &L2, true, &SD});
     }
@@ -444,7 +463,8 @@ static int mems_test(int argc, char **argv) {
                 while (i < P.size() && base_code(P[i]) >= 0) ++i;
                 u64 n = i - r0;
                 if (!n) continue;
-                segment_search Q0, Q1; Q0.S = Q1.S = &S; Q1.SP = &SD;
+                for (const stpd_index *DD : {&SD, &SDp}) {
+                segment_search Q0, Q1; Q0.S = Q1.S = &S; Q1.SP = DD;
                 Q0.prepare(P.data() + r0, n); Q1.prepare(P.data() + r0, n);
                 for (int q = 0; q < 20; ++q) {
                     u64 end = 1 + rng() % n, lo = q % 3 ? 0 : rng() % end;
@@ -456,7 +476,7 @@ static int mems_test(int argc, char **argv) {
                     if (ok && j0 < end) {          // every occurrence by phi^-1, against the suffix array
                         vector<u64> occ; u64 checks = 0;
                         const char *X = dir ? Q1.rc.data() : Q1.R;
-                        SD.locate((const uint8_t *)X + j0, end - j0, Q1.sst[dir].t, occ, checks);
+                        DD->locate((const uint8_t *)X + j0, end - j0, Q1.sst[dir].t, occ, checks);
                         vector<u64> want;
                         for (u64 x = I0.sp; x < I0.ep; ++x) want.push_back(BF.SA[x]);
                         CHECK(occ == want, "STPD locate: pattern %zu dir %d [%lu,%lu): %zu occurrences, SA range %zu", pi, dir, j0, end, occ.size(), want.size());
@@ -464,9 +484,10 @@ static int mems_test(int argc, char **argv) {
                     }
                     ++nq;
                 }
+                }
             }
         }
-        printf("STPD: %lu longest-suffix searches checked (start and lex-smallest occurrence), %lu occurrences located by phi^-1 checked against SA\n", nq, nloc);
+        printf("STPD (text and parse oracle): %lu longest-suffix searches checked (start and lex-smallest occurrence), %lu occurrences located by phi^-1 checked against SA\n", nq, nloc);
     }
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;

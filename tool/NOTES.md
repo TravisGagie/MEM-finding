@@ -190,6 +190,82 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-I$PWD/_deps/sdsl-build/e
 
 The first `cmake` run creates that directory. The plain `cmake ..` failed with "divsufsort.h: No such file or directory".
 
+### STPD with the text read through the parse (`--parse-oracle`, 2026-11-03)
+
+`katka index --parse-oracle [--syncmer k,s] PREFIX` writes `PREFIX.ptxt` (`src/parse_text.hpp`). It contains the two-level index's parse of S$ (the same closed syncmers, the same lexicographic phrase ids) stored as a text oracle:
+- the phrase starts: the boundary list, in Elias–Fano;
+- the parse: one packed id per phrase;
+- the phrase dictionary: the distinct phrases concatenated in id order, with packed offsets.
+
+Run alone, it reads only `PREFIX.S`, not the BWT. `katka find --stpd --parse-oracle` loads it instead of `PREFIX.S`. Every text read of STPD search (the comparisons of the binary search, the S[t−1] test of the LF-like step, and the checks of φ⁻¹ locating) goes through it:
+- **Position to phrase:** a predecessor query on the starts, then the phrase's characters from the dictionary. Consecutive phrases overlap by k characters, so either phrase can serve a position in the overlap.
+- **The current phrase:** each thread keeps a cursor on its current phrase. A read inside it costs no query. A read just past either end moves to the next or previous phrase using only the phrase lengths (the next phrase starts k characters before the current one ends). Only a read anywhere else costs a predecessor query.
+- `--stats` prints how the seeks were served (same phrase, neighbour, query).
+
+**Tests:** `katka-test mems --stpd` builds an oracle with k,s = 12,3 (short phrases, so many boundary crossings). It checks every position read forward and backward, plus 20,000 random reads and LCEs, against the text. It also runs the STPD MEM checks and the φ⁻¹ locating checks (against the suffix array) through the oracle. `selftest.sh` compares `find --stpd` and `find --stpd --locate` outputs with and without the oracle, byte for byte.
+
+**On the synthetic collection** (16 × 2 Mbp, both strands, n = 64.0 × 10⁶; 2 patterns of 4.0 Mbp; search time, the minimum of 3 runs, since this container's timings vary by up to 30%). The outputs were byte-identical to the plain text in every case, with the same numbers of jumps and comparisons:
+
+| | plain text | oracle 51,12 | oracle 31,8 |
+|---|---|---|---|
+| size | 64.0 MB | 45.0 MB (5.62 bits/char) | 43.9 MB (5.71 bits/char) |
+| (dictionary / parse / starts) | | 33.1 / 7.6 / 2.8 MB | 26.2 / 13.4 / 4.3 MB |
+| L = 1000, `--no-intervals` | 0.20 s | 0.84 s | 1.05 s |
+| L = 1000, `--locate` | 0.20 s | 0.89 s | 1.10 s |
+| L = 1000, FB, `--no-intervals` | 0.74 s | 4.64 s | 4.80 s |
+| L = 100, `--no-intervals` | 0.29 s | 1.53 s | 1.86 s |
+| L = 100, `--locate` | 0.33 s | 1.64 s | 1.83 s |
+
+At L = 1000 (k,s = 51,12) the seeks split into 8.36 million served by the current phrase, 1.01 million by a neighbour and 1.88 million predecessor queries. The queries are almost exactly the binary search's comparisons (1.81 million): each comparison starts at a sampled position anywhere in the text. The LF-like steps and the comparisons' rightward reads almost never need a query. So the slowdown (4 to 6.5 times) is the cost of a random seek: about ten dependent memory accesses (two Elias–Fano selects, the packed id, two dictionary offsets, the bytes) against one for the plain text. On this collection the dictionary is half the text, because the synthetic genomes differ more than human haplotypes. On chr19 the dictionary should be a small fraction, and the parse and starts should take about (log σ + 2 + log(n/m)) bits per phrase, roughly 30 bits per 18 characters. That is 1.7 bits per character against 8.
+
+A cheap fix for the random seeks, not implemented: store each sampled position as (phrase index, offset) instead of a text position. That costs about the same bits, and a comparison would then start without a query. Only φ⁻¹ positions would still need one. That is also the first step of STPD over the parse.
+
+**For the desktop:** run `experiments/parse_oracle_chr19.sh` on the 16-individual index, which has `c33.S` and `c33.stpd`, with the chromosome-19 preset's syncmers and one smaller setting:
+
+```
+cd ~/rz/MEM-finding && git pull origin tool && make -C tool
+PIN=9 ~/rz/MEM-finding/tool/experiments/parse_oracle_chr19.sh ~/tool/chr19/c33 ~/tool/chr19/queries.fa ~/tool/chr19/poracle33 51,12 31,8
+```
+
+It needs `c33.rlbwt` too (for `find`), but not `c33.bwt`. Each oracle is built in `poracle33/k51s12/` and `poracle33/k31s8/` next to links to c33's files, so c33 is not changed. Single-threaded, it runs `--stpd --no-intervals` and `--stpd --locate` at L = 1000 and 100, and FB at L = 1000, each with the text and with each oracle. It cmps every oracle output against the text's and writes `poracle33/summary.txt` (sizes, times, peaks, seek counts). The plain-text runs hold the 4.07 GB text. The oracle runs should take about 1 GB. Copy `summary.txt` and the `*.log` files to `tool/results/chr19/poracle33/` and push.
+
+### STPD over the parse (sketch, not implemented)
+
+The idea is to run STPD search over the parse Z (phrase ids, the oracle's `ids`) for the whole phrases of the pattern, and over characters only at its two ends. The setting, as in two-level search: a pattern piece X = X_l · P_1 ⋯ P_h · X_r, where:
+- X_r starts at X's last closed syncmer, so it is a prefix of a phrase;
+- P_1 ⋯ P_h are the whole phrases between X's first and last syncmers (consecutive ones overlapping by k);
+- X_l is the part before X's first syncmer.
+
+Three facts make this work:
+1. A closed syncmer depends only on its k-mer. So every occurrence of X[f..] (f = X's first syncmer) in S starts at a phrase start and has the same phrase boundaries as X. (A syncmer at position 0 is the start of phrase 0 anyway.)
+2. The dictionary is prefix-free (the build checks this), and the ids are lexicographic. So for suffixes of S that start at phrase starts, the character order equals the order of their parse suffixes compared as id strings: equal ids mean equal phrases, and the first differing id decides.
+3. Hence the smallest suffix of S prefixed by X[f..] starts at start(u), where Z[u..] is the smallest parse suffix that matches P_1 ⋯ P_h as ids and then X_r as a character prefix of phrase Z[u + h].
+
+**The per-phrase table.** F[a], for each id a, is the smallest parse suffix starting with a, i.e. SA_Z at the first row of a's block. It takes σ log m bits. Optionally, G[a] is the range of the parse sample's entries whose suffix starts with a, which takes σ log r_Z bits. F[a] is always a parse-sample entry, because a's first occurrence in the parse BWT is a run start. So F only saves a binary search, and G shortens the others to the entries starting with a.
+
+**Entering from the character-level interval.** The right end X_r is matched by characters: character-level STPD (or backward search) gives the smallest occurrence t, or the interval [sp, ep). Then:
+- From t: t is a phrase start by fact 1, and u = pred(t) on the boundary list (check start(u) = t).
+- From [sp, ep), without a toehold: ρ = rank_B(sp) is the first parse row prefixed by X_r. The ids whose phrases have prefix X_r are contiguous (lexicographic ids), and ρ is the first row of the smallest of them, a₁ (ρ = C_Z[a₁]). So a₁ comes from C_Z, and u = F[a₁].
+
+Without either: a₁ is the smallest id whose phrase has prefix X_r, found by a binary search over the dictionary, which is sorted.
+
+**Parse-level steps.** These go right to left over P_h, …, P_1, with state u = the smallest parse suffix prefixed by the pattern's ids matched so far plus X_r. To prepend id a:
+- If Z[u − 1] = a, then u − 1. This is one read of `ids`, next to the cursor.
+- Otherwise, binary search over the parse sample for the smallest parse suffix prefixed by a·(ids)·X_r. The parse sample is the STPD sample of Z: run starts of the parse BWT, pruned with the LCP of Z in phrases, built by the same LF pass over the parse BWT, which the `.lvl` already has. With G it searches only among the entries starting with a. Each comparison reads ids of Z sequentially from a phrase index (no predecessor query), using the lcp-skip in ids. Only the last phrase's comparison reads characters from the dictionary, for X_r.
+- If no parse suffix is prefixed by it, the match ends inside phrase a. Convert u to t = start(u) (one select) and continue by characters into a's characters, right to left from its last uncovered one, with character-level STPD through the same oracle. That gives the exact match start for BML, and the next search restarts there.
+
+A parse-level jump replaces up to |P_i| − k character-level jumps, each of which would cost log r comparisons with random seeks. The parse sample has at most r_Z entries (the parse BWT runs: 514 thousand for 3.2 million phrases on the synthetic data, against r = 3.8 million).
+
+**Finishing at the left end.** After P_1, t = start(u) (one Elias–Fano select) is the smallest suffix of S prefixed by X[f..] (fact 3). Character-level STPD continues over X_l, testing S[t − 1] through the oracle: the cursor is already on phrase u − 1, whose last characters precede start(u), so this costs no query. When it jumps, it uses the character-level sample. The final t is the smallest occurrence of the whole match, so locating (φ⁻¹ with oracle checks) and the BML/FB drivers are unchanged.
+
+**What it needs on top of the oracle:**
+- F (and optionally G);
+- the parse sample, as phrase indices;
+- C_Z (the parse BWT already has its counts);
+- pattern parsing (`parse_pattern`, as in two-level search), plus a map from each pattern phrase to its id. That is the dictionary's hash table, `two_level::dict`; a phrase that is not in the dictionary ends the parse-level match.
+
+Open points: an id-level pruning rule equivalent to the character-level one (the same proof should go through with Z's LCP in phrases); and how often Z[u − 1] ≠ a on human haplotypes, i.e. whether parse-level jumps are rare enough. `--stats` on the two-level index already counts parse steps, which bounds this.
+
 ### sdsl-lite
 
 The tool has no sdsl dependency, only zlib and the bundled libsais (the auto-mode permission check refused to build sdsl at first). Its own versions replace sdsl's `sd_vector` (Elias–Fano), `wt_huff` (a wavelet matrix), `rank_support_v5` and `rmq_succinct_sct` (`src/rmq.hpp`, a min-tree in balanced parentheses). They are checked against brute force in `katka-test unit`.
@@ -354,7 +430,17 @@ Memory (rewritten 2026-11-03, after the desktop's 32-individual build peaked at 
 
 The peak is about 8.6 bytes per phrase plus the dictionary and the RLCSA/RLBWT (until B). Output is byte-identical (smallest and frequent continuation, `--no-blocks`, selftest). On the synthetic collection with `--syncmer 8,2` (25.4 million phrases, 2.9 phrases per block) the step peaks at 0.47 GB instead of 0.85 GB. The step now prints its own peak (`peak memory of this step`, VmHWM reset through `/proc/self/clear_refs`). Expected on chr19: about 4 GB at 32 individuals, and about 8 GB at 64 individuals (m ≈ 870 million), which should fit in 11 GB. `--continuation frequent` counts distinct successor pairs in a hash map (about 40 bytes per distinct pair) instead of sorting all m pairs (8 bytes per phrase).
 
-Not changed: `index --stpd` holds the text (1 byte per character) plus O(r). At 16 individuals it peaked at 8.9 GB (n = 4.07 × 10⁹, r = 68 million), so the O(r) part (the move structure and run arrays during sampling) is about 4.8 GB. That is the next thing to look at if STPD at 32 individuals is wanted.
+Not changed: `index --stpd` holds the text (1 byte per character) plus O(r). At 16 individuals it peaked at 8.9 GB (n = 4.07 × 10⁹, r = 68 million), so about 4.8 GB is something else. I haven't measured what. That is the next thing to look at if STPD at 32 individuals is wanted.
+
+**For the desktop (2026-11-03): the new two-level build, at 32 and then 64 individuals.** After `git pull origin tool && make -C tool`, rebuild the 32-individual index in the same 11 GB cgroup as `run_n.sh`, keeping the old `.lvl` to compare:
+
+```
+cd ~/tool/chr19 && mv c65.lvl c65.lvl.old
+systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "index: %e s wall, peak %M KB" ~/rz/MEM-finding/tool/bin/katka index --preset chr19 c65 > index.65.new.err 2>&1
+tail -5 index.65.new.err; cmp c65.lvl c65.lvl.old && echo "same .lvl"
+```
+
+The log line `two-level: parse ... (peak memory of this step X GB)` gives the two-level step alone; the expected value is about 4 GB. If the `.lvl` files are the same and the peak is well under 11 GB, run `run_scripts/run_n.sh 129` (64 individuals; about 40 GB of disk, so delete `c65.bwt` first if space is short). Put the logs in `tool/results/chr19/` and push.
 
 ## Open questions for Travis
 

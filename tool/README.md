@@ -65,6 +65,7 @@ Reads `PREFIX.S`, `PREFIX.tbl` and the BWT, and always writes the RLBWT `PREFIX.
 | `--twolevel` | `PREFIX.lvl` | two-level index with blocks; needs a BWT with one terminator |
 | `--stpd` | `PREFIX.stpd` | suffix-tree path decomposition sample for `find --stpd`: the needed BWT run starts, from the LF pass and text comparisons; needs one terminator |
 | `--stpd-all` | | keep every BWT run start (no pruning) |
+| `--parse-oracle` | `PREFIX.ptxt` | the text read through the two-level parse (phrase starts, parse, dictionary), for `find --stpd --parse-oracle`; uses `--syncmer`; run alone, it reads only `PREFIX.S` |
 | `--syncmer k,s` | | closed syncmers (default 51,12), canonical under reverse complement |
 | `--no-blocks` | | the parse only |
 | `--continuation smallest\|frequent` | | which successor continues a block (default smallest; frequent stores the order bit ω) |
@@ -92,6 +93,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--no-jumps` | two-level search without block steps |
 | `--stpd` | STPD search (`PREFIX.stpd`, with the text `PREFIX.S` as the oracle): binary searches over a sample of at most r text positions instead of backward steps. The intervals of the reported MEMs are then computed by backward search, so the output is the same as plain search |
 | `--no-intervals` | with `--stpd` and no tags: skip the intervals (the mems format prints `-` for them) |
+| `--parse-oracle` | with `--stpd`: read the text through `PREFIX.ptxt` instead of holding `PREFIX.S` (same output; see NOTES.md) |
 | `--locate` | with `--stpd`: locate every occurrence of each MEM (of its reverse complement, for BML and FB) by φ⁻¹ steps from the first one, checked against the text at the end of each batch of doubling size, then a binary search in the batch that overshot, as Becker et al. locate; the mems format gets a sixth column, the number of occurrences |
 | `--stpd --twolevel` | STPD finds the MEMs, and two-level search (with blocks unless `--no-jumps`) computes their intervals |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |

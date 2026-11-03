@@ -23,6 +23,40 @@ struct twolevel_options {
 // from o.tmp.  `release` is called once the characters are no longer needed (after B), so the caller can
 // free the RLBWT and RLCSA.  The peak is about 8 bytes per phrase plus the dictionary.
 
+// The parse of S$ (the file S, then the terminator, byte 1) at closed syncmers (k, s): a phrase runs from
+// the start of one syncmer to the end of the next (consecutive phrases overlap by k characters), the first
+// from position 0 (a syncmer at 0 does not start a phrase) and the last to the end of S$.  Streams S,
+// keeping only the open phrase; calls f(p, len) for each phrase in text order and returns |S$|.
+template <class F> uint64_t syncmer_parse(const std::string &Sfile, int K, int SM, bool &zero_is_syncmer, F f) {
+    zero_is_syncmer = false;
+    FILE *fs = open_or_die(Sfile, "rb");
+    std::vector<uint8_t> buf, raw(1 << 24);
+    uint64_t base = 0, open = 0, scanned = 0, n = 0;
+    auto add_phrase = [&](uint64_t s, uint64_t e) { f(buf.data() + (s - base), e - s); };
+    bool more = true;
+    while (more) {
+        size_t got = fread(raw.data(), 1, raw.size(), fs);
+        buf.insert(buf.end(), raw.begin(), raw.begin() + got);
+        if (got == 0) { buf.push_back(1); more = false; }      // the terminator $
+        const uint64_t end = base + buf.size();
+        if (end >= (uint64_t)K && end - K + 1 > scanned) {
+            const uint64_t from = scanned;
+            for_each_syncmer(buf.data() + (from - base), end - from, K, SM, [&](uint64_t q) {
+                uint64_t a = from + q;
+                if (a == 0) { zero_is_syncmer = true; return; }
+                add_phrase(open, a + K);
+                open = a;
+            });
+            scanned = end - K + 1;
+        }
+        if (!more) { n = end; add_phrase(open, n); break; }
+        uint64_t keep = std::min(open, scanned);
+        if (keep > base) { buf.erase(buf.begin(), buf.begin() + (keep - base)); base = keep; }
+    }
+    fclose(fs);
+    return n;
+}
+
 inline void build_twolevel(const std::string &Sfile, const rlbwt &bwt, const stepper &st, const twolevel_options &o, two_level &L,
                            const std::function<void()> &release = {}) {
     const int K = o.k;
@@ -43,49 +77,21 @@ inline void build_twolevel(const std::string &Sfile, const rlbwt &bwt, const ste
     std::vector<uint64_t> doff, rhash;
     std::unordered_map<uint64_t, uint32_t> seen;
     bool zero_is_syncmer = false;
-    uint64_t n = 0;
-    {
-        FILE *f = open_or_die(Sfile, "rb");
-        std::vector<uint8_t> buf, raw(1 << 24);
-        uint64_t base = 0, open = 0, scanned = 0;
-        auto add_phrase = [&](uint64_t s, uint64_t e) {
-            const uint8_t *p = buf.data() + (s - base);
-            uint64_t len = e - s, hv = phrase_hash(p, len);
-            auto it = seen.find(hv);
-            if (it == seen.end()) {
-                uint32_t idx = (uint32_t)rhash.size();
-                seen.emplace(hv, idx); rhash.push_back(hv); doff.push_back(dict.size());
-                dict.insert(dict.end(), p, p + len);
-                put(idx);
-            } else {
-                uint32_t idx = it->second;
-                uint64_t a = doff[idx], b2 = idx + 1 < doff.size() ? doff[idx + 1] : dict.size();
-                if (b2 - a != len || memcmp(dict.data() + a, p, len)) throw std::runtime_error("phrase hash collision");
-                put(idx);
-            }
-        };
-        bool more = true;
-        while (more) {
-            size_t got = fread(raw.data(), 1, raw.size(), f);
-            buf.insert(buf.end(), raw.begin(), raw.begin() + got);
-            if (got == 0) { buf.push_back(1); more = false; }      // the terminator $
-            const uint64_t end = base + buf.size();
-            if (end >= (uint64_t)K && end - K + 1 > scanned) {
-                const uint64_t from = scanned;
-                for_each_syncmer(buf.data() + (from - base), end - from, K, o.s, [&](uint64_t q) {
-                    uint64_t a = from + q;
-                    if (a == 0) { zero_is_syncmer = true; return; }
-                    add_phrase(open, a + K);
-                    open = a;
-                });
-                scanned = end - K + 1;
-            }
-            if (!more) { n = end; add_phrase(open, n); break; }
-            uint64_t keep = std::min(open, scanned);
-            if (keep > base) { buf.erase(buf.begin(), buf.begin() + (keep - base)); base = keep; }
+    const uint64_t n = syncmer_parse(Sfile, K, o.s, zero_is_syncmer, [&](const uint8_t *p, uint64_t len) {
+        uint64_t hv = phrase_hash(p, len);
+        auto it = seen.find(hv);
+        if (it == seen.end()) {
+            uint32_t idx = (uint32_t)rhash.size();
+            seen.emplace(hv, idx); rhash.push_back(hv); doff.push_back(dict.size());
+            dict.insert(dict.end(), p, p + len);
+            put(idx);
+        } else {
+            uint32_t idx = it->second;
+            uint64_t a = doff[idx], b2 = idx + 1 < doff.size() ? doff[idx + 1] : dict.size();
+            if (b2 - a != len || memcmp(dict.data() + a, p, len)) throw std::runtime_error("phrase hash collision");
+            put(idx);
         }
-        fclose(f);
-    }
+    });
     if (n != bwt.n) die("two-level: |S$| = " + std::to_string(n) + " but the BWT has " + std::to_string(bwt.n) + " rows");
     doff.push_back(dict.size());
     seen = std::unordered_map<uint64_t, uint32_t>();

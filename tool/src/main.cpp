@@ -11,6 +11,7 @@
 #include "tag_build.hpp"
 #include "twolevel_build.hpp"
 #include "stpd_export.hpp"
+#include "parse_text.hpp"
 #include "libsais.h"
 #include "libsais64.h"
 #include <atomic>
@@ -218,7 +219,10 @@ static const char *INDEX_USAGE =
     "  --twolevel          two-level index with blocks (PREFIX.lvl; needs one terminator)\n"
     "    --syncmer k,s     closed syncmers (default 51,12)\n"
     "    --no-blocks       parse only\n"
-    "    --continuation smallest|frequent   successor that continues a block (default smallest)\n";
+    "    --continuation smallest|frequent   successor that continues a block (default smallest)\n"
+    "  --parse-oracle      the text read through the two-level parse (PREFIX.ptxt: phrase starts, parse,\n"
+    "                      dictionary), for find --stpd --parse-oracle; uses --syncmer; alone, it reads only\n"
+    "                      PREFIX.S (no BWT)\n";
 
 static void build_kebab(const string &Sfile, uint32_t k, double eps, const string &out) {
     kmer_filter F; F.k = k;
@@ -275,9 +279,10 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
+    bool poracle = false;
     std::vector<u64> lambdas;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "h", longopts, nullptr)) != -1) {
@@ -300,6 +305,7 @@ static int cmd_index(int argc, char **argv) {
             case 'P': stpd = std::max(stpd, 1); break;
             case 'l': { std::string v = optarg, w; for (char ch : v + ",") { if (ch == ',') { if (!w.empty()) lambdas.push_back(std::stoull(w)); w.clear(); } else w += ch; } break; }
             case 'Q': stpd = 2; break;
+            case 'O': poracle = true; break;
             case 'C': { string v = optarg; if (v == "frequent") to.frequent = true; else if (v != "smallest") die("--continuation smallest|frequent"); break; }
             default: fputs(INDEX_USAGE, stderr); return 1;
         }
@@ -309,6 +315,19 @@ static int cmd_index(int argc, char **argv) {
     if (bwtfile.empty()) bwtfile = prefix + ".bwt";
     const string Sfile = prefix + ".S";
     double t0 = now();
+    auto build_parse_oracle = [&]() {
+        if (read_info_digest(prefix)) die("the parse oracle is for undigested texts");
+        reset_step_peak();
+        parse_text PT;
+        PT.build(Sfile, to.k, to.s, prefix + ".ptxt.tmp");
+        PT.save(prefix + ".ptxt");
+        fprintf(stderr, "parse oracle: %.3f MB (peak memory of this step %.2f GB)\n", PT.bytes() / 1e6, step_peak_gb());
+    };
+    if (poracle && !csa && !efcsa && !tags && !stpd && !tl && !kebab) {   // only the oracle: no BWT needed
+        build_parse_oracle();
+        fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
+        return 0;
+    }
     rlbwt B;
     B.build(bwtfile);
     save_rlbwt(B, prefix + ".rlbwt");
@@ -354,6 +373,7 @@ static int cmd_index(int argc, char **argv) {
         D.build(Sfile, bwtfile, B, stpd == 1);
         D.save(prefix + ".stpd");
     }
+    if (poracle) build_parse_oracle();
     if (read_info_digest(prefix) && (kebab || tl)) die("KeBaB and two-level indexing are for undigested texts");
     if (kebab) build_kebab(Sfile, kebab, eps, prefix + ".k" + std::to_string(kebab) + ".kbf");
     if (tl) {
@@ -397,6 +417,8 @@ static const char *FIND_USAGE =
     "    --stpd            STPD search (PREFIX.stpd and the text PREFIX.S): binary searches over a sample of\n"
     "                      at most r positions; the intervals of reported MEMs by backward search\n"
     "    --no-intervals    with --stpd: do not compute intervals (mems format prints - -; no tags)\n"
+    "    --parse-oracle    with --stpd: read the text through the two-level parse (PREFIX.ptxt, from index\n"
+    "                      --parse-oracle) instead of PREFIX.S\n"
     "    --locate          with --stpd: locate every occurrence of each MEM by phi^-1 steps checked against the\n"
     "                      text (doubling batches, then a binary search), and print their number (mems format);\n"
     "                      no intervals are computed unless tags are asked for (the mems format prints - -)\n"
@@ -575,13 +597,13 @@ static int cmd_find(int argc, char **argv) {
     string tagfile, kbffile, format = "listing";
     int nthreads = 1, ft = 0, hpc = -1, csa = 0;
     uint32_t kebab_k = 0;
-    bool twolevel = false, stats = false, use_stpd = false;
+    bool twolevel = false, stats = false, use_stpd = false, poracle = false;
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -610,6 +632,7 @@ static int cmd_find(int argc, char **argv) {
             case 12: stats = true; break;
             case 13: mode = NONE; break;
             case 14: use_stpd = true; break;
+            case 17: poracle = true; break;
             case 15: K.intervals = false; break;
             case 16: K.locate = true; break;
             default: fputs(FIND_USAGE, stderr); return 1;
@@ -656,8 +679,17 @@ static int cmd_find(int argc, char **argv) {
         K.comp = DM.comp;
     }
     stpd_index SD;
+    parse_text PT;
+    if (poracle && !use_stpd) die("--parse-oracle needs --stpd");
     if (use_stpd) {
-        SD.load(prefix + ".stpd", prefix + ".S");
+        SD.load(prefix + ".stpd", poracle ? string() : prefix + ".S");
+        if (poracle) {
+            PT.load(prefix + ".ptxt");
+            if (PT.n != SD.n) die(prefix + ".ptxt does not match " + prefix + ".stpd");
+            SD.PT = &PT;
+            fprintf(stderr, "parse oracle: %lu phrases (k = %u, s = %u), %u distinct: %.3f MB (%.2f bits per character) instead of the text (%.3f MB)\n",
+                    PT.m, PT.K, PT.SM, PT.sigma, PT.bytes() / 1e6, 8.0 * PT.bytes() / PT.n, PT.n / 1e6);
+        }
         K.SP = &SD;
         fprintf(stderr, "STPD: %lu sampled positions (r = %lu), %.3f MB on top of the text\n", SD.pos.size(), SD.runs, SD.bytes() / 1e6);
     }
@@ -694,6 +726,10 @@ static int cmd_find(int argc, char **argv) {
     if (stats)
         fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
                 st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
+    if (stats && poracle) {
+        const std::atomic<u64> *t = parse_text::totals();
+        fprintf(stderr, "parse oracle seeks: same phrase %lu, next/previous phrase %lu, predecessor queries %lu\n", t[0].load(), t[1].load(), t[2].load());
+    }
     return 0;
 }
 
