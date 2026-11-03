@@ -1,0 +1,48 @@
+stpd-prep: 33 genomes, |T| = 4063444290 (both strands, A/C/G/T pieces); the first genome (both strands) has 123414728 characters (st.reflen)
+wall 30.5 s, peak memory 0.14 GB, exit 0: katka stpd-prep /home/travis/tool/chr19/list33abs.tsv
+Sending logging messages to file: st.S.log
+==== Parsing. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/newscanNT.x st.S -w 10 -p 100
+Elapsed time: 174.6754
+==== Computing BWT of parsing. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/bwtparse st.S
+Elapsed time: 13.5839
+==== Computing final BWT. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/pfbwtNT.x -w 10 st.S
+Elapsed time: 170.9160
+Total construction time: 359.1758
+==== Deleting temporary files.
+==== Done
+wall 359.4 s, peak memory 2.83 GB, exit 0: bigbwt st.S
+RLBWT: n=4063444291 r=68446559, 191.241 MB (11.1 s)
+STPD: n=4063444291 r=68446559, 68446557 run starts, 44251277 sampled positions (0.647 of r), 177.005 MB on top of the text (+350.155 MB for phi^-1), 419.2 s
+index built in 430.7 s (peak memory 8.93 GB)
+wall 430.7 s, peak memory 8.93 GB, exit 0: katka index --stpd
+stpd-export: 44251277 sampled positions (+ position 0)
+stpd-export: PLCP done (600.7 s)
+stpd-export: wrote st.T.{colex_m,rbwt,pa,lcs} for 4063444291 rows (2589.4 s)
+wall 2589.6 s, peak memory 6.41 GB, exit 0: katka stpd-export st
+
+[INFO] Suffix Tree path decomposition found! Proceeding to index construction
+
+[INFO] Constructing the STPD-index using the path decomposition in st.T.colex_m
+
+[STEP 1] Constructing the random-access text oracle...
+[STEP 2] Constructing the binary search data structure...
+		- Tabulation length = 7
+		- PA samples width = 32 bits per entry
+		- LCS values width = 3 bits per entry
+		- STPD array size = 44251278
+		- Text size = 4063444290
+		- N/S = 91.8266
+[STEP 3] Constructing the phi function...
+
+[DONE] Index successfully built!
+
+[INFO] Writing components to disk:
+		- Random-access data structure size = 63243941 bytes
+		- Binary search data structure size = 200862232 bytes
+		- Phi-function data structure size = 348628112 bytes
+
+[DONE] Index successfully stored!
+		→ Total index size in disk = 612734285 bytes
+
+malloc_count ### exiting, total: 11,076,040,619, peak: 4,991,987,848, current: 4,096
+wall 507.1 s, peak memory 4.93 GB, exit 0: stpd-build -i st.T

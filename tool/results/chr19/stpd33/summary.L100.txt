@@ -1,0 +1,21 @@
+STPD-index (8a432a4 add LICENSE) against katka (c09732c tool/: katka-blocks pairs listing records with reads by position (names can repeat across regions and mates)); L = 100; patterns /home/travis/tool/chr19/queries.fa
+their index: 584.3 MiB (built for L = 1000, reused)
+theirs bml: 4 patterns, 38984 MEMs (L = 100, BML); finding them 54.8267 s (140225 longest-prefix searches, 1834289 jumps, 101235 candidates rejected by the check); 7 MEMs whose first occurrence crosses a junction | 72.36 s wall, peak 955108 KB
+theirs bml-locate: 4 patterns, 38984 MEMs (L = 100, BML); finding them 54.7818 s (140225 longest-prefix searches, 1834289 jumps, 101235 candidates rejected by the check); locating 384341 occurrences 15.3603 s; 7 MEMs whose first occurrence crosses a junction | 86.12 s wall, peak 956056 KB
+theirs fb: not run (stuck for 54 min on L = 1000; see README)
+ours plain: reads=4 MEMs=38984, wall 43.67 s; searches=101241 char_steps=250432634 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0 | 44.11 s wall, peak 1025912 KB
+ours twolevel-blocks: reads=4 MEMs=38984, wall 6.13 s; searches=140225 char_steps=10255702 parse_steps=1761487 block_steps=1570823 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0 | 6.70 s wall, peak 1355564 KB
+ours stpd-nointervals: reads=4 MEMs=38984, wall 3.64 s; searches=101241 char_steps=250432634 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=1441319 stpd_compares=36817462 | 9.42 s wall, peak 4945540 KB
+ours stpd: reads=4 MEMs=38984, wall 136.07 s; searches=140225 char_steps=435632316 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=1441319 stpd_compares=36817462 | 141.96 s wall, peak 4945592 KB
+ours stpd-twolevel: reads=4 MEMs=38984, wall 7.26 s; searches=140225 char_steps=253389260 parse_steps=982920 block_steps=1069046 kmer_tests=0 kmer_restarts=0 stpd_jumps=1441319 stpd_compares=36817462 | 14.25 s wall, peak 5841052 KB
+ours stpd-locate: reads=4 MEMs=38984, wall 135.82 s; searches=140225 char_steps=435632316 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=1441319 stpd_compares=36817462 | 141.83 s wall, peak 4945612 KB
+ours fb-twolevel-blocks: reads=4 MEMs=38984, wall 5.90 s; searches=184442 char_steps=7889834 parse_steps=1611137 block_steps=1556305 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0 | 7.15 s wall, peak 1355484 KB
+comparison (reference: katka plain BML, 38984 MEMs):
+  ours.twolevel-blocks       38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing
+  ours.stpd-nointervals      38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing
+  ours.stpd                  38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing
+  ours.stpd-twolevel         38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing
+  ours.stpd-locate           38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing; occurrence counts different from ep - sp: 0
+  theirs.bml                 38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing
+  theirs.bml-locate          38984 MEMs, 0 only here (0 with the first occurrence across a junction), 0 missing; occurrence counts different from ep - sp: 0
+  forward-backward: ours 38984 MEMs, theirs 0, 0 in both

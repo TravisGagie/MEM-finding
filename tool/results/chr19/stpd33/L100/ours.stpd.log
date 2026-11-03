@@ -1,0 +1,5 @@
+STPD: 44361753 sampled positions (r = 68446485), 177.447 MB on top of the text
+index loaded in 5.6 s
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 136.07 s, 34016565.1 us/read
+searches=140225 char_steps=435632316 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=1441319 stpd_compares=36817462
+141.96 s wall, peak 4945592 KB

@@ -1,0 +1,17 @@
+STPD-index (8a432a4 add LICENSE) against katka (c09732c tool/: katka-blocks pairs listing records with reads by position (names can repeat across regions and mates)); L = 1000; patterns /home/travis/tool/chr19/queries.fa
+[2026-11-03 00:21:15] their text T (both strands, A/C/G/T pieces) and S = reverse(T)
+[2026-11-03 00:21:46] BWT of S
+[2026-11-03 00:27:45] katka's STPD sample of S (= their st-colex- sampling of T)
+[2026-11-03 00:34:56] their input files: st.T.{colex_m,rbwt,pa,lcs}
+[2026-11-03 01:18:05] their stpd-build (RLZ reference: 123414728 characters)
+their index: 584.3 MiB; build steps (wall time, peak memory):
+  wall 30.5 s, peak memory 0.14 GB, exit 0: katka stpd-prep /home/travis/tool/chr19/list33abs.tsv
+  wall 359.4 s, peak memory 2.83 GB, exit 0: bigbwt st.S
+  wall 430.7 s, peak memory 8.93 GB, exit 0: katka index --stpd
+  wall 2589.6 s, peak memory 6.41 GB, exit 0: katka stpd-export st
+  wall 507.1 s, peak memory 4.93 GB, exit 0: stpd-build -i st.T
+[2026-11-03 01:26:33] theirs: bml
+theirs bml: 4 patterns, 22711 MEMs (L = 1000, BML); finding them 44.5994 s (92957 longest-prefix searches, 1285721 jumps, 70241 candidates rejected by the check); 4 MEMs whose first occurrence crosses a junction
+[2026-11-03 01:27:30] theirs: bml-locate
+theirs bml-locate: 4 patterns, 22711 MEMs (L = 1000, BML); finding them 42.3967 s (92957 longest-prefix searches, 1285721 jumps, 70241 candidates rejected by the check); locating 72876 occurrences 11.4159 s; 4 MEMs whose first occurrence crosses a junction
+[2026-11-03 01:28:37] theirs: fb

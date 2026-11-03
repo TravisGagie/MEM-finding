@@ -1,0 +1,19 @@
+== index --stpd c33 00:12:54
+RLBWT: n=4065485531 r=68446485, 191.252 MB (14.7 s)
+STPD: n=4065485531 r=68446485, 68446483 run starts, 44361753 sampled positions (0.648 of r), 177.447 MB on top of the text (+350.165 MB for phi^-1), 384.9 s
+index built in 400.0 s (peak memory 8.94 GB)
+index-stpd: 400.04 s wall, 384.59 s user, peak 8726268 KB
+exit 0
+-rw-rw-r-- 1 travis travis 4065485530 Nov  2 23:36 c33.S
+-rw-rw-r-- 1 travis travis 4065485531 Nov  2 23:42 c33.bwt
+-rw-rw-r-- 1 travis travis  579342093 Nov  2 23:42 c33.csa
+-rw-rw-r-- 1 travis travis         17 Nov  2 23:36 c33.info
+-rw-rw-r-- 1 travis travis  208527959 Nov  2 23:46 c33.lvl
+-rw-rw-r-- 1 travis travis  191252588 Nov  3 00:13 c33.rlbwt
+-rw-rw-r-- 1 travis travis  527612556 Nov  3 00:19 c33.stpd
+-rw-rw-r-- 1 travis travis       1227 Nov  2 23:36 c33.tbl
+== comparison L = 1000 00:19:34
+exit 1
+cp: cannot stat 'stpd33/summary.txt': No such file or directory
+cat: stpd33/summary.L1000.txt: No such file or directory
+/dev/nvme0n1p2  228G  154G   63G  72% /

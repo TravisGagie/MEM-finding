@@ -1,0 +1,4 @@
+RLBWT: n=4065485531 r=68446485, 191.252 MB (14.7 s)
+STPD: n=4065485531 r=68446485, 68446483 run starts, 44361753 sampled positions (0.648 of r), 177.447 MB on top of the text (+350.165 MB for phi^-1), 384.9 s
+index built in 400.0 s (peak memory 8.94 GB)
+index-stpd: 400.04 s wall, 384.59 s user, peak 8726268 KB

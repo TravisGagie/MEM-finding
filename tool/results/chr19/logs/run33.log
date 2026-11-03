@@ -1,0 +1,71 @@
+== prep 23:36:28
+genomes=33 |S|=4065485530
+prep: 18.02 s wall, 14.66 s user, peak 133792 KB
+prep exit 0
+-rw-rw-r-- 1 travis travis 4065485530 Nov  2 23:36 c33.S
+== bigbwt 23:36:47
+Total construction time: 344.4528
+==== Deleting temporary files.
+==== Done
+bigbwt: 344.63 s wall, 337.96 s user, peak 2614492 KB
+bigbwt exit 0
+== index 23:42:31
+blocks: 23158046 (9.52 phrases each), 1225789 symbols; block BWT 2613788 runs; built in 194.4 s
+two-level: parse 166.364 MB, blocks 42.163 MB
+index built in 213.7 s (peak memory 4.69 GB)
+index: 213.78 s wall, 204.78 s user, peak 4577088 KB
+index exit 0
+-rw-rw-r-- 1 travis travis 4065485530 Nov  2 23:36 c33.S
+-rw-rw-r-- 1 travis travis 4065485531 Nov  2 23:42 c33.bwt
+-rw-rw-r-- 1 travis travis  579342093 Nov  2 23:42 c33.csa
+-rw-rw-r-- 1 travis travis         17 Nov  2 23:36 c33.info
+-rw-rw-r-- 1 travis travis  208527959 Nov  2 23:46 c33.lvl
+-rw-rw-r-- 1 travis travis  191252588 Nov  2 23:42 c33.rlbwt
+-rw-rw-r-- 1 travis travis       1227 Nov  2 23:36 c33.tbl
+/dev/nvme0n1p2  228G  186G   31G  86% /
+== bml1000 23:46:05
+index loaded in 0.9 s
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 5.66 s, 1415468.3 us/read
+searches=92957 char_steps=6802862 parse_steps=2547359 block_steps=1814194 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+bml1000: 6.60 s wall, 5.54 s user, peak 1355528 KB
+bml1000 exit 0
+== nj1000 23:46:12
+index loaded in 0.5 s
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 8.46 s, 2115666.5 us/read
+searches=92957 char_steps=6802862 parse_steps=15123381 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+nj1000: 9.00 s wall, 8.35 s user, peak 1355528 KB
+nj1000 exit 0
+== plain1000 23:46:21
+index loaded in 0.4 s
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 40.41 s, 10102345.1 us/read
+searches=70246 char_steps=259771898 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+plain1000: 40.83 s wall, 40.33 s user, peak 1025764 KB
+plain1000 exit 0
+L = 1000: two-level (blocks, no jumps) = plain, 22711 MEMs
+== bml100 23:47:02
+index loaded in 0.5 s
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 5.84 s, 1459446.8 us/read
+searches=140225 char_steps=10255702 parse_steps=1761487 block_steps=1570823 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+bml100: 6.37 s wall, 5.73 s user, peak 1355612 KB
+bml100 exit 0
+== nj100 23:47:08
+index loaded in 0.5 s
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 8.57 s, 2141292.2 us/read
+searches=140225 char_steps=10255702 parse_steps=13515647 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+nj100: 9.10 s wall, 8.51 s user, peak 1355568 KB
+nj100 exit 0
+== plain100 23:47:18
+index loaded in 0.4 s
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 39.18 s, 9793921.2 us/read
+searches=101241 char_steps=250432634 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+plain100: 39.59 s wall, 39.09 s user, peak 1025800 KB
+plain100 exit 0
+L = 100: two-level (blocks, no jumps) = plain, 38984 MEMs
+== fb1000 23:47:57
+index loaded in 0.5 s
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 5.65 s, 1412045.7 us/read
+searches=184442 char_steps=7889834 parse_steps=1611137 block_steps=1556305 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+fb1000: 6.18 s wall, 5.54 s user, peak 1355528 KB
+fb1000 exit 0
+fb = plain (L = 1000)
+== done 23:48:03

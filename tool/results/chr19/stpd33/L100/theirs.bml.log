@@ -1,0 +1,10 @@
+[INFO] Loading components to disk:
+		- Random-access text oracle...
+		- Binary search data structure...
+		- Phi-function data structure...
+
+[DONE] Index successfully loaded!
+
+stpd-index-mems: 4 patterns, 38984 MEMs (L = 100, BML); finding them 54.8267 s (140225 longest-prefix searches, 1834289 jumps, 101235 candidates rejected by the check); 7 MEMs whose first occurrence crosses a junction
+malloc_count ### exiting, total: 1,429,732,619, peak: 965,180,185, current: 4,096
+72.36 s wall, peak 955108 KB
