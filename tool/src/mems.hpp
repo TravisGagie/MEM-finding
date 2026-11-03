@@ -38,7 +38,8 @@
 //                  every MEM it could find lies in a pseudo-MEM already searched)
 //                check (--kebab-check T t): the T longest pseudo-MEMs (T >= t), then accept if there are at
 //                  least T + 1 pseudo-MEMs and at least t MEMs found are at least as long as the (T+1)st
-//                  (--strict: longer), else BML on the whole read (exact; with --strict, ties complete too)
+//                  (--strict: longer), else BML on the whole read (exact; with --strict, ties complete too),
+//                  from L, or (--check-seed) from the t-th longest MEM found if at least t were found
 //   KeBaB top with a fixed L (--kebab-top t --fixed-L, KeBaB's pipeline): every MEM of length >= max(L, k)
 //                in the t longest pseudo-MEMs, nothing else
 //   min3         ignore MEMs with fewer than min3 distinct 3-mers (they do not raise L either)
@@ -322,6 +323,7 @@ struct mem_options {
     enum { STREAM, TOP, BATCH, CHECK } kebab_rule = STREAM;   // with pseudo and longest
     u64 check_T = 0;                // CHECK: search the T longest pseudo-MEMs, then test (T >= t)
     bool check_strict = false;      //   accept only with t MEMs longer than the (T+1)st pseudo-MEM
+    bool check_seed = false;        //   the fallback starts with L = the t-th longest MEM found, if t were found
     u64 fixed_top = 0;              // with pseudo, no longest: every MEM >= L in the t longest pseudo-MEMs only
     int min3 = 0;                   // -D
     const kmer_filter *filter = nullptr;
@@ -568,7 +570,17 @@ void find_mems(segment_search &Q, const std::string &read, const mem_options &op
             if (why) {
                 ++Q.cnt.kb_fallbacks;
                 (why == 1 ? Q.cnt.kb_fb_few : Q.cnt.kb_fb_short) += 1;
-                st = read_state(); st.L = opt.L;
+                // --check-seed: every MEM found is a MEM of the read (of length >= k), so the t-th longest found
+                // is at most the t-th longest overall, and the whole-read search can start there
+                u64 seed = opt.L;
+                if (opt.check_seed && st.best.size() >= t) {
+                    std::vector<u64> ls;
+                    for (auto &M : st.best) ls.push_back(M.e - M.a);
+                    std::nth_element(ls.begin(), ls.begin() + (t - 1), ls.end(), std::greater<u64>());
+                    seed = std::max(seed, ls[t - 1]);
+                    ++Q.cnt.kb_seeded;
+                }
+                st = read_state(); st.L = seed;
                 segments(read, nullptr, segs);
                 for (auto [r0, n] : segs) if (n >= st.L) search(r0, n);
             }

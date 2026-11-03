@@ -453,6 +453,8 @@ static const char *FIND_USAGE =
     "                      least T + 1 pseudo-MEMs and at least t MEMs are at least as long as the (T+1)st\n"
     "                      (--strict: longer); otherwise BML on the whole read (exact)\n"
     "    --strict          with --kebab-check: \"longer than\" (complete on ties)\n"
+    "    --check-seed      with --kebab-check: the fallback starts with L = the t-th longest MEM found in the\n"
+    "                      scanned pseudo-MEMs, if at least t were found (same output, fewer steps)\n"
     "    --fixed-L         with --kebab-top t: every MEM of length >= max(L, k) in the t longest pseudo-MEMs, as\n"
     "                      KeBaB's pipeline (no longest-t selection)\n"
     "    --read-stats FILE with --longest and -K: per read, name, pseudo-MEMs, searched, batches, fallback\n"
@@ -675,7 +677,7 @@ static int cmd_find(int argc, char **argv) {
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"longest", 1, 0, 18}, {"kebab-top", 1, 0, 19}, {"kebab-batch", 1, 0, 20},
-        {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
+        {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
         {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
@@ -697,6 +699,7 @@ static int cmd_find(int argc, char **argv) {
                 if (K.opt.check_T < K.opt.longest || K.opt.longest == 0) die("--kebab-check T t needs T >= t >= 1");
                 break;
             case 24: K.opt.check_strict = true; break;
+            case 26: K.opt.check_seed = true; break;
             case 25: fixed_L = true; break;
             case 2: K.opt.fb = true; break;
             case 'D': K.opt.min3 = std::stoi(optarg); break;
@@ -739,7 +742,7 @@ static int cmd_find(int argc, char **argv) {
         if (K.opt.kebab_rule != mem_options::TOP || !K.opt.longest) die("--fixed-L goes with --kebab-top t");
         K.opt.fixed_top = K.opt.longest; K.opt.longest = 0; K.opt.adaptive = false;
     }
-    if (K.opt.check_strict && K.opt.kebab_rule != mem_options::CHECK) die("--strict goes with --kebab-check");
+    if ((K.opt.check_strict || K.opt.check_seed) && K.opt.kebab_rule != mem_options::CHECK) die("--strict and --check-seed go with --kebab-check");
     if (K.opt.longest && K.opt.top) die("--top and --longest/--kebab-top/--kebab-batch/--kebab-check are exclusive");
     if (K.opt.longest) K.opt.adaptive = false;
     if (kebab_rule_set && !K.opt.pseudo) die("--kebab-top and --kebab-batch need -K");
@@ -850,8 +853,9 @@ static int cmd_find(int argc, char **argv) {
                 K.opt.L, K.opt.fixed_top, st.sc.kb_pseudo, (double)st.sc.kb_pseudo / std::max<u64>(1, st.reads), st.sc.kb_searched,
                 (double)st.sc.kb_searched / std::max<u64>(1, st.reads), (double)st.sc.char_steps / std::max<u64>(1, st.reads));
     if (stats && K.opt.kebab_rule == mem_options::CHECK && K.opt.longest && K.opt.pseudo)
-        fprintf(stderr, "kebab check (T = %lu, t = %lu%s): fallbacks %lu of %lu reads (%lu with at most T pseudo-MEMs, %lu with fewer than t long MEMs)\n",
-                K.opt.check_T, K.opt.longest, K.opt.check_strict ? ", strict" : "", st.sc.kb_fallbacks, st.reads, st.sc.kb_fb_few, st.sc.kb_fb_short);
+        fprintf(stderr, "kebab check (T = %lu, t = %lu%s%s): fallbacks %lu of %lu reads (%lu with at most T pseudo-MEMs, %lu with fewer than t long MEMs; %lu seeded)\n",
+                K.opt.check_T, K.opt.longest, K.opt.check_strict ? ", strict" : "", K.opt.check_seed ? ", seeded" : "", st.sc.kb_fallbacks, st.reads,
+                st.sc.kb_fb_few, st.sc.kb_fb_short, st.sc.kb_seeded);
     if (stats && K.opt.longest && K.opt.pseudo)
         fprintf(stderr, "kebab (%s, t = %lu): pseudo-MEMs %lu (%.2f per read), searched %lu (%.2f per read), batches %lu, reads with a second batch %lu, whole-read fallbacks %lu, backward steps %.1f per read\n",
                 K.opt.kebab_rule == mem_options::TOP ? "top" : K.opt.kebab_rule == mem_options::BATCH ? "batch" : K.opt.kebab_rule == mem_options::CHECK ? "check" : "streaming", K.opt.longest,

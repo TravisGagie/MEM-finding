@@ -303,7 +303,7 @@ static int mems_test(int argc, char **argv) {
     }
 
     u64 nmems = 0, nchecked = 0, nlongest = 0, ntop = 0, ntop_differ = 0, kb_multi = 0, kb_fall = 0;
-    u64 kc_runs = 0, kc_fall = 0, nfixed = 0;
+    u64 kc_runs = 0, kc_fall = 0, nfixed = 0, kc_seeded = 0, kc_s1 = 0, kc_s2 = 0, kc_fewer = 0, kc_more = 0;
     for (size_t pi = 0; pi < pats.size(); ++pi) {
         const string &P = pats[pi];
         if (digest) {
@@ -471,6 +471,17 @@ static int mems_test(int argc, char **argv) {
                     for (u64 T : {t, 2 * t, t + 2})
                         for (int strict = 0; strict < 2; ++strict) {
                             mem_options c = q; c.kebab_rule = mem_options::CHECK; c.check_T = T; c.check_strict = strict;
+                            {   // --check-seed: the same output (backward steps compared, not required to drop: a larger
+                                // starting L can cost more steps on some reads)
+                                mem_options cs = c; cs.check_seed = true;
+                                segment_search Q1, Q2; stepper S4 = base; Q1.S = Q2.S = &S4;
+                                vector<mem> g1, g2;
+                                find_mems(Q1, P, c, [&](const mem &M) { g1.push_back(M); });
+                                find_mems(Q2, P, cs, [&](const mem &M) { g2.push_back(M); });
+                                CHECK(same(g1, g2), "KeBaB check T=%lu t=%lu strict=%d L=%lu pattern %zu: --check-seed changes the output", T, t, strict, L, pi);
+                                kc_seeded += Q2.cnt.kb_seeded; kc_s1 += Q1.cnt.char_steps; kc_s2 += Q2.cnt.char_steps;
+                                kc_fewer += Q2.cnt.char_steps < Q1.cnt.char_steps; kc_more += Q2.cnt.char_steps > Q1.cnt.char_steps;
+                            }
                             segment_search Qc; stepper S3 = base; Qc.S = &S3;
                             vector<mem> g;
                             find_mems(Qc, P, c, [&](const mem &M) { g.push_back(M); });
@@ -636,7 +647,8 @@ static int mems_test(int argc, char **argv) {
     }
     printf("longest t (t = 1, 3, 5; -D 0 and 14): %lu exact runs checked (no filter, KeBaB streaming, KeBaB batch: %lu second batches, %lu whole-read fallbacks); KeBaB top: %lu of %lu runs differ from the t longest\n",
            nlongest, kb_multi, kb_fall, ntop_differ, ntop);
-    printf("KeBaB check (T = t, 2t, t + 2; strict and not): %lu runs checked, %lu fell back; KeBaB top with a fixed L: %lu runs checked\n", kc_runs, kc_fall, nfixed);
+    printf("KeBaB check (T = t, 2t, t + 2; strict and not): %lu runs checked, %lu fell back; --check-seed: same output, %lu seeded fallbacks, backward steps %lu -> %lu (fewer in %lu runs, more in %lu); KeBaB top with a fixed L: %lu runs checked\n",
+           kc_runs, kc_fall, kc_seeded, kc_s1, kc_s2, kc_fewer, kc_more, nfixed);
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");
     return failures ? 1 : 0;
 }

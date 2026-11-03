@@ -278,6 +278,12 @@ Open points: an id-level pruning rule equivalent to the character-level one (the
   - `--read-stats` has a new last column: the fallback's reason, `few_pseudo_mems` (at most T pseudo-MEMs) or `few_long_mems` (fewer than t MEMs reach the bound). `--stats` prints the counts of each.
 - **`--kebab-top t --fixed-L`** (KeBaB's own pipeline): report every MEM of length at least max(L, k) inside the t longest pseudo-MEMs, and nothing else. There is no longest-t selection, and `-X` is ignored. Inside a pseudo-MEM a match shorter than k need not be a MEM, hence max(L, k).
 
+- **`--check-seed`** (with `--kebab-check`): if the check fails but at least t MEMs were found in the scanned pseudo-MEMs, the whole-read BML starts with L equal to the t-th longest of them, instead of from L.
+  - *Why it is exact:* every MEM found there is a MEM of the read of length at least k (inside pseudo-MEMs only such matches are reported), so the t-th longest found is at most the true t-th longest, and no MEM of the output is shorter.
+  - The fallback re-finds the MEMs it had, so it starts with an empty selection and only L carried over.
+  - Brute force: the output is identical to the unseeded fallback in every run. Seeded fallbacks: 934 of 6,426 and 922 of 6,458. The backward steps drop by 3.0% and 4.4% in all, but some runs take more steps (377 and 208, against 543 and 671 that take fewer): a larger L means longer windows, and a longer window can cost more steps before it fails.
+  - `--stats` counts the seeded fallbacks.
+
 **Tests** (`katka-test mems`, brute force; t = 1, 3, 5; T = t, 2t, t + 2; `-D` 0 and 14; L = k and L = 1; plain and homopolymer-compressed):
 - `--strict` gives exactly the t longest with ties.
 - Without it, the output contains only MEMs from that set and has the same t longest lengths.
@@ -300,6 +306,8 @@ Report for each run:
 - `scripts/compare_longest_t.py` against `c.$t` (the streaming rule, exact at L = 20) and against `d.$t`.
 
 The lengths should never differ from `c.$t`'s, and with `--strict` the spans shouldn't either.
+
+**After the current queue:** rerun the t = 3 and t = 5 check runs, with and without `--strict`, adding `--check-seed`, to files `ec.$T.$t` and `ecs.$T.$t`. `cmp` each with its unseeded run: they must be byte-identical. Report the times and the `kebab check` line, whose "seeded" count is the number of fallbacks that started from the seed.
 
 For the paper's pipeline, run `$K find $Z -L 20 -K 20 --kebab-top $t --fixed-L $H $R f.$t` for t = 1, 3, 5. Score it with every MEM voting, as the L = 30 threshold runs in `results/zymo/` were (`credit_schemes.py`, `score_spu2.py`), against the same scoring of `-L 20 -K 20` without `--kebab-top`. The difference is the cost of searching only the t longest pseudo-MEMs.
 
