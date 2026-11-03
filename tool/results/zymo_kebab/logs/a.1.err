@@ -1,0 +1,5 @@
+index loaded in 9.1 s
+reads=581802 MEMs=577867 without MEMs=4707 | threads=12 wall 79.84 s, 1646.8 us/read
+searches=2178516 char_steps=185171397 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (top, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 581802 (1.00 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 318.3 per read
+a.1: 89.29 s wall, 900.90 s user, peak 7343120 KB

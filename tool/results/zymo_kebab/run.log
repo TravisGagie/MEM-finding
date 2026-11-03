@@ -1,0 +1,196 @@
+== a.1 15:13:52
+reads=581802 MEMs=577867 without MEMs=4707 | threads=12 wall 79.84 s, 1646.8 us/read
+searches=2178516 char_steps=185171397 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (top, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 581802 (1.00 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 318.3 per read
+a.1: 89.29 s wall, 900.90 s user, peak 7343120 KB
+a.1 exit 0
+== b.1 15:15:22
+reads=581802 MEMs=592877 without MEMs=0 | threads=12 wall 82.20 s, 1695.5 us/read
+searches=2742375 char_steps=225471695 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 752874 (1.29 per read), batches 605142, reads with a second batch 17213, whole-read fallbacks 0, backward steps 387.5 per read
+b.1: 91.06 s wall, 919.12 s user, peak 7346084 KB
+b.1 exit 0
+== b1.1 15:16:53
+reads=581802 MEMs=592877 without MEMs=0 | threads=12 wall 83.19 s, 1715.8 us/read
+searches=2742375 char_steps=225471695 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 752874 (1.29 per read), batches 605142, reads with a second batch 17213, whole-read fallbacks 0, backward steps 387.5 per read
+b1.1: 91.98 s wall, 925.65 s user, peak 7345324 KB
+b1.1 exit 0
+== c.1 15:18:25
+reads=581802 MEMs=592877 without MEMs=0 | threads=12 wall 81.97 s, 1690.6 us/read
+searches=2742375 char_steps=225471695 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (streaming, t = 1): pseudo-MEMs 600809096 (1032.67 per read), searched 752874 (1.29 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 387.5 per read
+c.1: 91.11 s wall, 920.68 s user, peak 7344772 KB
+c.1 exit 0
+== d.1 15:19:56
+reads=581802 MEMs=592877 without MEMs=0 | threads=12 wall 117.65 s, 2426.6 us/read
+searches=95624776 char_steps=3350157062 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+d.1: 126.75 s wall, 1353.00 s user, peak 7197636 KB
+d.1 exit 0
+== a.3 15:22:03
+reads=581802 MEMs=1738004 without MEMs=1207 | threads=12 wall 91.94 s, 1896.3 us/read
+searches=6711430 char_steps=509544069 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (top, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1735561 (2.98 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 875.8 per read
+a.3: 100.45 s wall, 1040.33 s user, peak 7344828 KB
+a.3 exit 0
+== b.3 15:23:43
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 98.57 s, 2033.1 us/read
+searches=7964450 char_steps=591115206 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 2164215 (3.72 per read), batches 598524, reads with a second batch 10729, whole-read fallbacks 0, backward steps 1016.0 per read
+b.3: 107.89 s wall, 1084.01 s user, peak 7345080 KB
+b.3 exit 0
+== b1.3 15:25:31
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 100.99 s, 2082.9 us/read
+searches=7964450 char_steps=591115206 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 2164215 (3.72 per read), batches 598524, reads with a second batch 10729, whole-read fallbacks 0, backward steps 1016.0 per read
+b1.3: 110.63 s wall, 1078.46 s user, peak 7344560 KB
+b1.3 exit 0
+== c.3 15:27:22
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 94.01 s, 1939.0 us/read
+searches=7964450 char_steps=591115206 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (streaming, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 2164215 (3.72 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 1016.0 per read
+c.3: 102.51 s wall, 1064.87 s user, peak 7344124 KB
+c.3 exit 0
+== d.3 15:29:04
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 177.46 s, 3660.3 us/read
+searches=163412194 char_steps=5538519280 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+d.3: 186.29 s wall, 2045.41 s user, peak 7197604 KB
+d.3 exit 0
+== a.5 15:32:11
+reads=581802 MEMs=2900409 without MEMs=459 | threads=12 wall 100.50 s, 2073.0 us/read
+searches=11152234 char_steps=788433825 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (top, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 2890019 (4.97 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 1355.2 per read
+a.5: 109.58 s wall, 1147.21 s user, peak 7344244 KB
+a.5 exit 0
+== b.5 15:34:00
+reads=581802 MEMs=2969535 without MEMs=0 | threads=12 wall 103.70 s, 2138.9 us/read
+searches=12937065 char_steps=895611215 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3532355 (6.07 per read), batches 597526, reads with a second batch 10127, whole-read fallbacks 0, backward steps 1539.4 per read
+b.5: 112.89 s wall, 1186.53 s user, peak 7344684 KB
+b.5 exit 0
+== b1.5 15:35:53
+reads=581802 MEMs=2969535 without MEMs=0 | threads=12 wall 105.03 s, 2166.4 us/read
+searches=12937065 char_steps=895611215 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (batch, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3532355 (6.07 per read), batches 597526, reads with a second batch 10127, whole-read fallbacks 0, backward steps 1539.4 per read
+b1.5: 113.37 s wall, 1189.19 s user, peak 7346000 KB
+b1.5 exit 0
+== c.5 15:37:46
+reads=581802 MEMs=2969535 without MEMs=0 | threads=12 wall 105.15 s, 2168.7 us/read
+searches=12937065 char_steps=895611215 parse_steps=0 block_steps=0 kmer_tests=8199371519 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+kebab (streaming, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3532355 (6.07 per read), batches 0, reads with a second batch 0, whole-read fallbacks 0, backward steps 1539.4 per read
+c.5: 114.60 s wall, 1189.46 s user, peak 7343348 KB
+c.5 exit 0
+== d.5 15:39:41
+reads=581802 MEMs=2969535 without MEMs=0 | threads=12 wall 218.17 s, 4499.8 us/read
+searches=215382139 char_steps=7075463469 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+d.5: 227.35 s wall, 2510.89 s user, peak 7198996 KB
+d.5 exit 0
+== accuracy (maxmem_roc, longest MEMs vote) 15:43:28
+-- a.1
+   10   99.19    0.00    98.72    98.37
+-- b.1
+   10  100.00    0.00    99.61    99.27
+-- b1.1
+   10  100.00    0.00    99.61    99.27
+-- c.1
+   10  100.00    0.00    99.61    99.27
+-- d.1
+   10  100.00    0.00    99.61    99.27
+-- a.3
+   10   99.79    0.00    99.26    98.92
+-- b.3
+   10  100.00    0.00    99.61    99.27
+-- b1.3
+   10  100.00    0.00    99.61    99.27
+-- c.3
+   10  100.00    0.00    99.61    99.27
+-- d.3
+   10  100.00    0.00    99.61    99.27
+-- a.5
+   10   99.92    0.00    99.40    99.07
+-- b.5
+   10  100.00    0.00    99.61    99.27
+-- b1.5
+   10  100.00    0.00    99.61    99.27
+-- c.5
+   10  100.00    0.00    99.61    99.27
+-- d.5
+   10  100.00    0.00    99.61    99.27
+== comparisons 16:00:02
+-- a.1 against c.1
+reads 581802, t = 1: lengths of the t longest differ in 72280 (12.4235%), of which 0 have a reference longest MEM shorter than 20; spans differ in 72280 (12.4235%); reference longest shorter than 20: 0 reads
+-- b.1 against c.1
+reads 581802, t = 1: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- a.1 against d.1
+reads 581802, t = 1: lengths of the t longest differ in 72280 (12.4235%), of which 0 have a reference longest MEM shorter than 20; spans differ in 72280 (12.4235%); reference longest shorter than 20: 0 reads
+-- b1.1 against d.1
+reads 581802, t = 1: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- c.1 against d.1
+reads 581802, t = 1: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- a.3 against c.3
+reads 581802, t = 3: lengths of the t longest differ in 154636 (26.5788%), of which 0 have a reference longest MEM shorter than 20; spans differ in 154636 (26.5788%); reference longest shorter than 20: 0 reads
+-- b.3 against c.3
+reads 581802, t = 3: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- a.3 against d.3
+reads 581802, t = 3: lengths of the t longest differ in 154636 (26.5788%), of which 0 have a reference longest MEM shorter than 20; spans differ in 154636 (26.5788%); reference longest shorter than 20: 0 reads
+-- b1.3 against d.3
+reads 581802, t = 3: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- c.3 against d.3
+reads 581802, t = 3: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- a.5 against c.5
+reads 581802, t = 5: lengths of the t longest differ in 205491 (35.3197%), of which 0 have a reference longest MEM shorter than 20; spans differ in 205491 (35.3197%); reference longest shorter than 20: 0 reads
+-- b.5 against c.5
+reads 581802, t = 5: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- a.5 against d.5
+reads 581802, t = 5: lengths of the t longest differ in 205491 (35.3197%), of which 0 have a reference longest MEM shorter than 20; spans differ in 205491 (35.3197%); reference longest shorter than 20: 0 reads
+-- b1.5 against d.5
+reads 581802, t = 5: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+-- c.5 against d.5
+reads 581802, t = 5: lengths of the t longest differ in 0 (0.0000%), of which 0 have a reference longest MEM shorter than 20; spans differ in 0 (0.0000%); reference longest shorter than 20: 0 reads
+== compressing 16:19:19
+total 432348
+-rw-rw-r-- 1 travis travis      479 Nov  3 15:15 a.1.err
+-rw-rw-r-- 1 travis travis 20499432 Nov  3 15:15 a.1.tsv
+-rw-rw-r-- 1 travis travis  5252412 Nov  3 15:15 a.1.zst
+-rw-rw-r-- 1 travis travis      483 Nov  3 15:23 a.3.err
+-rw-rw-r-- 1 travis travis 20674483 Nov  3 15:23 a.3.tsv
+-rw-rw-r-- 1 travis travis 12845771 Nov  3 15:23 a.3.zst
+-rw-rw-r-- 1 travis travis      485 Nov  3 15:34 a.5.err
+-rw-rw-r-- 1 travis travis 20951121 Nov  3 15:34 a.5.tsv
+-rw-rw-r-- 1 travis travis 19937996 Nov  3 15:34 a.5.zst
+-rw-rw-r-- 1 travis travis      487 Nov  3 15:16 b.1.err
+-rw-rw-r-- 1 travis travis 20526060 Nov  3 15:16 b.1.tsv
+-rw-rw-r-- 1 travis travis  5355008 Nov  3 15:16 b.1.zst
+-rw-rw-r-- 1 travis travis      492 Nov  3 15:25 b.3.err
+-rw-rw-r-- 1 travis travis 20736504 Nov  3 15:25 b.3.tsv
+-rw-rw-r-- 1 travis travis 13135628 Nov  3 15:25 b.3.zst
+-rw-rw-r-- 1 travis travis      494 Nov  3 15:35 b.5.err
+-rw-rw-r-- 1 travis travis 20992368 Nov  3 15:35 b.5.tsv
+-rw-rw-r-- 1 travis travis 20425178 Nov  3 15:35 b.5.zst
+-rw-rw-r-- 1 travis travis      488 Nov  3 15:18 b1.1.err
+-rw-rw-r-- 1 travis travis 20526060 Nov  3 15:18 b1.1.tsv
+-rw-rw-r-- 1 travis travis  5355008 Nov  3 15:18 b1.1.zst
+-rw-rw-r-- 1 travis travis      494 Nov  3 15:27 b1.3.err
+-rw-rw-r-- 1 travis travis 20736504 Nov  3 15:27 b1.3.tsv
+-rw-rw-r-- 1 travis travis 13135628 Nov  3 15:27 b1.3.zst
+-rw-rw-r-- 1 travis travis      495 Nov  3 15:37 b1.5.err
+-rw-rw-r-- 1 travis travis 20992368 Nov  3 15:37 b1.5.tsv
+-rw-rw-r-- 1 travis travis 20425178 Nov  3 15:37 b1.5.zst
+-rw-rw-r-- 1 travis travis      482 Nov  3 15:19 c.1.err
+-rw-rw-r-- 1 travis travis 20526060 Nov  3 15:19 c.1.tsv
+-rw-rw-r-- 1 travis travis  5355008 Nov  3 15:19 c.1.zst
+-rw-rw-r-- 1 travis travis      487 Nov  3 15:29 c.3.err
+-rw-rw-r-- 1 travis travis 20736504 Nov  3 15:29 c.3.tsv
+-rw-rw-r-- 1 travis travis 13135628 Nov  3 15:29 c.3.zst
+-rw-rw-r-- 1 travis travis      489 Nov  3 15:39 c.5.err
+-rw-rw-r-- 1 travis travis 20992368 Nov  3 15:39 c.5.tsv
+-rw-rw-r-- 1 travis travis 20425178 Nov  3 15:39 c.5.zst
+-rw-rw-r-- 1 travis travis      283 Nov  3 15:22 d.1.err
+-rw-rw-r-- 1 travis travis  5355008 Nov  3 15:22 d.1.zst
+-rw-rw-r-- 1 travis travis      285 Nov  3 15:32 d.3.err
+-rw-rw-r-- 1 travis travis 13135628 Nov  3 15:32 d.3.zst
+-rw-rw-r-- 1 travis travis      285 Nov  3 15:43 d.5.err
+-rw-rw-r-- 1 travis travis 20425178 Nov  3 15:43 d.5.zst
+-rw-rw-r-- 1 travis travis    10924 Nov  3 16:19 run.log
+-rwxrwxr-x 1 travis travis     1677 Nov  3 15:13 run.sh
+== done 16:25:14

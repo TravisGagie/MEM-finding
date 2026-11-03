@@ -1,0 +1,24 @@
+== index --parse-oracle 15:45:18
+parse oracle: 1483.724 MB (peak memory of this step 1.79 GB)
+index built in 113.0 s (peak memory 1.79 GB)
+parse-oracle: 112.99 s wall, 107.18 s user, peak 1749012 KB
+-rw-rw-r-- 1 travis travis 1483723942 Nov  3 15:47 c33.ptxt
+== rlz_parse 15:47:11
+parse: n = 4065485531 characters, m = 220466619 phrases (18.4 characters per phrase step), sigma = 8512838 distinct, K = 51
+reference parse (CHM13, both strands, S[0..123414730)): 6691777 phrases; target: 213774842 phrases
+H0 = 22.2823 bits per phrase; H1 = 0.1497 bits per phrase (8512837 contexts, 9342836 distinct pairs); log2(sigma) = 23.02
+RLZ (greedy longest match): 22811810 factors (17510796 literals), 9.37 phrases per factor (37.02 per non-literal factor)
+GDC-style RLZ (match + one mismatch phrase): 18356612 factors, 11.65 phrases per factor; 3517221 runs of equal relative pointers
+sizes (MB):
+  current parse oracle: ids 661.4 + phrase starts 191.8 + dictionary 630.5 = 1483.7
+  RLZ parse oracle: factor starts (EF over S positions) 28.5 + offsets (23 bits each) 65.6 + literals 52.5
+                   + reference parse (ids 20.1 + phrase starts EF 5.9) + dictionary 630.5 = 803.1
+  GDC + relative pointers (estimate): factor starts 22.9 + mismatch phrases 55.1 + pointer runs (value + EF of run starts) 12.7
+                   + reference parse 25.9 + dictionary 630.5 = 747.2
+RLZAP-style (J = 4, D = 4, M = 2): 12352342 factors, 17.31 phrases per factor; 18644761 literal phrases (7090969 factors that are only a literal), 1837448 pointer changes (|delta| <= 4), 1611960 explicit pointers
+  size (MB): factor starts 17.0 + literal counts 4.9 + literals (24 bits) 55.9 + pointer differences (run-length) 7.1 + reference parse 25.9 + dictionary 630.5 = 741.4
+RLZAP-style (J = 8, D = 8, M = 4): 10329469 factors, 20.70 phrases per factor; 19370412 literal phrases (5457307 factors that are only a literal), 1793440 pointer changes (|delta| <= 8), 1474034 explicit pointers
+  size (MB): factor starts 14.2 + literal counts 4.3 + literals (24 bits) 58.1 + pointer differences (run-length) 6.5 + reference parse 25.9 + dictionary 630.5 = 739.6
+(85.3 s)
+rlz_parse: 85.49 s wall, 83.49 s user, peak 4102940 KB
+== done 15:48:36

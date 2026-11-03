@@ -1,0 +1,4 @@
+index loaded in 8.4 s
+reads=581802 MEMs=1780319 without MEMs=0 | threads=12 wall 177.46 s, 3660.3 us/read
+searches=163412194 char_steps=5538519280 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+d.3: 186.29 s wall, 2045.41 s user, peak 7197604 KB
