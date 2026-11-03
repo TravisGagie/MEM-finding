@@ -171,7 +171,27 @@ static int cmd_bwt(int argc, char **argv) {
 }
 
 // peak resident memory of this process so far, in GB (10^9 bytes)
-static double peak_gb() { struct rusage u; getrusage(RUSAGE_SELF, &u); return u.ru_maxrss * 1024.0 / 1e9; }
+// Peak memory: VmHWM (which reset_step_peak resets, so each index step can report its own peak), with the
+// peaks of earlier steps kept in g_peak; getrusage where /proc is missing.
+static double g_peak = 0;
+static double vmhwm_gb() {
+    FILE *f = fopen("/proc/self/status", "r");
+    if (!f) return -1;
+    char line[256]; double kb = -1;
+    while (fgets(line, sizeof line, f)) if (!strncmp(line, "VmHWM:", 6)) { kb = atof(line + 6); break; }
+    fclose(f);
+    return kb < 0 ? -1 : kb * 1024 / 1e9;
+}
+static double step_peak_gb() {
+    double v = vmhwm_gb();
+    if (v >= 0) return v;
+    struct rusage u; getrusage(RUSAGE_SELF, &u); return u.ru_maxrss * 1024.0 / 1e9;
+}
+static double peak_gb() { return std::max(g_peak, step_peak_gb()); }
+static void reset_step_peak() {
+    g_peak = peak_gb();
+    if (FILE *f = fopen("/proc/self/clear_refs", "w")) { fputs("5", f); fclose(f); }
+}
 
 // ---------------------------------------------------------------------------------------------------
 // katka index
@@ -337,14 +357,17 @@ static int cmd_index(int argc, char **argv) {
     if (read_info_digest(prefix) && (kebab || tl)) die("KeBaB and two-level indexing are for undigested texts");
     if (kebab) build_kebab(Sfile, kebab, eps, prefix + ".k" + std::to_string(kebab) + ".kbf");
     if (tl) {
+        reset_step_peak();
         rlcsa X;                                    // for the character steps: the one just built, or build it
         if (file_exists(prefix + ".csa")) X.load(prefix + ".csa");
         if (X.n != B.n) X.build(bwtfile, false);   // (none, or one left from another BWT)
         stepper st; st.bwt = &B; st.csa = &X;
         two_level L;
-        build_twolevel(Sfile, B, st, to, L);
+        to.tmp = prefix + ".lvl.tmp";
+        build_twolevel(Sfile, B, st, to, L, [&]() { X = rlcsa(); B = rlbwt(); });   // (nothing after this step needs them)
         L.save(prefix + ".lvl");
-        fprintf(stderr, "two-level: parse %.3f MB, blocks %.3f MB\n", L.bytes_parse() / 1e6, L.has_blocks ? L.bytes_blocks() / 1e6 : 0.0);
+        fprintf(stderr, "two-level: parse %.3f MB, blocks %.3f MB (peak memory of this step %.2f GB)\n", L.bytes_parse() / 1e6,
+                L.has_blocks ? L.bytes_blocks() / 1e6 : 0.0, step_peak_gb());
     }
     fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
     return 0;

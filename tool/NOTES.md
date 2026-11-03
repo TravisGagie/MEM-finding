@@ -344,7 +344,17 @@ done
 
 `--continuation frequent` at index time gives the most-frequent-successor blocks. For STPD search, add `--stpd` at index time and use `find -L 1000 --format mems --stpd [--no-intervals]`. It needs the text in memory: 4 GB for 16 individuals (both strands).
 
-Memory: the parse of both strands has about twice as many phrases as T's. With 64 individuals, if that is about 800 million, building blocks needs roughly 13 bytes per phrase, about 10 GB. That should fit in 16 GB, but tightly. If it doesn't, `--no-blocks` needs about 12 bytes per phrase.
+Memory (rewritten 2026-11-03, after the desktop's 32-individual build peaked at 9.04 GB with m = 434 million phrases, about 21 bytes per phrase): the parse vector grew by doubling (2.1 GB of capacity), libsais_int got a copy of it, the suffix array and the parse-BWT vector were held together with it, and the RLCSA (1.2 GB) and RLBWT stayed loaded throughout. `build_twolevel` (`src/twolevel_build.hpp`) now:
+- writes the parse to `PREFIX.lvl.tmp` while scanning S, and reads it back at its exact size;
+- calls back to `index` once B is built, which frees the RLCSA and RLBWT;
+- derives successors, block starts (one bit per phrase) and block symbols (4 bytes per block; distinct keys through a hash map) from the parse before the suffix array;
+- runs libsais_int with the parse itself as input (it is destroyed), so the parse and its suffix array take 8 bytes per phrase in all;
+- takes the block BWT from the suffix array;
+- reads the parse back and overwrites the suffix array with the parse BWT.
+
+The peak is about 8.6 bytes per phrase plus the dictionary and the RLCSA/RLBWT (until B). Output is byte-identical (smallest and frequent continuation, `--no-blocks`, selftest). On the synthetic collection with `--syncmer 8,2` (25.4 million phrases, 2.9 phrases per block) the step peaks at 0.47 GB instead of 0.85 GB. The step now prints its own peak (`peak memory of this step`, VmHWM reset through `/proc/self/clear_refs`). Expected on chr19: about 4 GB at 32 individuals, and about 8 GB at 64 individuals (m ≈ 870 million), which should fit in 11 GB. `--continuation frequent` counts distinct successor pairs in a hash map (about 40 bytes per distinct pair) instead of sorting all m pairs (8 bytes per phrase).
+
+Not changed: `index --stpd` holds the text (1 byte per character) plus O(r). At 16 individuals it peaked at 8.9 GB (n = 4.07 × 10⁹, r = 68 million), so the O(r) part (the move structure and run arrays during sampling) is about 4.8 GB. That is the next thing to look at if STPD at 32 individuals is wanted.
 
 ## Open questions for Travis
 
