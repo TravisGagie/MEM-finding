@@ -430,11 +430,16 @@ BIGREPAIR=~/bigrepair/bigrepair tool/experiments/grammar_tags.sh ~/tool/silva/ba
 
 **Tests.**
 - **Toy** (`selftest` data, 1,004,033 tag runs). Answers byte-identical under `-c` and `-l` with all three tag arrays. File sizes: plain 0.98 MB (+ RMQ 0.76), built-in RePair 0.91 MB, from bigrepair 1.28 MB.
-- **Synthetic** (64.0 million rows, 63.7 million tag runs, one tag per genome; 3,000 reads). Built-in RePair: 91.2 MB, 64 s, peak 1.62 GB. bigrepair with its plain RePair (`-m 0`): 57 s, peak 0.83 GB. The comparison of the answers is being rerun (this entry will be updated).
+- **Synthetic** (64.0 million rows, 63.7 million tag runs, one tag per genome; 3,000 reads). Answers byte-identical under `-c` and `-l` with all three tag arrays.
+  - Built-in RePair: 56 s, peak 1.62 GB.
+  - bigrepair (`-m 0`): 53 s, peak 0.83 GB. Building the tag array from its grammar took 8.6 s, peak 1.03 GB.
+  - Tag array files: plain 53.8 MB (+ RMQ 48.6 MB), built-in RePair 42.6 MB, from bigrepair 48.8 MB.
+  - These tags are nearly random: 16 tags, one run per row on average. So this measures cost, not the compression SILVA's tags will get.
 
 **Memory for SILVA's 359,351,512 tag runs** (n = 1,173,771,557, r = 68.3 million), scaled per run from the synthetic test. That test has 63.7 million runs, about 1/5.6 of SILVA's.
 - **Plain tag array from the cache:** 0.99 GB, 15.5 bytes per run, so about 5.6 GB. This agrees with the 6.5 GB measured when `bac` was built, which also built the RLCSA.
 - **Built-in RePair:** 1.62 GB, 25.4 bytes per run, so **about 9.2 GB** with SILVA's 0.16 GB RLBWT. That is under the 11 GB cap, but not by much. Item 9 of the review below estimated 16 bytes per run; the measurement replaces that.
+- **The tag array from bigrepair's grammar:** 1.03 GB, 16 bytes per run, so about 5.8 GB.
 - **bigrepair:** its plain RePair (`-m 0`, the script's default) peaked at 0.83 GB on 64 million runs, 13 bytes per run, so about 4.7 GB for SILVA if its dictionary is as large as the tag sequence (the worst case; it is smaller when the sequence repeats).
   - **Use `-m 0`.** bigrepair's memory-bounded RePair (`largeb_repair`) is what it uses for any `-m` above 0, and by default with 95% of the machine's RAM, which is also above the 11 GB cap. It stalled on the 64 million runs: more than 30 minutes, killed. It took 30 s on either half of them, and 0.7, 8 and 14 s on the first 1, 4 and 16 million.
   - The script also gives bigrepair a time limit, `BGTIME` (default 8 h). If bigrepair does not finish in time, the rest of the step runs without its tag array, and the tables mark the bigrepair row as not finished.
