@@ -1,0 +1,4 @@
+genomes=3 |S|=367820280
+wall 3.6 s, peak 0.13 GB, exit 0
+BWT of 367820280 + 1 characters in 36.4 s
+wall 36.4 s, peak 2.21 GB, exit 0

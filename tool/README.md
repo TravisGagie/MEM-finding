@@ -2,6 +2,8 @@
 
 One index and one search engine for the three experiments of *Three Examples of MEM-Finding*: long noisy reads with few taxa (Zymo, Section 3), short reads with many taxa (SILVA, Section 4) and long accurate matches (chromosome 19, Section 5). It merges the code of KATKA (`../katka-readable/`) and of *More RLBWT Tricks* (`../chr19/twolevel/`), on one text holding every sequence and its reverse complement. The old directories are unchanged, and they still reproduce the numbers in the current paper.
 
+**To reproduce the chromosome 19 experiments of *More RLBWT Tricks* (v2), see [`CHR19.md`](CHR19.md).** It covers the build, the data, the commands for its tables, and using two-level search with blocks from code.
+
 Every technique is an option, and a preset chooses the options for each use case. Every search method returns the same longest suffix and BWT interval for every query, so any combination of them gives the same MEMs. `selftest.sh` checks this against brute force.
 
 ## Building

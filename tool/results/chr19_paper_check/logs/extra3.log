@@ -1,0 +1,16 @@
+RLBWT: n=367820281 r=62399658, 119.350 MB (6.0 s)
+parse oracle: n=367820281, 19936125 phrases, 6749519 distinct; dictionary 118.9 MB (470602357 bases at 2 bits, 8 phrases with other characters, 8 X runs; offsets 24.5 MB), parse 57.3 MB, starts 17.3 MB (4.74 bits per character in all; 34.3 s)
+parse oracle: 218.046 MB (peak memory of this step 1.40 GB)
+STPD: n=367820281 r=62399658, 62399656 run starts, 40634860 sampled positions (0.651 of r), 147.301 MB on top of the text (+268.329 MB for phi^-1), 290.7 s
+STPD sample built through the parse oracle (peak memory of this step 4.56 GB)
+index built in 331.7 s (peak memory 4.56 GB)
+wall 331.7 s, peak 4.56 GB, exit 0
+parse STPD: m=19936125, sigma=6749519, r_Z=6917063 parse BWT runs, 6917061 run starts, 6845345 sampled (0.990 of r_Z): sample 21.392 MB, entry 21.092 MB, C 3.717 MB, phi^-1 25.383 MB (8.4 s)
+STPD over the parse: 46.201 MB (+25.383 MB for locating); parse oracle 218.046 MB (peak memory of this step 0.78 GB)
+index built in 8.9 s (peak memory 0.78 GB)
+wall 8.9 s, peak 0.78 GB, exit 0
+RLZAP parse (J = 4, D = 4, M = 2): reference 6691777 phrases; target 13244348 phrases in 588582 factors (22.50 phrases per factor); 1006616 literal phrases (327307 factors only a literal); 105770 pointer changes, 48306 explicit pointers; 154076 stored pointer values
+  sizes (MB): reference ids 19.239 + starts 7.308; factor starts (parse 0.576, text 0.887); literal counts 0.274; literals 2.894; pointers (change positions 0.096, values 0.482): parse part 31.756; dictionary 118.916 (+ offsets 24.467) (4.7 s)
+RLZAP parse oracle: 175.140 MB (peak memory of this step 0.55 GB)
+index built in 5.7 s (peak memory 0.55 GB)
+wall 5.7 s, peak 0.55 GB, exit 0

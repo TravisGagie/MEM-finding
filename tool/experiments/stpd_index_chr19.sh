@@ -94,6 +94,7 @@ ours() {     # name, options
 }
 theirs bml
 theirs bml-locate --locate
+if [ -n "${THEIRS_BML_ONLY:-}" ]; then stamp "done (THEIRS_BML_ONLY: their BML only): $SUM"; exit 0; fi
 theirs fb --fb
 ours plain --csa
 ours twolevel-blocks --csa --twolevel

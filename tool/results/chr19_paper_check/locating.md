@@ -1,0 +1,5 @@
+- the samples, phi^-1 and the two lists (PREFIX.tloc): 540 MB
+- two-level with blocks: 13.05 / 18.01 s without locating, 17.98 / 30.57 s with (L = 1000 / 100; Table 2)
+- STPD over the parse with locating: 11.41 / 22.40 s
+- occurrences of all MEMs: 48942 (L = 1000), 465458 (L = 100); equal to the sums of ep - sp of plain search: True
+- positions (--locate-out) byte-identical to STPD over the parse, MEM by MEM: L = 1000 True, L = 100 True
