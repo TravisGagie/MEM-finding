@@ -298,6 +298,75 @@ A parse-level jump replaces up to |P_i| − k character-level jumps, each of whi
 
 Open points: an id-level pruning rule equivalent to the character-level one (the same proof should go through with Z's LCP in phrases); and how often Z[u − 1] ≠ a on human haplotypes, i.e. whether parse-level jumps are rare enough. `--stats` on the two-level index already counts parse steps, which bounds this.
 
+### For the desktop's SILVA queue (2026-11-04): what is prepared, so that the desktop uses it instead of writing its own
+
+The queue is: one timing protocol, credit accuracies on all four regions, B_λ, grammar tags (built-in RePair against bigrepair), the digested index, and a uniform-abundance MicrobeMixer simulation. Three of these have something ready here, tested on synthetic or toy data:
+
+- **The timing protocol (`find`, every run).** After its `reads=` line, `find` now prints:
+  ```
+  timing: N reads, T threads; mean per-read time A us; total time / reads B us (total W s)
+  ```
+  - **The mean per-read time** times each read alone in its thread: its search and its output formatting, then averaged over the reads.
+  - **The total time / reads** is the wall time of the whole search (reading, searching, writing; loading the index excluded) divided by the number of reads.
+  - With one thread the two differ only by reading and writing. With T threads the second is about the first divided by T.
+  - So no post-processing is needed. Report both, as the protocol asks, and take the thread count from the same line.
+- **The uniform-abundance simulation: `experiments/uniform_microbemixer.sh`.**
+  ```
+  KATKA=~/tool/silva/bac EXP=~/MEM-finding/katka/cliffy-experiments/src TRAV_TO_LENGTH=$S/work/ref/trav_to_length.txt \
+    tool/experiments/uniform_microbemixer.sh ~/rz/MicrobeMixer $FASTA $S/exp1_data/tax_slv_ssu_138.1.txt \
+    $S/work/ref/rna/doc_to_traversal.txt ~/tool/silva/uniform 200000
+  ```
+  (`S=~/MEM-finding/katka/silva`; `$FASTA` is the SILVA reference `run_silva.sh` simulates from.)
+  - It lists every genus of the reference (`doc_to_traversal.txt`) in an abundance table, then runs MicrobeMixer per region (V1_V2, V3_V4, V4_V4, V4_V5), with the same primers and command line as `katka/silva/run_silva.sh`.
+  - It checks that every genus with reads has the same number of them, to within one.
+  - With `KATKA` set, it runs `katka find --preset silva` on both mates and scores them with `scripts/score_silva.py` (proportional credit, `MODE=freq`; other schemes with `MODE`). It writes `summary.txt`.
+  - **Every genus gets a share of 0, on purpose.** MicrobeMixer gives each genus its share of the reads *still left*, then spreads the rest evenly. With equal nonzero shares the first genus gets about e times the reads of the last: on a 12-genus toy, 270 down to 147 of 2,400, and the factor approaches e ≈ 2.7 with SILVA's thousands of genera. With shares of 0 every read goes through the even spread: 200 each on the toy. Genera with no region between the primers get no reads, as in any MicrobeMixer simulation; `counts.txt` per region shows how many.
+  - MicrobeMixer needs `art_illumina` (ART; on Ubuntu, `apt install art-nextgen-simulation-tools`) and the Python modules `regex`, `aiohttp` and `pandas`.
+  - Tested end to end on a toy SILVA: 12 real SILVA 138.1 genus paths, 3 synthetic 16S-like sequences each with V4 primer sites, 2,400 read pairs. All 12 genera got 200 read pairs, and genus accuracy was 100%, as expected, since the toy genera share nothing.
+- **Grammar tags:** `index --tags --grammar` (built-in RePair) and `--bigrepair P` exist already (see "SILVA" below). Nothing new was needed.
+
+### Cliffy (2026-11-04)
+
+Cliffy, github.com/oma219/cliffy at `3763529`, built here with `katka/silva/build_cliffy.sh`'s steps (`cliffy_rz.patch`, `gxx-compat`) under GCC 13 and CMake 3.28. Indexed: 20 synthetic genomes as 20 documents, with `--taxcomp --num-col 7 --two-pass`, with and without `--revcomp`.
+
+**Why our sizes of its SILVA indexes are about twice those in Cliffy's paper (9.01 and 4.27 GB).**
+- **The paper counts 10 files** (cliffy-experiments, `workflow/rules/exp_1.smk`, rule `combine_all_index_sizes_into_csv_file_exp1`): `.bwt.cliffy`, `.F.cliffy`, `.runcnt`, `.ftab`, and the six profile files `.taxcomp.{sdap,edap,of.sdap,of.edap,ofptr.sdap,ofptr.edap}`. It reports the sum in GiB (2³⁰ bytes).
+- **We counted every file the build writes** (`du -cb output*` in `katka/silva/compare_lib.sh`), in GB. That adds the text (`.fna`), the parse and dictionary (`.parse`, `.parse_old`, `.dict`), LCP and SA samples (`.lcp`, `.esa`, `.ssa`), the BWT's run heads and lengths (`.bwt.heads`, `.bwt.len`), `.occ`, `.last`, and a text dump of the ftab (`.ftab.debug.txt`).
+  - On the small index these extras make the total 1.82 times the paper's count with both strands, and 1.94 times without.
+  - At SILVA's scale the extras grow with the text and the number of BWT runs r. On the small index `.lcp` took 19 bytes per run and `.esa` and `.ssa` 10 each. With r of about 70 million and the text of both strands, they and `.fna` alone add roughly 5 GB to the paper's 9.67 GB (9.01 GiB). The other extras make up the rest of our 19.58 GB; the script below lists them on the server's index. GiB against GB adds another 7%.
+- **Both strands are not the difference:** Cliffy's experiments build with `--revcomp` too (`exp_1.smk`), as we did.
+- **On disk against in memory:**
+  - The query (`cliffy run`, traced with strace) opens the paper's 10 files plus `.fna`, `.bwt.heads` and `.bwt.len`.
+  - On the small index the files it opens take 67 MB, while its peak memory was 242 MB. Most of the latter is the fixed 10-mer ftab and the run's buffers, so neither number scales simply to SILVA.
+  - The fair on-disk number is the paper's 10 files. For memory, measure the query's peak.
+- **`scripts/cliffy_index_size.sh PREFIX [CLIFFY READS.fq [RUN OPTIONS]]`** prints all three counts for any Cliffy index: the paper's (GiB and GB), all files (with the extras listed, largest first), and the files `cliffy run` opens. **For Gonzalo:** run it on the server's two SILVA indexes. The first line should give about 9.01 and 4.27 GiB; our 19.58 GB is the second line.
+  ```
+  tool/scripts/cliffy_index_size.sh katka/silva/work/index/full_text/output
+  tool/scripts/cliffy_index_size.sh katka/silva/work/index/minimizers/output
+  ```
+
+**Scoring Cliffy's approximate listing with one command.**
+- **The query:** `cliffy run --taxcomp --ftab` lists, for each match, `[start,end] {d1,…}`: the documents of its approximate listing. Cliffy's paper scores that listing with "method2" of `classify_silva_readset.py`:
+  - each match adds its full length to the clade of every listed document;
+  - a read is correct if its clade is among those of maximum weight (ties count as correct, and so does a read with no match unless its clade is "uncultured").
+- **The scorer:** `scripts/cliffy_listing_score.py` is a fast equivalent of method2, as `katka/silva/rz_score2.py` is of method0 (the LCA query). On a toy data set (24 clades with an "uncultured" one, 20 documents, 3,000 read pairs with ties, unmatched reads and repeated documents) its `theirs=` accuracy equals their script's method2 at all six levels.
+- **Correction:** `rz_score2.py`'s comment calls its `--mode list` "the method2 weighting", but that mode gives length/k to each of k listed documents, which is our even credit, not method2. Use `cliffy_listing_score.py` for Cliffy's listing.
+- **For Gonzalo**, on the server where `katka/silva/run_cliffy.sh` ran:
+  ```
+  EXP=~/MEM-finding/katka/cliffy-experiments/src tool/scripts/score_cliffy_listing.sh
+  ```
+  - It finds the newest `katka/silva/work/compare/cliffy-*`. For both indexes and all four regions it scores `runs/<index>.<region>_{1,2}.p1.all` into `scores/<index>.<region>.listing.csv`, and prints genus-level accuracy per region and the mean.
+  - Each csv has all six levels, with `theirs=` (Cliffy's rule), the accuracy counting unmatched reads as wrong, and `strict` (ties counted as wrong).
+  - It was tested on the toy data laid out as on the server.
+
+### Reproducing More RLBWT Tricks v2 (2026-11-04)
+
+`CHR19.md` is the guide for others (Eddie Ferro's group): the commit, the build, the data, the commands for Table 1, Table 2 and the locating paragraph, their expected outputs, and using two-level search with blocks from code.
+- **The driver:** `experiments/chr19_paper.sh` (`build`, `table1`, `table2`, `locating`, `all`). It checks every output against plain search and writes the tables in the paper's layout.
+- **The data:** `experiments/hprc_chr19.py`. It reuses `chr19/twolevel/download_hprc_chr19.py`'s download code for the 16 individuals, or takes a manifest. **For the desktop:** write `experiments/hprc_chr19_64.tsv` from the sources of `~/shortcuts/chr19_scaling/hprc_chr19`: role, sample, haplotype, sequence name, length, number of N, for CHM13, the 128 haplotypes in collection order, and the two queries. Then `CHR19.md`'s data section works for 32 and 64 individuals.
+- **The API example:** `experiments/twolevel_example.cpp`. Its MEMs and intervals are byte-identical to `katka find`'s.
+- **The synthetic check:** `experiments/chr19_synthetic.py`.
+
 ### KeBaB: `--kebab-check T t` and `--kebab-top t --fixed-L` (2026-11-03)
 
 - **`--kebab-check T t`** (T ≥ t ≥ 1, with `-K k`):

@@ -678,7 +678,7 @@ struct read_parser {
     }
 };
 
-struct run_stats { u64 reads = 0, mems = 0, unclassified = 0; search_counters sc; };
+struct run_stats { u64 reads = 0, mems = 0, unclassified = 0; double read_time = 0; search_counters sc; };   // read_time: the sum of each read's own time
 
 // threads take chunks of reads and write their outputs back in input order
 static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr, FILE *lout = nullptr) {
@@ -708,7 +708,9 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
             }
             lines.resize(names.size()); slines.resize(names.size()); plines.resize(names.size());
             for (size_t i = 0; i < names.size(); ++i) {
+                const double t0r = now();
                 u64 m = K.run(Q, names[i], seqs[i], lines[i], sout ? &slines[i] : nullptr, lout ? &plines[i] : nullptr);
+                st.read_time += now() - t0r;
                 ++st.reads; st.mems += m; st.unclassified += m == 0;
             }
             {
@@ -723,7 +725,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
             if (names.empty()) break;
         }
         std::lock_guard<std::mutex> g(st_m);
-        total.reads += st.reads; total.mems += st.mems; total.unclassified += st.unclassified; total.sc.add(Q.cnt);
+        total.reads += st.reads; total.mems += st.mems; total.unclassified += st.unclassified; total.read_time += st.read_time; total.sc.add(Q.cnt);
     };
     std::vector<std::thread> th;
     for (int t = 0; t < nthreads; ++t) th.emplace_back(work);
@@ -932,6 +934,11 @@ static int cmd_find(int argc, char **argv) {
     if (out != stdout) fclose(out);
     fprintf(stderr, "reads=%lu MEMs=%lu without MEMs=%lu | threads=%d wall %.2f s, %.1f us/read\n", st.reads, st.mems, st.unclassified, nthreads, wall,
             1e6 * wall * nthreads / std::max<u64>(1, st.reads));
+    // the timing protocol's two numbers: each read timed alone (its search and output formatting, in its
+    // thread), averaged; and the wall time of the whole search (reading, searching, writing; loading excluded)
+    // divided by the number of reads
+    fprintf(stderr, "timing: %lu reads, %d threads; mean per-read time %.2f us; total time / reads %.2f us (total %.3f s)\n",
+            st.reads, nthreads, 1e6 * st.read_time / std::max<u64>(1, st.reads), 1e6 * wall / std::max<u64>(1, st.reads), wall);
     if (stats)
         fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
                 st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
