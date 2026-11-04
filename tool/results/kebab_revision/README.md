@@ -6,7 +6,7 @@ step in an 11 GB cgroup with no swap.
 **Setting:**
 - **Reads:** the 581,802 positive (microbial) Zymo reads (`~/zymo/all.fq`), 11,456,712,680 bases, with no
   homopolymer compression and no low-complexity filter.
-- **KeBaB:** its own tool (github.com/nathanielbrown/kebab at 4bed76f), with `kebab build -k 20 -e 0.1 -f 1`
+- **KeBaB:** its own tool (https://github.com/drnatebrown/kebab at 4bed76f), with `kebab build -k 20 -e 0.1 -f 1`
   (one hash function) and `kebab scan -l 40 -s [--top-t N]`.
 - **ropebwt3:** 3.10-r285, unmodified, `ropebwt3 mem -l 40`.
 - **Scripts and logs:** `build.sh`, `build2.sh`, `run.sh`, `run2.sh`, `logs/`.
