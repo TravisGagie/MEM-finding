@@ -31,7 +31,13 @@ python3 experiments/hprc_chr19.py ~/chr19data                  # 16 individuals 
 python3 experiments/hprc_chr19.py ~/chr19data --plan           # only list the sequences
 ```
 
-**32 and 64 individuals.** The script's built-in list, from `chr19/twolevel/download_hprc_chr19.py`, has the first 16 individuals. For 32 and 64, pass a manifest with the same columns (role, sample, haplotype, sequence name, length, number of N), the individuals in order: `--manifest hprc_chr19_64.tsv`. `--individuals N` takes the first N of them. `experiments/hprc_chr19_64.tsv` will list the 129 sequences of the paper's runs. Until it is in the repository, ask us for it, or build it from the HPRC release 2 assemblies with the rule above.
+**32 and 64 individuals.** The script's built-in list (from `chr19/twolevel/download_hprc_chr19.py`) has the first 16 individuals. `experiments/hprc_chr19_64.tsv` lists the 129 sequences of the paper's 64-individual collection and the two queries: role, sample, haplotype, sequence name, length and number of N, then the source assembly, with the individuals in order. Its first 16 individuals are the built-in list. For all three sizes, download the 64 individuals (129 sequences, about 7.9 GB of bases):
+
+```
+python3 experiments/hprc_chr19.py ~/chr19data --manifest experiments/hprc_chr19_64.tsv
+```
+
+`--individuals N` takes only the first N individuals of a manifest.
 
 Use the 64-individual `collection.txt` for every size: the script takes its first 33, 65 or 129 lines.
 
