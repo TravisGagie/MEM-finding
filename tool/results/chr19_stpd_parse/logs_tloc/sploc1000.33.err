@@ -1,0 +1,6 @@
+parse oracle: 220466619 phrases (k = 51, s = 12), 8512838 distinct: 1036.369 MB (2.04 bits per character) instead of the text (4065.486 MB)
+STPD: 44361753 sampled positions (r = 68446485), 177.447 MB on top of the text
+STPD over the parse, components (MB): plain parse 661.400, boundaries 191.798, dictionary strings 151.248 (2 bits per base, with exceptions; + offsets 31.923), parse sample 33.501 (9571667 of r_Z = 10332018), entry table 29.795 (+ C 8.088), parse phi^-1 45.472 (locating), character-level sample 177.447 (+ phi^-1 350.165, locating), right end: RLCSA 579.342, B 12.783, dictionary hash 105.221
+index loaded in 2.6 s
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 5.83 s, 1456406.5 us/read
+STPD over the parse --locate: wall 8.62 s, peak 2908724 KB

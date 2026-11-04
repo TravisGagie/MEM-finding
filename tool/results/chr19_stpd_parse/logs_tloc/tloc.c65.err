@@ -1,0 +1,6 @@
+RLBWT: n=8004217317 r=72587343, 217.645 MB (28.6 s)
+two-level locate: characters: 72587343 run samples 299.423 MB, phi^-1 387.835 MB (718.8 s)
+two-level locate: parse 12954298 run samples 59.614 MB, blocks 4548667 run samples 18.393 MB, block -> phrase 37.880 MB, phrase -> text 377.692 MB; in all 1180.837 MB (characters 687.258, parse 437.307, blocks 56.273) (796.7 s)
+two-level locate: 1180.837 MB (peak memory of this step 7.20 GB)
+index built in 828.3 s (peak memory 7.20 GB)
+tloc: 828.29 s wall, peak 7036040 KB

@@ -1,0 +1,33 @@
+== c33 L = 1000 10:56:52
+exit 0
+exit 0
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 7.50 s, 1873940.3 us/read
+reads=4 MEMs=22711 without MEMs=0 | threads=1 wall 5.83 s, 1456406.5 us/read
+  c33 L = 1000: positions byte-identical (22711 MEMs, 1317329 bytes)
+p0	6189	7359	1231892855,1901668231,2333412668,2639601627,2885585367,3753202622,3939569129,4065478956
+p0	6446	7620	1231893505,1901669768,2333413318,2885586017,3074057264,3878500306,4065479606,4065482054
+== c33 L = 100 10:57:10
+exit 0
+exit 0
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 8.25 s, 2061598.7 us/read
+reads=4 MEMs=38984 without MEMs=0 | threads=1 wall 9.61 s, 2403481.3 us/read
+  c33 L = 100: positions byte-identical (38984 MEMs, 5036107 bytes)
+p0	85	272	3443920647
+p0	97	275	3257462917
+== c65 L = 1000 10:57:32
+exit 0
+exit 0
+reads=4 MEMs=18479 without MEMs=0 | threads=1 wall 7.05 s, 1763056.5 us/read
+reads=4 MEMs=18479 without MEMs=0 | threads=1 wall 6.14 s, 1535869.2 us/read
+  c65 L = 1000: positions byte-identical (18479 MEMs, 1140044 bytes)
+p0	6189	7359	1231892855,1901668231,2333412668,2639601627,2885585367,3753202622,3939569129,4065478956,4498581573,4685455370,4685457560,4997129697,51795
+== c65 L = 100 10:57:52
+exit 0
+exit 0
+reads=4 MEMs=30809 without MEMs=0 | threads=1 wall 7.83 s, 1957088.9 us/read
+reads=4 MEMs=30809 without MEMs=0 | threads=1 wall 11.58 s, 2893941.4 us/read
+  c65 L = 100: positions byte-identical (30809 MEMs, 4660604 bytes)
+p0	85	272	3443920647
+p0	97	275	3257462917
+/dev/nvme0n1p2  228G  202G   14G  94% /
+== done 10:58:17

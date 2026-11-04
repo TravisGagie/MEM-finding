@@ -1,0 +1,5 @@
+two-level locate (MB): characters 687.258 (run samples 299.423, phi^-1 387.835), parse 437.307 (run samples 59.614, phrase -> text 377.692), blocks 56.273 (run samples 18.393, block -> phrase 37.880)
+index loaded in 1.4 s
+reads=4 MEMs=30809 without MEMs=0 | threads=1 wall 7.72 s, 1929983.9 us/read
+searches=137087 char_steps=10224637 parse_steps=1653913 block_steps=3179051 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+wall 9.25 s, peak 3174048 KB

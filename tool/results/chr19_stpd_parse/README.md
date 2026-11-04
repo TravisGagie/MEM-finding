@@ -202,3 +202,62 @@ to 482 MB, and RLZAP's factors get shorter (5.1 against 17.3 phrases).
   characters per search at L = 1000.
 - **Character-level STPD through the parse oracle:** the only configuration that gets faster, since its seeks find
   longer phrases (13.5 against 16.2 s).
+
+# Locating with two-level search and blocks (bb42c5a, 65e46c4; 2026-11-04)
+
+`index --twolevel-locate PREFIX` builds `PREFIX.tloc`, then `find --format mems --csa --twolevel --locate` runs at
+L = 1000 and 100. Both run in the 11 GB cgroup, and searches are pinned to CPU 9 (`tloc.sh`, `locpos.sh`,
+`logs_tloc/`).
+
+## Build
+
+| | c33 (16 individuals) | c65 (32 individuals) |
+|---|---|---|
+| `index --twolevel-locate` | 432 s, peak 4.21 GB | 828 s, peak 7.20 GB |
+| `.tloc` in all | **888.7 MB** (the NOTES estimate: about 880) | 1,180.8 MB |
+| characters: run samples + φ⁻¹ | 273.8 + 350.2 = 624.0 MB | 299.4 + 387.8 = 687.3 MB |
+| parse: run samples + phrase → text | 45.5 + 191.8 = 237.3 MB | 59.6 + 377.7 = 437.3 MB |
+| blocks: run samples + block → phrase | 10.1 + 17.4 = 27.5 MB | 18.4 + 37.9 = 56.3 MB |
+
+## Search (single-threaded; L = 1000 / L = 100)
+
+| | c33 | c65 |
+|---|---|---|
+| two-level with blocks, no locating | 5.62 / 5.72 s (1.39 GB) | 5.39 / 5.57 s (2.07 GB) |
+| **two-level with blocks, `--locate`** | **7.50 / 8.10 s** (2.22 GB) | **7.13 / 7.72 s** (3.17 GB) |
+| STPD over the parse, `--locate` | 5.73 / 9.26 s (2.98 GB) | 5.97 / 11.38 s (4.57 GB) |
+| occurrences located | 72,876 / 384,341 | 64,945 / 362,636 |
+| MEMs in more than one sequence | 9,629 / 19,653 | 7,147 / 14,082 |
+
+The two-level times are from the first runs. In the `--locate-out` runs below, two-level locating took the same
+time: 7.50 / 8.25 s on c33 and 7.05 / 7.83 s on c65.
+
+Files read:
+- **Two-level locating:** about 1,868 MB for c33 (RLBWT 191 + RLCSA 579 + `.lvl` 209 + `.tloc` 889) and about
+  2,841 MB for c65.
+- **STPD over the parse with `--locate`:** 2,378 MB and 3,937 MB.
+
+## Checks
+
+- **Against plain search:** columns 1–5 equal plain search's.
+- **Counts:** column 6, the occurrences, equals ep − sp for every MEM.
+- **Against STPD over the parse with `--locate`:** the occurrence and distinct-sequence counts are equal, MEM by MEM.
+- **The occurrence totals** at L = 1000 and 100 on c33 are also those of the published STPD-index on the same
+  queries (above).
+- **Positions:** `--locate-out` writes each MEM's sorted positions, those of its reverse complement in S, for BML.
+  The two-level locating files and STPD over the parse's files are **byte-identical** at both L on both collections:
+
+| | MEMs | file |
+|---|---|---|
+| c33, L = 1000 | 22,711 | 1,317,329 bytes |
+| c33, L = 100 | 38,984 | 5,036,107 bytes |
+| c65, L = 1000 | 18,479 | 1,140,044 bytes |
+| c65, L = 100 | 30,809 | 4,660,604 bytes |
+
+## Reading
+
+- **Locating with two-level search:** it adds about 2 s to the 5.6–5.7 s search (34–42% on c33, 32–39% on c65),
+  and 0.9–1.2 GB of files.
+- **Against STPD over the parse with `--locate`:** at L = 1000 it is slower (7.5 against 5.7 s on c33). At L = 100
+  it is faster (8.1 against 9.3 s on c33, 7.7 against 11.4 s on c65). It needs 25–30% less memory, and reads about
+  21% (c33) to 28% (c65) fewer bytes.

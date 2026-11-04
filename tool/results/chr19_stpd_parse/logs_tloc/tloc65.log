@@ -1,0 +1,32 @@
+== index --twolevel-locate c65 10:32:49
+exit 0
+RLBWT: n=8004217317 r=72587343, 217.645 MB (28.6 s)
+two-level locate: characters: 72587343 run samples 299.423 MB, phi^-1 387.835 MB (718.8 s)
+two-level locate: parse 12954298 run samples 59.614 MB, blocks 4548667 run samples 18.393 MB, block -> phrase 37.880 MB, phrase -> text 377.692 MB; in all 1180.837 MB (characters 687.258, parse 437.307, blocks 56.273) (796.7 s)
+two-level locate: 1180.837 MB (peak memory of this step 7.20 GB)
+index built in 828.3 s (peak memory 7.20 GB)
+tloc: 828.29 s wall, peak 7036040 KB
+-rw-rw-r-- 1 travis travis 1180839516 Nov  4 10:46 c65.tloc
+== L = 1000 10:46:37
+exit 0
+two-level locate (MB): characters 687.258 (run samples 299.423, phi^-1 387.835), parse 437.307 (run samples 59.614, phrase -> text 377.692), blocks 56.273 (run samples 18.393, block -> phrase 37.880)
+reads=4 MEMs=18479 without MEMs=0 | threads=1 wall 7.13 s, 1782715.4 us/read
+searches=90850 char_steps=6695467 parse_steps=2066354 block_steps=3273993 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+wall 9.52 s, peak 3174088 KB
+  18479 MEMs (plain 18479, STPD over the parse --locate 18479)
+  columns 1-5 equal plain search: True
+  occurrences (column 6) equal ep - sp: True
+  occurrences and distinct sequences equal STPD over the parse --locate (per MEM): True
+  occurrences in all 64945, MEMs in more than one sequence 7147
+== L = 100 10:46:47
+exit 0
+two-level locate (MB): characters 687.258 (run samples 299.423, phi^-1 387.835), parse 437.307 (run samples 59.614, phrase -> text 377.692), blocks 56.273 (run samples 18.393, block -> phrase 37.880)
+reads=4 MEMs=30809 without MEMs=0 | threads=1 wall 7.72 s, 1929983.9 us/read
+searches=137087 char_steps=10224637 parse_steps=1653913 block_steps=3179051 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+wall 9.25 s, peak 3174048 KB
+  30809 MEMs (plain 30809, STPD over the parse --locate 30809)
+  columns 1-5 equal plain search: True
+  occurrences (column 6) equal ep - sp: True
+  occurrences and distinct sequences equal STPD over the parse --locate (per MEM): True
+  occurrences in all 362636, MEMs in more than one sequence 14082
+== done 10:46:56
