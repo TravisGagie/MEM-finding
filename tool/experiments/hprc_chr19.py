@@ -22,6 +22,7 @@ ORIG = os.path.join(HERE, "..", "..", "chr19", "twolevel", "download_hprc_chr19.
 
 
 def load_original():
+    sys.dont_write_bytecode = True                    # (no __pycache__ in chr19/, which stays unchanged)
     spec = importlib.util.spec_from_file_location("download_hprc_chr19", ORIG)
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
