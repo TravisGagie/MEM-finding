@@ -547,7 +547,7 @@ A pseudo-MEM shorter than the current L is skipped (no backward steps) and not c
 - The heuristic reports only true MEMs, but differs from the t longest in 613 of 4,080 runs (synthetic reads, many shorter than k).
 - On the self-test reads, `--kebab-batch 3 -L 1` gives byte-identical output to the exact reference `--longest 3 -L 1`.
 
-`scripts/compare_longest_t.py run.txt ref.txt reads.fq t [k]` compares two listings read by read, using the t longest with ties at compressed lengths. It reports the reads whose sorted lengths differ (a longest MEM missed), the reads whose spans differ, and the reads whose reference longest MEM is shorter than k.
+`scripts/compare_longest_t.py run.txt ref.txt reads.fq t [k]` compares two listings read by read, using the t longest with ties at compressed lengths. It reports the reads whose sorted lengths differ (a longest MEM missed), the reads whose spans differ, and the reads whose reference longest MEM is shorter than k. For an index built without `-U`, use `--plain` or `--info PREFIX.info` to compare lengths in bases. `maxmem_roc_stream.py`, `same_longest_mems.py` and `results/zymo_kebab/topt_lengths.py` take the same options.
 
 **For the desktop (Zymo, `~/zymo/hpc/zy`, `~/zymo/all.fq`; one run at a time, 12 threads, in the 11 GB cgroup as in `results/zymo/run_scripts/runs2.sh`).** After `git pull origin tool && make -C tool` and `tool/selftest.sh`, for t in 1, 3 and 5:
 

@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
-# maxmem_roc_stream.py listings truth tbl reads.fq
+# maxmem_roc_stream.py [--plain | --info PREFIX.info] listings truth tbl reads.fq
 # katka-readable/scripts/maxmem_roc.py with the reads given (-U: each MEM scored by its homopolymer-compressed
 # length), streaming instead of loading every read: the listings must be in the reads' order (katka find and
 # katka-classify write reads back in input order), which is checked name by name. Same output.
+# --plain (or --info PREFIX.info, if its hpc line is 0): lengths in bases, end - start + 1, for an index built
+# without -U. The default (no option) is the homopolymer-compressed length, for an index built with -U.
+# With --plain the output is that of maxmem_roc.py without the reads (thresholds in steps of 5, not 2).
 import re, sys, collections
+def length_mode(argv):
+    # --plain, or --info PREFIX.info with hpc 0 (an index built without -U): MEM length = end - start + 1
+    plain, rest, i = False, [], 0
+    while i < len(argv):
+        if argv[i] == '--plain': plain = True
+        elif argv[i] == '--info':
+            l = open(argv[i + 1]).readline().split(); i += 1
+            plain = plain or not (len(l) == 2 and l[0] == 'hpc' and int(l[1]))
+        else: rest.append(argv[i])
+        i += 1
+    return plain, rest
+plain, sys.argv[1:] = length_mode(sys.argv[1:])
 out, truthf, tbl, fq = sys.argv[1:5]
 names = []
 for l in open(tbl):
@@ -18,6 +33,7 @@ def next_read():
     s = F.readline().strip(); F.readline(); F.readline()
     return h[1:].split()[0], s
 def clen(r, a, b):
+    if plain: return b - a + 1
     r = r[a:b + 1]
     return sum(1 for i in range(len(r)) if i == 0 or r[i] != r[i - 1])
 score = {}; vote = {}; vote_even = {}
@@ -51,7 +67,7 @@ print('reads %d (%d positive, %d yeast); longest MEM, median: positive %d, yeast
       % (len(score), len(pos), len(neg), sorted(score[k] for k in pos)[len(pos) // 2] if pos else 0,
          sorted(score[k] for k in neg)[len(neg) // 2] if neg else 0))
 print('    t   sens    spec   species acc (prop / even)')
-for t in range(10, 61, 2):
+for t in range(10, 61, 5 if plain else 2):   # the steps of maxmem_roc.py without and with the reads
     sens = 100 * sum(score[k] >= t for k in pos) / max(1, len(pos))
     spec = 100 * sum(score[k] < t for k in neg) / max(1, len(neg))
     row = '  %3d  %6.2f  %6.2f' % (t, sens, spec)
