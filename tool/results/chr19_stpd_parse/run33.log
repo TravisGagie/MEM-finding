@@ -1,0 +1,90 @@
+== index --parse-oracle c33 (the dictionary at 2 bits per base) 19:45:18
+exit 0
+parse oracle: n=4065485531, 220466619 phrases, 8512838 distinct; dictionary 151.2 MB (598602502 bases at 2 bits, 89 phrases with other characters, 89 X runs; offsets 31.9 MB), parse 661.4 MB, starts 191.8 MB (2.04 bits per character in all; 104.4 s)
+parse oracle: 1036.369 MB (peak memory of this step 1.56 GB)
+parse-oracle: 104.70 s wall, peak 1522888 KB
+-rw-rw-r-- 1 travis travis 1036369054 Nov  3 19:47 c33.ptxt
+STPD over the parse on /home/travis/tool/chr19/c33; katka 4700b46 tool/results/zymo_kebab: --kebab-check T = 2t (exact; patterns /home/travis/tool/chr19/queries.fa; L in 1000 100
+[2026-11-03 19:47:02] character-level sample, through the parse oracle
+index --stpd --parse-oracle: wall 664.2 s, peak memory 5.97 GB, exit 0
+[2026-11-03 19:58:07] STPD over the parse
+index --stpd-parse: m=220466619, sigma=8512838, r_Z=10332018 parse BWT runs, 10332016 run starts, 9571667 sampled (0.926 of r_Z): sample 33.501 MB, entry 29.795 MB, C 8.088 MB, phi^-1 45.472 MB (56.3 s); wall 57.2 s, peak memory 3.39 GB, exit 0
+[2026-11-03 19:59:04] RLZAP parse oracle
+index --rlzap: (J = 4, D = 4, M = 2): reference 6691777 phrases; target 213774842 phrases in 12352342 factors (17.31 phrases per factor); 18644761 literal phrases (7090969 factors only a literal); 1837448 pointer changes, 1611960 explicit pointers; 3449408 stored pointer values
+oracle: 316.583 MB (peak memory of this step 2.78 GB)
+  sizes (MB): reference ids 20.075 + starts 10.043; factor starts (parse 10.668, text 17.205); literal counts 5.328; literals 55.934; pointers (change positions 2.086, values 12.073): parse part 133.412; dictionary 151.248 (+ offsets 31.923) (39.2 s); wall 39.9 s, peak memory 2.78 GB, exit 0
+L = 1000:
+[2026-11-03 19:59:44] L1000.plain
+  L1000.plain                MEMs=22711, search wall 40.66 s; wall 41.7 s, peak memory 1.05 GB
+[2026-11-03 20:00:25] L1000.stpd-parse
+  L1000.stpd-parse           MEMs=22711, search wall 5.69 s; wall 7.7 s, peak memory 2.98 GB
+      L1000.stpd-parse: the same MEMs as L1000.plain
+  components (MB): plain parse 661.400, boundaries 191.798, dictionary strings 151.248 (2 bits per base, with exceptions; + offsets 31.923), parse sample 33.501 (9571667 of r_Z = 10332018), entry table 29.795 (+ C 8.088), parse phi^-1 45.472 (locating), character-level sample 177.447 (+ phi^-1 350.165, locating), right end: RLCSA 579.342, B 12.783, dictionary hash 105.221
+[2026-11-03 20:00:33] L1000.stpd-parse-locate
+  L1000.stpd-parse-locate    MEMs=22711, search wall 5.73 s; wall 7.2 s, peak memory 2.98 GB
+      L1000.stpd-parse-locate: the same MEMs as L1000.plain
+      L1000.stpd-parse-locate: every occurrence count equals ep - sp
+[2026-11-03 20:00:40] L1000.stpd-parse-rlzap
+  L1000.stpd-parse-rlzap     MEMs=22711, search wall 8.65 s; wall 9.7 s, peak memory 2.26 GB
+      L1000.stpd-parse-rlzap: the same MEMs as L1000.plain
+  RLZAP parse (MB): reference ids 20.075 + starts 10.043, factor starts 10.668 (parse) + 17.205 (text), literal counts 5.328, literals 55.934, pointers 14.159: 133.412 in all (instead of the plain parse and boundaries)
+[2026-11-03 20:00:50] L1000.stpd-parse-rlzap-locate
+  L1000.stpd-parse-rlzap-locate MEMs=22711, search wall 8.98 s; wall 10.0 s, peak memory 2.26 GB
+      L1000.stpd-parse-rlzap-locate: the same MEMs as L1000.plain
+      L1000.stpd-parse-rlzap-locate: the same output as with the plain parse
+[2026-11-03 20:01:00] L1000.stpd-oracle
+  L1000.stpd-oracle          MEMs=22711, search wall 16.19 s; wall 17.2 s, peak memory 2.04 GB
+      L1000.stpd-oracle: the same MEMs as L1000.plain
+[2026-11-03 20:01:18] L1000.twolevel-blocks
+  L1000.twolevel-blocks      MEMs=22711, search wall 5.62 s; wall 6.2 s, peak memory 1.39 GB
+      L1000.twolevel-blocks: the same MEMs as L1000.plain
+L = 100:
+[2026-11-03 20:01:24] L100.plain
+  L100.plain                 MEMs=38984, search wall 39.18 s; wall 39.6 s, peak memory 1.05 GB
+[2026-11-03 20:02:04] L100.stpd-parse
+  L100.stpd-parse            MEMs=38984, search wall 6.40 s; wall 7.9 s, peak memory 2.98 GB
+      L100.stpd-parse: the same MEMs as L100.plain
+[2026-11-03 20:02:11] L100.stpd-parse-locate
+  L100.stpd-parse-locate     MEMs=38984, search wall 9.26 s; wall 10.7 s, peak memory 2.98 GB
+      L100.stpd-parse-locate: the same MEMs as L100.plain
+      L100.stpd-parse-locate: every occurrence count equals ep - sp
+[2026-11-03 20:02:22] L100.stpd-parse-rlzap
+  L100.stpd-parse-rlzap      MEMs=38984, search wall 10.17 s; wall 11.2 s, peak memory 2.26 GB
+      L100.stpd-parse-rlzap: the same MEMs as L100.plain
+[2026-11-03 20:02:34] L100.stpd-parse-rlzap-locate
+  L100.stpd-parse-rlzap-locate MEMs=38984, search wall 17.96 s; wall 19.0 s, peak memory 2.26 GB
+      L100.stpd-parse-rlzap-locate: the same MEMs as L100.plain
+      L100.stpd-parse-rlzap-locate: the same output as with the plain parse
+[2026-11-03 20:02:53] L100.stpd-oracle
+  L100.stpd-oracle           MEMs=38984, search wall 19.25 s; wall 20.3 s, peak memory 2.04 GB
+      L100.stpd-oracle: the same MEMs as L100.plain
+[2026-11-03 20:03:13] L100.twolevel-blocks
+  L100.twolevel-blocks       MEMs=38984, search wall 5.72 s; wall 6.3 s, peak memory 1.39 GB
+      L100.twolevel-blocks: the same MEMs as L100.plain
+[2026-11-03 20:03:19] done: /home/travis/tool/chr19/stpd_parse33/summary.txt
+script exit 0
+[20:03:19] L1000.stpd-text
+  L1000.stpd-text            MEMs=22711, search wall 3.25 s; wall 8.49 s, peak memory 4945700 KB
+      L1000.stpd-text: the same MEMs as L1000.plain
+[20:03:28] L1000.stpd-text-locate
+  L1000.stpd-text-locate     MEMs=22711, search wall 3.23 s; wall 6.10 s, peak memory 4945652 KB
+      L1000.stpd-text-locate: the same MEMs as L1000.plain
+[20:03:34] L100.stpd-text
+  L100.stpd-text             MEMs=38984, search wall 3.57 s; wall 6.30 s, peak memory 4945728 KB
+      L100.stpd-text: the same MEMs as L100.plain
+[20:03:40] L100.stpd-text-locate
+  L100.stpd-text-locate      MEMs=38984, search wall 3.76 s; wall 6.48 s, peak memory 4945784 KB
+      L100.stpd-text-locate: the same MEMs as L100.plain
+-rw-rw-r-- 1 travis travis 4065485530 Nov  2 23:36 c33.S
+-rw-rw-r-- 1 travis travis 4065485531 Nov  2 23:42 c33.bwt
+-rw-rw-r-- 1 travis travis  579342093 Nov  2 23:42 c33.csa
+-rw-rw-r-- 1 travis travis         17 Nov  2 23:36 c33.info
+-rw-rw-r-- 1 travis travis  208527959 Nov  2 23:46 c33.lvl
+-rw-rw-r-- 1 travis travis  116856184 Nov  3 19:59 c33.pstpd
+-rw-rw-r-- 1 travis travis 1036369054 Nov  3 19:49 c33.ptxt
+-rw-rw-r-- 1 travis travis  191252588 Nov  3 19:47 c33.rlbwt
+-rw-rw-r-- 1 travis travis  316582858 Nov  3 19:59 c33.rptxt
+-rw-rw-r-- 1 travis travis  527612556 Nov  3 19:58 c33.stpd
+-rw-rw-r-- 1 travis travis  527612556 Nov  3 00:19 c33.stpd.old
+-rw-rw-r-- 1 travis travis       1227 Nov  2 23:36 c33.tbl
+== done 20:03:47
