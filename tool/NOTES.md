@@ -449,7 +449,8 @@ The sequence starts come from `PREFIX.tbl` at query time. `index --twolevel-loca
 **Tests** (`katka-test mems --twolevel`):
 - After random two-level searches on both strands, with and without blocks, the toehold equals SA[sp]: 3,120 checks on the chromosome-like collection.
 - Every occurrence of every MEM, for BML and FB at L = 1 and 25, equals the suffix array's (110,456 occurrences).
-- `selftest.sh` checks `find --twolevel --locate` against plain search: the same MEMs and intervals, and occurrence counts equal to ep − sp.
+- `selftest.sh` checks `find --twolevel --locate` against plain search: the same MEMs and intervals, and occurrence counts equal to ep − sp. It also checks that its `--locate-out` positions equal STPD over the parse's, MEM by MEM.
+- `find --locate-out FILE` (with any `--locate`) writes, per MEM, the name, start and end, then its sorted positions (those of its reverse complement in S, for BML and FB). On the synthetic collection, two-level locating, STPD over the parse and character-level STPD write byte-identical files: 4,410 positions at L = 1000 and 29,460 at L = 100. Every one of them holds the MEM's reverse complement in the text.
 
 **On the synthetic collection** (search time, minimum of 3 runs):
 - **Time:** two-level with blocks 0.32 → 0.49 s with `--locate` at L = 1000 (1,996 MEMs, 4,410 occurrences), and 0.44 → 0.77 s at L = 100 (4,663 MEMs, 29,460 occurrences). The difference includes the second search per MEM.
@@ -478,7 +479,9 @@ for L in 1000 100; do
 done
 ```
 
-`index --twolevel-locate` needs `c33.bwt`, `c33.lvl` and `c33.ptxt`; the last is rebuilt if it is missing or of the old format. Check each output against plain search (`plain$L.33.tsv` from `run_n.sh`): columns 1–5 must be equal, and column 6 (occurrences) must equal ep − sp. Report:
+`index --twolevel-locate` needs `c33.bwt`, `c33.lvl` and `c33.ptxt`; the last is rebuilt if it is missing or of the old format. Check each output against plain search (`plain$L.33.tsv` from `run_n.sh`): columns 1–5 must be equal, and column 6 (occurrences) must equal ep − sp.
+
+That checks only the number of occurrences. Also compare the positions themselves: add `--locate-out tlpos$L.33.txt` to the two-level run, and run STPD over the parse with `--csa --stpd-parse --locate --locate-out sppos$L.33.txt`. The two files must be byte-identical: the same MEMs in the same order, each with its sorted positions. Report:
 - the build's time and peak, and the `two-level locate` lines (component sizes);
 - the search times next to two-level with blocks without `--locate` and STPD over the parse with `--locate`, from `results/chr19_stpd_parse/`.
 

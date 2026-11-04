@@ -108,6 +108,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--stpd-parse` | STPD over the parse (`PREFIX.lvl`'s B and dictionary, `PREFIX.pstpd`, `PREFIX.ptxt`, `PREFIX.stpd`; the RLCSA with `--csa`, else the RLBWT, at the right end). Same MEMs as plain search. With `--locate`, φ⁻¹ over the parse; the mems format then prints the occurrences and the distinct sequences among them |
 | `--rlzap-oracle` | with `--stpd-parse` or `--stpd --parse-oracle`: read the text through `PREFIX.rptxt` |
 | `--parse-oracle` | with `--stpd`: read the text through `PREFIX.ptxt` instead of holding `PREFIX.S` (same output; see NOTES.md) |
+| `--locate-out FILE` | with `--locate`: per MEM, the name, start, end and its sorted positions (of its reverse complement in S, for BML and FB) |
 | `--twolevel --locate` | two-level search with blocks keeps a toehold (SA at the interval's first row) through character, parse and block steps (`PREFIX.tloc`), and lists every occurrence by φ⁻¹; the mems format prints the occurrences and the distinct sequences |
 | `--locate` | with `--stpd`: locate every occurrence of each MEM (of its reverse complement, for BML and FB) by φ⁻¹ steps from the first one, checked against the text at the end of each batch of doubling size, then a binary search in the batch that overshot, as Becker et al. locate; the mems format gets a sixth column, the number of occurrences |
 | `--stpd --twolevel` | STPD finds the MEMs, and two-level search (with blocks unless `--no-jumps`) computes their intervals |

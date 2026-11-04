@@ -136,6 +136,9 @@ for L in 100 1000; do
   paste pa.out pb.out | awk -F'\t' '$2 != $7 || $3 != $8 || $4 != $9 || $5 != $10 || $5 - $4 != $11 { bad++ } END { exit bad > 0 }' || { echo "FAILED: two-level locate, L = $L"; exit 1; }
   echo "  same: two-level search with blocks, --locate (the same MEMs and intervals, occurrence counts = ep - sp), L = $L"
 done
+quiet $K find -L 100 --format mems --csa --twolevel --locate --locate-out pa.out c "$D/chr/queries.fa" /dev/null
+quiet $K find -L 100 --format mems --csa --stpd-parse --locate --locate-out pb.out c "$D/chr/queries.fa" /dev/null
+same pa.out pb.out "two-level locating and STPD over the parse list the same positions for every MEM"
 quiet $K find --preset chr19 c "$D/chr/queries.fa" b.out
 same a.out b.out "preset chr19 (two-level, blocks) = plain search"
 quiet $K find --preset novel -L 200 t "$D/reads.fq" a.out

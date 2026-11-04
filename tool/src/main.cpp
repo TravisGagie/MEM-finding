@@ -526,6 +526,8 @@ static const char *FIND_USAGE =
     "    --stpd-parse      STPD over the parse (PREFIX.lvl's B and dictionary, PREFIX.pstpd, PREFIX.ptxt as the\n"
     "                      text, PREFIX.stpd at the left end): implies --stpd --parse-oracle; with --locate,\n"
     "                      phi^-1 over the parse, and the mems format prints occurrences and distinct sequences\n"
+    "    --locate-out FILE with --locate: per MEM, name, start, end and its sorted positions (those of its reverse\n"
+    "                      complement in S, for BML and FB), comma-separated, in output order\n"
     "    --rlzap-oracle    with --parse-oracle or --stpd-parse: the RLZAP parse oracle PREFIX.rptxt (index --rlzap)\n"
     "    --parse-oracle    with --stpd: read the text through the two-level parse (PREFIX.ptxt, from index\n"
     "                      --parse-oracle) instead of PREFIX.S\n"
@@ -578,7 +580,8 @@ struct finder {
     bool read_stats = false;
 
     // the output of one read; returns its number of MEMs (with read_stats, its statistics line in *sl)
-    u64 run(segment_search &Q, const string &name, const string &read, string &line, string *sl = nullptr) const {
+    u64 run(segment_search &Q, const string &name, const string &read, string &line, string *sl = nullptr, string *pl = nullptr) const {
+        if (pl) pl->clear();
         line.clear();
         const search_counters before = Q.cnt;
         static thread_local string h;
@@ -593,6 +596,16 @@ struct finder {
         if (!mems_format) line = ">" + name + "\n";
         find_mems(Q, hpc ? h : read, opt, [&](const mem &M) {
             u64 first = hpc ? pos[M.a] : M.a, last = hpc ? pos[M.e] - 1 : M.e - 1;
+            if (pl) {                               // --locate-out: name, start, end, the sorted positions (of rc(MEM) in S)
+                static thread_local std::vector<u64> ps;
+                ps = Q.occbuf;
+                std::sort(ps.begin(), ps.end());
+                char hb[64];
+                snprintf(hb, sizeof hb, "\t%lu\t%lu\t", first, last + 1);
+                *pl += name; *pl += hb;
+                for (size_t q = 0; q < ps.size(); ++q) { snprintf(hb, sizeof hb, q ? ",%lu" : "%lu", ps[q]); *pl += hb; }
+                *pl += "\n";
+            }
             if (mems_format) {
                 if (intervals) snprintf(b, sizeof b, "\t%lu\t%lu\t%lu\t%lu", first, last + 1, M.I.sp, M.I.ep);
                 else snprintf(b, sizeof b, "\t%lu\t%lu\t-\t-", first, last + 1);
@@ -668,7 +681,7 @@ struct read_parser {
 struct run_stats { u64 reads = 0, mems = 0, unclassified = 0; search_counters sc; };
 
 // threads take chunks of reads and write their outputs back in input order
-static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr) {
+static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr, FILE *lout = nullptr) {
     const size_t CHUNK = 256;
     std::mutex in_m, out_m, st_m;
     std::condition_variable out_cv;
@@ -676,7 +689,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
     bool eof = false;
     run_stats total;
     auto work = [&]() {
-        std::vector<string> names, seqs, lines, slines;
+        std::vector<string> names, seqs, lines, slines, plines;
         run_stats st;
         string name, seq;
         segment_search Q;
@@ -693,9 +706,9 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
                 }
                 my = next_in++;
             }
-            lines.resize(names.size()); slines.resize(names.size());
+            lines.resize(names.size()); slines.resize(names.size()); plines.resize(names.size());
             for (size_t i = 0; i < names.size(); ++i) {
-                u64 m = K.run(Q, names[i], seqs[i], lines[i], sout ? &slines[i] : nullptr);
+                u64 m = K.run(Q, names[i], seqs[i], lines[i], sout ? &slines[i] : nullptr, lout ? &plines[i] : nullptr);
                 ++st.reads; st.mems += m; st.unclassified += m == 0;
             }
             {
@@ -703,6 +716,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
                 out_cv.wait(lk, [&] { return next_out == my; });
                 for (size_t i = 0; i < names.size(); ++i) fputs(lines[i].c_str(), out);
                 if (sout) for (size_t i = 0; i < names.size(); ++i) fputs(slines[i].c_str(), sout);
+                if (lout) for (size_t i = 0; i < names.size(); ++i) fputs(plines[i].c_str(), lout);
                 ++next_out;
             }
             out_cv.notify_all();
@@ -724,7 +738,7 @@ static int cmd_find(int argc, char **argv) {
     int nthreads = 1, ft = 0, hpc = -1, csa = 0;
     uint32_t kebab_k = 0;
     bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false, use_pstpd = false, rlzap_oracle = false;
-    string readstats;
+    string readstats, locate_out;
     bool fixed_L = false;
     int mode = -1;
     static option longopts[] = {
@@ -732,7 +746,7 @@ static int cmd_find(int argc, char **argv) {
         {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -777,6 +791,7 @@ static int cmd_find(int argc, char **argv) {
             case 17: poracle = true; break;
             case 22: use_stpd = poracle = twolevel = use_pstpd = true; break;
             case 27: rlzap_oracle = true; break;
+            case 28: locate_out = optarg; break;
             case 15: K.intervals = false; break;
             case 16: K.locate = true; break;
             default: fputs(FIND_USAGE, stderr); return 1;
@@ -908,8 +923,11 @@ static int cmd_find(int argc, char **argv) {
     double t1 = now();
     FILE *sout = nullptr;
     if (!readstats.empty()) { sout = open_or_die(readstats, "w"); fputs("read\tpseudo_mems\tsearched\tbatches\tfallback\tbackward_steps\tmems\tfallback_reason\n", sout); }
-    run_stats st = find_all(K, P, out, nthreads, sout);
+    if (!locate_out.empty() && !K.locate) die("--locate-out needs --locate");
+    FILE *lout = locate_out.empty() ? nullptr : open_or_die(locate_out, "w");
+    run_stats st = find_all(K, P, out, nthreads, sout, lout);
     if (sout) fclose(sout);
+    if (lout) fclose(lout);
     double wall = now() - t1;
     if (out != stdout) fclose(out);
     fprintf(stderr, "reads=%lu MEMs=%lu without MEMs=%lu | threads=%d wall %.2f s, %.1f us/read\n", st.reads, st.mems, st.unclassified, nthreads, wall,
