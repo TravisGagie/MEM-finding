@@ -244,19 +244,23 @@ def main():
             return m
         runs = grab(r"tag runs: (\d+) runs over (\d+) rows", "tag-run count")
         g = grab(r"1\. built-in RePair: tag array: .*?, ([\d.]+) MB; wall ([\d.]+) s, peak ([\d.]+) GB", "built-in RePair line")
-        bg = grab(r"2\. bigrepair -i: \.R (\d+) bytes, \.C (\d+) bytes; wall ([\d.]+) s, peak ([\d.]+) GB", "bigrepair line")
-        bt = grab(r"3\. from bigrepair's grammar: tag array: .*?, ([\d.]+) MB; wall ([\d.]+) s, peak ([\d.]+) GB", "bigrepair tag array line")
-        fl = grab(r"tag array files: plain (\d+) bytes \(\+ RMQ (\d+)\), built-in RePair (\d+), bigrepair (\d+)", "file sizes")
-        ident = re.findall(r"find -(\w): outputs byte-identical with the three tag arrays: (\w+)", txt)
+        dnf = re.search(r"2\. bigrepair -i: DID NOT FINISH.*", txt)
+        if dnf:
+            c.miss(f, "grammar", "bigrepair did not finish: " + dnf.group(0)[len("2. bigrepair -i: "):])
+        bg = None if dnf else grab(r"2\. bigrepair -i: \.R (\d+) bytes, \.C (\d+) bytes; wall ([\d.]+) s, peak ([\d.]+) GB", "bigrepair line")
+        bt = None if dnf else grab(r"3\. from bigrepair's grammar: tag array: .*?, ([\d.]+) MB; wall ([\d.]+) s, peak ([\d.]+) GB", "bigrepair tag array line")
+        fl = grab(r"tag array files: plain (\d+) bytes \(\+ RMQ (\d+)\), built-in RePair (\d+), bigrepair (\d+|none)", "file sizes")
+        ident = re.findall(r"find -(\w): outputs byte-identical with the (?:three )?tag arrays[^:]*: (\w+)", txt)
         mb = lambda x: gb(int(x) / 1e6)
         rows = [["plain (+ RMQ)", "%s (+ %s)" % (mb(fl.group(1)), mb(fl.group(2))), "", ""],
                 ["built-in RePair", mb(fl.group(3)), "%s s" % g.group(2), "%s GB" % g.group(3)],
                 ["bigrepair", mb(fl.group(4)), "%.1f s" % (float(bg.group(3)) + float(bt.group(2))),
-                 "%s GB" % max(bg.group(4), bt.group(3), key=float)]]
+                 "%s GB" % max(bg.group(4), bt.group(3), key=float)] if bg else
+                ["bigrepair", "BAD: grammar/summary.txt (bigrepair did not finish; step grammar)", "", ""]]
         show("Grammar-compressed tags (file sizes in MB; build time and peak memory)",
              ["tag array", "file (MB)", "build", "peak"], rows, None,
              "  {:,} tag runs over {:,} rows; bigrepair's grammar: .R {} MB, .C {} MB; answers byte-identical: {}".format(
-                 int(runs.group(1)), int(runs.group(2)), mb(bg.group(1)), mb(bg.group(2)),
+                 int(runs.group(1)), int(runs.group(2)), mb(bg.group(1)) if bg else "-", mb(bg.group(2)) if bg else "-",
                  ", ".join("-%s %s" % x for x in ident) if len(ident) == 2 else c.miss(f, "grammar", "the find comparison did not finish")))
     except Missing as e:
         show("Grammar-compressed tags", ["tag array", "file (MB)"], [[str(e), ""]])

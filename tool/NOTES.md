@@ -323,7 +323,121 @@ The queue is: one timing protocol, credit accuracies on all four regions, B_λ, 
   - **Every genus gets a share of 0, on purpose.** MicrobeMixer gives each genus its share of the reads *still left*, then spreads the rest evenly. With equal nonzero shares the first genus gets about e times the reads of the last: on a 12-genus toy, 270 down to 147 of 2,400, and the factor approaches e ≈ 2.7 with SILVA's thousands of genera. With shares of 0 every read goes through the even spread: 200 each on the toy. Genera with no region between the primers get no reads, as in any MicrobeMixer simulation; `counts.txt` per region shows how many.
   - MicrobeMixer needs `art_illumina` (ART; on Ubuntu, `apt install art-nextgen-simulation-tools`) and the Python modules `regex`, `aiohttp` and `pandas`.
   - Tested end to end on a toy SILVA: 12 real SILVA 138.1 genus paths, 3 synthetic 16S-like sequences each with V4 primer sites, 2,400 read pairs. All 12 genera got 200 read pairs, and genus accuracy was 100%, as expected, since the toy genera share nothing.
-- **Grammar tags:** `index --tags --grammar` (built-in RePair) and `--bigrepair P` exist already (see "SILVA" below). Nothing new was needed.
+- **Grammar tags:** `index --tags --grammar` (built-in RePair) and `--bigrepair P` exist already (see "SILVA" below). The comparison script and its desktop commands are in the next section.
+
+### SILVA queue: runner and tables (2026-11-04)
+
+Everything the desktop's SILVA queue needs, as one runner, `experiments/silva_queue.sh`, and one script that prints the paper's tables from its outputs, `scripts/silva_tables.py`. Please use these rather than new scripts, so that every number in the tables comes from the same protocol.
+
+**Setup on the desktop (once):**
+
+- bigrepair, for the grammar step:
+  ```
+  cd ~ && git clone https://gitlab.com/manzai/bigrepair && make -C bigrepair && pip install psutil
+  ```
+  (bigrepair's driver is a Python script that needs psutil.)
+- The rest is in place already: the undigested index `~/tool/silva/bac` (`index --preset silva`, see "SILVA" below; it has the tag-run cache `bac.tagruns`), `~/tool/silva/list.tsv`, Big-BWT in `katka/deps`, MicrobeMixer in `katka/MicrobeMixer`, cliffy-experiments in `katka/cliffy-experiments`, and the reads and truth under `katka/silva/work`.
+
+**The queue, in its order** (each step skips work whose output exists, so a step can be rerun after a failure):
+
+```
+cd ~/MEM-finding && git pull && make -C tool
+BIGREPAIR=~/bigrepair/bigrepair tool/experiments/silva_queue.sh timing credit blam grammar digests uniform
+tool/experiments/silva_queue.sh collect                  # the small outputs to tool/results/silva_queue, to commit
+python3 tool/scripts/silva_tables.py tool/results/silva_queue --latex
+```
+
+Outputs go to `Q=~/tool/silva/queue`. Every timed run is capped at 11 GB (`MEMMAX`) and logs its wall time and peak memory.
+
+- **timing.**
+  - The timing protocol, used by every timed step: `katka find` with one thread pinned to CPU 9 (`PIN`), then with 12 threads (`THREADS`), on both mates of every region.
+  - It checks that the 12-thread output is byte-identical to the one-thread output.
+  - The tables take the time per read from the `timing:` lines: the mean per-read time with one thread, with the total time over the number of reads beside it. Reads per second is all the reads over the summed wall time of the 12-thread runs.
+  - The configuration is `find --preset silva` (L = 30, counts, explicit RLCSA, `-F 10`) on `bac`.
+- **credit.**
+  - Scores the timing step's outputs, the same MEMs at L = 30, under six credit schemes: `lca` = range, `one`, `cliffs` = sample, `list` = even, `norm` and `freq` = proportional. It uses `scripts/score_silva.py`, one region at a time.
+  - `norm` needs the number of sequences per genus, which the step counts from `$S/work/ref/dna/doc_<i>_seq.fa`.
+  - These six give the SILVA column of `tab:credit`.
+- **blam.**
+  - Runs `index --tags --tag-lcp 0,10,30,100,1000` on `bac`. This recomputes the tag runs and B_λ with the per-genus tags, and prints ρ, r, σ, d and the lemma's bound for each λ.
+  - The tables recompute the bound from these numbers as a check.
+  - It peaked at 6.5 GB when `bac`'s tags were built (`results/silva_profile`), and B_λ's records are streamed (`--blam-mem`, default 6 GB), so it should fit in 11 GB. If it does not, add `--blam-external`.
+- **grammar.** Runs `experiments/grammar_tags.sh` on `bac` (below). Then, with each of the two grammar tag arrays:
+  - It runs the timing protocol with `--preset silva -T <tag array>`.
+  - It checks that every output is byte-identical to the default's.
+  - It scores the outputs under proportional credit.
+- **digests.**
+  - Builds the digested index `~/tool/silva/dg` if it is not there:
+    - `prep --digest 4,11 list.tsv dg`;
+    - Big-BWT on `dg.S`;
+    - `index --csa --efcsa --tags dg`;
+    - `index --tags --sample 4 --tag-out dg.s4.tag dg`.
+  - For L = 15, 20, 30, 40 and 50 it runs the timing protocol with `-L $L -c -F 2` and each locate structure: `--csa` (explicit RLCSA), `--efcsa` (Elias–Fano), and, for L ≥ 30, no RLCSA with `-T dg.s4.tag` (RLBWT with tags sampled at s = 4).
+  - It checks that the Elias–Fano and sampled outputs are byte-identical to the explicit RLCSA's, and records this in `digests/identical.txt`.
+  - It scores the explicit RLCSA's outputs under proportional credit.
+  - It then runs the undigested default (`--preset silva -L $L`) at L = 15, 20, 30 and 40.
+  - Together these fill every cell of `tab:digest`, and the "minimizer digests" row of `tab:others` (L = 30).
+- **uniform.**
+  - Runs `experiments/uniform_microbemixer.sh` with the defaults of `katka/silva/run_silva.sh` (MicrobeMixer, `SILVA_138.1_SSURef_NR99_tax_silva.fasta`, 200,000 pairs per region; `NREADS` to change it).
+  - It then copies the per-region read counts and scores to `uniform/`.
+- **collect.** Copies everything except the finds' outputs (`*.out`, large) and MicrobeMixer's reads to `OUT` (default `tool/results/silva_queue`). That is everything `silva_tables.py` reads, a few MB.
+
+**Space** in the tables is the total size in GB (10⁹ bytes) of the files a configuration loads, recorded in `Q/sizes.txt`:
+- default: `bac.rlbwt`, `bac.csa`, `bac.tag` and `bac.tag.rmq`;
+- grammar: `bac.rlbwt`, `bac.csa` and the grammar tag array;
+- digests: `dg.rlbwt`, `dg.map` and tags, with `dg.csa`, `dg.efcsa` or `dg.s4.tag` as the row says.
+
+**Expected cost** (from the published per-read times, 53 to 220 µs):
+- Each one-thread run of 200,000 reads takes 10 to 45 s, and there are about 200 runs.
+- Each scoring takes a minute or two with 12 threads, and there are about 70.
+- So the queue should take a few hours, plus bigrepair (below) and MicrobeMixer's simulation.
+
+**`silva_tables.py Q [--latex]`** prints, in order:
+1. `tab:credit`, the SILVA column: strict genus accuracy, the mean over the regions and each region.
+2. `tab:others`, our rows:
+   - default, grammar (built-in RePair and bigrepair) and minimizer digests;
+   - for each: space, time per read (and total over reads), reads/s with 12 threads, and genus accuracy (strict, and with ties counted correct).
+3. `tab:digest`: space, the time per read for L = 15 … 50, and the strict accuracy rows.
+4. B_λ for each λ, with the lemma's bound, ρ/bound, and whether the bound holds.
+5. The grammar sizes: the plain, built-in RePair and bigrepair tag arrays; the build times and peaks; whether the answers are byte-identical.
+6. The uniform simulation: reads per genus and genus accuracy per region.
+
+`--latex` adds each table's rows in the paper's layout. **A missing input is never a blank:**
+- A missing file prints `MISSING: <file> (step <step>)` in its cell.
+- A file that is there but unusable prints `BAD: <file> (<why>; step <step>)`. The reasons are a missing `timing:` line, a run that did not exit 0, a bound that does not add up, or a configuration absent from `sizes.txt`.
+- The script ends with the list of everything missing and exits 1. `\missing{}` stands in for these cells in the LaTeX rows.
+
+**Tested on a toy SILVA** (12 genera, 2,400 read pairs; the same reads under all four region names):
+- Every step ran; the tables were complete and the script exited 0.
+- The Elias–Fano and sampled outputs were byte-identical to the explicit RLCSA's in all 64 runs.
+- The grammar outputs were byte-identical to the default's.
+- The lemma's bound held for every λ.
+- Every accuracy was 100%, as expected, since the toy genera share nothing, so the toy checks the plumbing, not the schemes.
+- The failure cases were shown correctly: with a scoring deleted, a run's log marked as failed, a configuration removed from `sizes.txt`, and the B_λ log and the uniform step's outputs deleted, the script named each of the 13 inputs and exited 1.
+
+#### Grammar tags: built-in RePair against bigrepair (`experiments/grammar_tags.sh`)
+
+```
+BIGREPAIR=~/bigrepair/bigrepair tool/experiments/grammar_tags.sh ~/tool/silva/bac \
+    katka/silva/work/compare/reads_every50/V1_V2_1.fq ~/tool/silva/queue/grammar -L 30 --csa -F 10
+```
+
+(The `grammar` step of the runner does exactly this.) It writes `WORK/summary.txt` with each step's time and peak memory:
+1. `index --tags --grammar --tag-out WORK/g.tag bac`: the built-in approximate RePair, from the tag-run cache `bac.tagruns`.
+2. `scripts/tagruns_to_int32.py bac.tagruns WORK/tags.int32` (the runs' tags as 32-bit integers, streamed), then `bigrepair -i -r WORK/tags.int32`.
+3. `index --tags --bigrepair WORK/tags.int32 --tag-out WORK/bg.tag bac`: the tag array from bigrepair's grammar (`.R`, `.C`).
+4. `find -c` and `find -l` with `bac.tag`, `g.tag` and `bg.tag`. The three outputs must be byte-identical, since only the tag array's encoding differs; the script stops if they are not.
+
+**Tests.**
+- **Toy** (`selftest` data, 1,004,033 tag runs). Answers byte-identical under `-c` and `-l` with all three tag arrays. File sizes: plain 0.98 MB (+ RMQ 0.76), built-in RePair 0.91 MB, from bigrepair 1.28 MB.
+- **Synthetic** (64.0 million rows, 63.7 million tag runs, one tag per genome; 3,000 reads). Built-in RePair: 91.2 MB, 64 s, peak 1.62 GB. bigrepair with its plain RePair (`-m 0`): 57 s, peak 0.83 GB. The comparison of the answers is being rerun (this entry will be updated).
+
+**Memory for SILVA's 359,351,512 tag runs** (n = 1,173,771,557, r = 68.3 million), scaled per run from the synthetic test. That test has 63.7 million runs, about 1/5.6 of SILVA's.
+- **Plain tag array from the cache:** 0.99 GB, 15.5 bytes per run, so about 5.6 GB. This agrees with the 6.5 GB measured when `bac` was built, which also built the RLCSA.
+- **Built-in RePair:** 1.62 GB, 25.4 bytes per run, so **about 9.2 GB** with SILVA's 0.16 GB RLBWT. That is under the 11 GB cap, but not by much. Item 9 of the review below estimated 16 bytes per run; the measurement replaces that.
+- **bigrepair:** its plain RePair (`-m 0`, the script's default) peaked at 0.83 GB on 64 million runs, 13 bytes per run, so about 4.7 GB for SILVA if its dictionary is as large as the tag sequence (the worst case; it is smaller when the sequence repeats).
+  - **Use `-m 0`.** bigrepair's memory-bounded RePair (`largeb_repair`) is what it uses for any `-m` above 0, and by default with 95% of the machine's RAM, which is also above the 11 GB cap. It stalled on the 64 million runs: more than 30 minutes, killed. It took 30 s on either half of them, and 0.7, 8 and 14 s on the first 1, 4 and 16 million.
+  - The script also gives bigrepair a time limit, `BGTIME` (default 8 h). If bigrepair does not finish in time, the rest of the step runs without its tag array, and the tables mark the bigrepair row as not finished.
 
 ### Cliffy (2026-11-04)
 
@@ -732,7 +846,7 @@ sdsl was then built here, only for the regressions. Its consequences:
 6. **The t longest MEMs.** When several MEMs tie for t-th place, the tool keeps the one found first.
 7. **`-K` with `-X`.** KATKA required the filter's k to be at most L. The tool requires it only with a fixed L (pseudo-MEMs), since adaptive L starts low and the longest-first order handles it, as KATKA's `-X -L 20 -K` runs did.
 8. **Tags** may be any 32-bit integers (KATKA stored 14 bits).
-9. **Grammar.** The built-in RePair is approximate: each round replaces every pair whose frequency is at least half the largest. The grammar differs from bigrepair's, so the size reported in the paper (0.23 GB for SILVA) should be remeasured, or the tool given bigrepair's output with `--bigrepair`. Answers are identical either way (tested). The built-in one needs about 16 bytes per run, roughly 6 GB for SILVA's 359 million runs, so on the desktop bigrepair may be the safer choice.
+9. **Grammar.** The built-in RePair is approximate: each round replaces every pair whose frequency is at least half the largest. The grammar differs from bigrepair's, so the size reported in the paper (0.23 GB for SILVA) should be remeasured, or the tool given bigrepair's output with `--bigrepair`. Answers are identical either way (tested). The built-in one was estimated here at 16 bytes per run. Measured since ("SILVA queue: runner and tables", Grammar tags), it takes 25 bytes per run, about 9.2 GB for SILVA's 359 million runs.
 10. **Digests of reads collapse equal neighbouring codes, as the reference's do.** KATKA collapsed equal neighbouring bytes in reads but codes in the reference. These differ only when two different codes that share the merged byte are adjacent. In that case KATKA's read digest could miss a match, which the tool's cannot. The test data includes merged codes, and the listings were identical.
 11. **Output order with `--top`**: the t longest are printed at the end of the read, sorted by position.
 

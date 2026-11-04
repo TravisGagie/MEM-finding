@@ -97,13 +97,14 @@ step_grammar() {  # grammar tags: built-in RePair against bigrepair, then the ti
   need "$IDX.tagruns"
   [ -s "$Q/grammar/summary.txt" ] || { stamp "grammar tags"; THREADS=1 "$HERE/experiments/grammar_tags.sh" "$IDX" "$READS/V1_V2_1.fq" "$Q/grammar" -L 30 --csa -F 10; }
   timed "$Q/timing" grammar "$IDX" --preset silva -T "$Q/grammar/g.tag"
-  timed "$Q/timing" bigrepair "$IDX" --preset silva -T "$Q/grammar/bg.tag"
+  local G="grammar"; [ -s "$Q/grammar/bg.tag" ] && G="grammar bigrepair" || echo "no bigrepair tag array (see $Q/grammar/summary.txt): only the built-in RePair is timed"
+  [ -s "$Q/grammar/bg.tag" ] && timed "$Q/timing" bigrepair "$IDX" --preset silva -T "$Q/grammar/bg.tag"
   sizes grammar "$IDX.rlbwt" "$IDX.csa" "$Q/grammar/g.tag"
-  sizes bigrepair "$IDX.rlbwt" "$IDX.csa" "$Q/grammar/bg.tag"
-  for t in grammar bigrepair; do for r in $REGIONS; do for m in 1 2; do
+  [ -s "$Q/grammar/bg.tag" ] && sizes bigrepair "$IDX.rlbwt" "$IDX.csa" "$Q/grammar/bg.tag"
+  for t in $G; do for r in $REGIONS; do for m in 1 2; do
     cmp -s "$Q/timing/default.${r}_$m.out" "$Q/timing/$t.${r}_$m.out" || { echo "$t ${r}_$m: answers differ from the default's"; exit 1; }
   done; done; done
-  for t in grammar bigrepair; do for r in $REGIONS; do
+  for t in $G; do for r in $REGIONS; do
     [ -s "$Q/credit/freq.$t.$r.csv" ] || score freq "$Q/timing/$t.${r}_1.out" "$Q/timing/$t.${r}_2.out" $r "$Q/credit/freq.$t.$r.csv"
   done; done
 }
