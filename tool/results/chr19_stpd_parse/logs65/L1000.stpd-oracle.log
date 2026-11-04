@@ -1,0 +1,7 @@
+parse oracle: 434172121 phrases (k = 51, s = 12), 9522052 distinct: 1886.189 MB (1.89 bits per character) instead of the text (8004.217 MB)
+STPD: 46890805 sampled positions (r = 72587343), 193.425 MB on top of the text
+index loaded in 1.7 s
+reads=4 MEMs=18479 without MEMs=0 | threads=1 wall 15.93 s, 3982053.4 us/read
+searches=53892 char_steps=285289814 parse_steps=0 block_steps=0 kmer_tests=0 kmer_restarts=0 stpd_jumps=824349 stpd_compares=21128436
+parse oracle seeks: same phrase 284886158, next/previous phrase 56188115, predecessor queries 21889635
+wall 17.7 s, peak memory 2.97 GB, exit 0

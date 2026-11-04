@@ -1,0 +1,5 @@
+RLZAP parse (J = 4, D = 4, M = 2): reference 6691777 phrases; target 427480344 phrases in 24331858 factors (17.57 phrases per factor); 37553683 literal phrases (13807357 factors only a literal); 3821917 pointer changes, 2970574 explicit pointers; 6792491 stored pointer values
+  sizes (MB): reference ids 20.075 + starts 10.858; factor starts (parse 21.012, text 33.888); literal counts 10.637; literals 112.661; pointers (change positions 4.108, values 24.623): parse part 237.862; dictionary 170.273 (+ offsets 35.708) (77.4 s)
+RLZAP parse oracle: 443.843 MB (peak memory of this step 5.21 GB)
+index built in 78.7 s (peak memory 5.21 GB)
+wall 78.7 s, peak memory 5.21 GB, exit 0

@@ -1,0 +1,7 @@
+RLBWT: n=8004217317 r=72587343, 217.645 MB (28.8 s)
+parse oracle: n=8004217317, 434172121 phrases, 9522052 distinct; dictionary 170.3 MB (673944330 bases at 2 bits, 177 phrases with other characters, 177 X runs; offsets 35.7 MB), parse 1302.5 MB, starts 377.7 MB (1.89 bits per character in all; 197.9 s)
+parse oracle: 1886.189 MB (peak memory of this step 2.45 GB)
+STPD: n=8004217317 r=72587343, 72587341 run starts, 46890805 sampled positions (0.646 of r), 193.425 MB on top of the text (+387.835 MB for phi^-1), 1000.8 s
+STPD sample built through the parse oracle (peak memory of this step 7.10 GB)
+index built in 1230.4 s (peak memory 7.10 GB)
+wall 1230.4 s, peak memory 7.10 GB, exit 0

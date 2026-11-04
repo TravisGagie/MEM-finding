@@ -80,3 +80,55 @@ Plain search takes 259.8 M character steps.
 - **Character-level STPD through the parse oracle** saves 2.9 GB against the text, but is 5 times slower.
 - **katka's STPD over the text is still the fastest search** (3.25 s; the same with `--locate`, since `5f1c76c` no
   longer computes intervals for it). It has to hold the 4 GB text, though.
+
+# 32 individuals (c65)
+
+The same run (`run65.sh`, `summary65.txt`, `run65.log`, `logs65/`) on c65 (n = 8.0 × 10⁹, r = 72.6 M).
+
+## Building the components
+
+| step | wall | peak | output |
+|---|---|---|---|
+| `index --parse-oracle` | 199.0 s | 2.16 GB | `c65.ptxt` 1,886.2 MB, see below |
+| `index --stpd --parse-oracle` | 1,230.4 s | 7.10 GB | `c65.stpd` 581.3 MB (sample 193.4 + φ⁻¹ 387.8) |
+| `index --stpd-parse` | 119.1 s | 5.98 GB | `c65.pstpd` 145.8 MB (11,521,370 sampled of r_Z = 12,954,298) |
+| `index --rlzap` | 78.7 s | 5.21 GB | `c65.rptxt` 443.8 MB |
+
+- **Parse oracle:** 1,886.2 MB in all, 1.89 bits per character. Its parts:
+  - dictionary 170.3 MB: 673,944,330 bases at 2 bits; 177 phrases with other characters;
+  - dictionary offsets 35.7 MB;
+  - parse 1,302.5 MB (434,172,121 phrases, 9,522,052 distinct);
+  - phrase starts 377.7 MB.
+- **RLZAP parse part:** 237.9 MB, against 1,680.2 MB for the plain parse and its starts.
+
+## Queries (search time, wall including loading, peak; L = 1000 / L = 100)
+
+| configuration | search (s) | wall (s) | peak | files read (MB) |
+|---|---|---|---|---|
+| plain search (RLCSA) | 50.30 / 49.29 | 52.1 / 50.1 | 1.69 GB | 1,410 |
+| **two-level with blocks** | **5.39 / 5.57** | 6.3 / 6.5 | 2.07 GB | 1,660 |
+| STPD over the parse, plain parse | 5.85 / 6.50 | 8.5 / 8.8 | 4.56 GB | 3,490 |
+| STPD over the parse, plain parse, `--locate` | 5.97 / 11.38 | 8.9 / 14.2 | 4.57 GB | 3,937 |
+| STPD over the parse, RLZAP parse | 8.96 / 10.40 | 10.9 / 12.1 | 3.12 GB | 2,048 |
+| STPD over the parse, RLZAP parse, `--locate` | 9.31 / 22.85 | 10.9 / 24.4 | 3.13 GB | 2,495 |
+| character-level STPD through the parse oracle | 15.93 / 18.19 | 17.7 / 19.8 | 2.97 GB | 2,685 |
+| katka's STPD over the text | 3.18 / 3.43 | 13.7 / 14.5 | 8.87 GB | 8,803 |
+| katka's STPD over the text, `--locate` | 3.24 / 3.65 | 14.2 / 15.0 | 8.87 GB | 8,803 |
+
+STPD over the parse reads these components, in MB:
+- **the parse:** plain parse 1,302.5, starts 377.7, dictionary 170.3 plus offsets 35.7;
+- **the samples:** parse sample 41.8, entry 34.5, C 9.9;
+- **the character-level sample:** 193.4;
+- **the right end:** RLCSA 1,192.7, B 14.7, dictionary hash 116.7;
+- **for `--locate` only:** parse φ⁻¹ 59.6 and character φ⁻¹ 387.8.
+
+**Correctness:** every configuration gives the same MEMs as plain search, 18,479 and 30,809. Every `--locate` run
+gives occurrence counts equal to ep − sp. The RLZAP runs give byte-identical output to the plain parse's.
+
+**From 16 to 32 individuals:**
+- **Search times:** two-level with blocks (5.62 → 5.39 s at L = 1000), STPD over the parse (5.69 → 5.85 s) and
+  STPD over the text (3.25 → 3.18 s) all stay flat. Plain search grows (40.7 → 50.3 s).
+- **Peak memory:** STPD over the parse grows from 2.98 to 4.56 GB, two-level with blocks from 1.39 to 2.07 GB,
+  and STPD over the text from 4.95 to 8.87 GB.
+
+So the c33 conclusion holds: STPD over the parse is not faster than blocks, and needs more than twice the memory.
