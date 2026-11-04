@@ -75,4 +75,16 @@ inline u64 file_size(const std::string &file) {
     return n;
 }
 
+// number of equal leading bytes of a[0..len) and b[0..len)
+inline u64 lce_bytes(const uint8_t *a, const uint8_t *b, u64 len) {
+    u64 i = 0;
+    for (; i + 8 <= len; i += 8) {
+        uint64_t x, y;
+        memcpy(&x, a + i, 8); memcpy(&y, b + i, 8);
+        if (x != y) return i + (__builtin_ctzll(x ^ y) >> 3);
+    }
+    while (i < len && a[i] == b[i]) ++i;
+    return i;
+}
+
 }  // namespace katka
