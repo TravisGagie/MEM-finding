@@ -1,0 +1,33 @@
+== ec.6.3 04:10:38
+exit 0
+kebab check (T = 6, t = 3, seeded): fallbacks 9026 of 581802 reads (0 with at most T pseudo-MEMs, 9026 with fewer than t long MEMs; 7337 seeded)
+kebab (check, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1985116 (3.41 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 9026, backward steps 1485.3 per read
+ec.6.3: 110.23 s wall, 1133.30 s user, peak 7344488 KB
+   unseeded: kebab check (T = 6, t = 3): fallbacks 9026 of 581802 reads (0 with at most T pseudo-MEMs, 9026 with fewer than t long MEMs)
+   unseeded: e.6.3: 110.25 s wall, 1139.46 s user, peak 7346444 KB
+   ec.6.3: byte-identical to e.6.3
+== ecs.6.3 04:12:29
+exit 0
+kebab check (T = 6, t = 3, strict, seeded): fallbacks 10729 of 581802 reads (0 with at most T pseudo-MEMs, 10729 with fewer than t long MEMs; 9040 seeded)
+kebab (check, t = 3): pseudo-MEMs 600809096 (1032.67 per read), searched 1985116 (3.41 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 10729, backward steps 1517.9 per read
+ecs.6.3: 110.20 s wall, 1139.17 s user, peak 7344976 KB
+   unseeded: kebab check (T = 6, t = 3, strict): fallbacks 10729 of 581802 reads (0 with at most T pseudo-MEMs, 10729 with fewer than t long MEMs)
+   unseeded: es.6.3: 112.32 s wall, 1149.07 s user, peak 7347812 KB
+   ecs.6.3: byte-identical to es.6.3
+== ec.10.5 04:14:19
+exit 0
+kebab check (T = 10, t = 5, seeded): fallbacks 8946 of 581802 reads (0 with at most T pseudo-MEMs, 8946 with fewer than t long MEMs; 7617 seeded)
+kebab (check, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3268918 (5.62 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 8946, backward steps 2116.9 per read
+ec.10.5: 121.07 s wall, 1268.90 s user, peak 7344476 KB
+   unseeded: kebab check (T = 10, t = 5): fallbacks 8946 of 581802 reads (0 with at most T pseudo-MEMs, 8946 with fewer than t long MEMs)
+   unseeded: e.10.5: 122.19 s wall, 1274.62 s user, peak 7345844 KB
+   ec.10.5: byte-identical to e.10.5
+== ecs.10.5 04:16:21
+exit 0
+kebab check (T = 10, t = 5, strict, seeded): fallbacks 10127 of 581802 reads (0 with at most T pseudo-MEMs, 10127 with fewer than t long MEMs; 8798 seeded)
+kebab (check, t = 5): pseudo-MEMs 600809096 (1032.67 per read), searched 3268918 (5.62 per read), batches 581802, reads with a second batch 0, whole-read fallbacks 10127, backward steps 2148.0 per read
+ecs.10.5: 121.97 s wall, 1273.44 s user, peak 7345772 KB
+   unseeded: kebab check (T = 10, t = 5, strict): fallbacks 10127 of 581802 reads (0 with at most T pseudo-MEMs, 10127 with fewer than t long MEMs)
+   unseeded: es.10.5: 125.38 s wall, 1293.90 s user, peak 7346472 KB
+   ecs.10.5: byte-identical to es.10.5
+== done 04:18:23

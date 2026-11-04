@@ -117,3 +117,17 @@ L counts homopolymer-compressed characters, as in every Zymo run here (about 34 
 - **Accuracy:** it loses 0.18–0.92 points, down to 98.66% at t = 1, against the 99.61% of the exact longest-MEM
   rules at about the same speed. The journal reports no loss for t = 10, 20, 30 with Tagger, L = 25 in bases;
   smaller t was not tested there.
+
+## `--check-seed` (7d28ada), 2026-11-04
+
+The t = 3 and t = 5 check runs (T = 2t), with and without `--strict`, rerun with `--check-seed` (`seed_run.sh`,
+`seed_run.log`). Every output is **byte-identical** to its unseeded run (`cmp`).
+
+| run | seeded fallbacks / fallbacks | wall, seeded | wall, unseeded |
+|---|---|---|---|
+| `--kebab-check 6 3` | 7,337 / 9,026 | 110.2 s | 110.3 s |
+| `--kebab-check 6 3 --strict` | 9,040 / 10,729 | 110.2 s | 112.3 s |
+| `--kebab-check 10 5` | 7,617 / 8,946 | 121.1 s | 122.2 s |
+| `--kebab-check 10 5 --strict` | 8,798 / 10,127 | 122.0 s | 125.4 s |
+
+The seed applies to 81–87% of the fallbacks. It saves 0–3% of the wall time, since fallbacks are under 2% of reads.
