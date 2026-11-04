@@ -178,7 +178,7 @@ Apart from the `.kbf`, the formats are new. The tool doesn't read KATKA's `.rz`,
 
 ## Map from the paper to the code
 
-Section numbers are those of *Three Examples of MEM-Finding* (`../paper/`).
+Section numbers are those of the abandoned *Three Examples of MEM-Finding* draft, whose source (`paper/`) has been removed; it is in the repository's history. Its material is now in *More RLBWT Tricks* (arXiv:2609.40299), *KATKA* (arXiv:2610.10500) and the SILVA paper in progress.
 
 | Paper | File | What is there |
 |---|---|---|
