@@ -1,0 +1,5 @@
+parse oracle: n=4065485531, 48388213 phrases, 3799631 distinct; dictionary 278.3 MB (1110285110 bases at 2 bits, 89 phrases with other characters, 89 X runs; offsets 14.7 MB), parse 133.1 MB, starts 55.5 MB (0.95 bits per character in all; 53.0 s)
+parse STPD: m=48388213, sigma=3799631, r_Z=4626214 parse BWT runs, 4626212 run starts, 4253845 sampled (0.920 of r_Z): sample 13.825 MB, entry 12.349 MB, C 3.118 MB, phi^-1 18.605 MB (12.2 s)
+STPD over the parse: 29.291 MB (+18.605 MB for locating); parse oracle 481.602 MB (peak memory of this step 2.40 GB)
+index built in 65.3 s (peak memory 2.40 GB)
+wall 65.4 s, peak memory 2.40 GB, exit 0

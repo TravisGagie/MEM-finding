@@ -1,0 +1,12 @@
+preset chr19 (long accurate matches): --csa --twolevel
+RLBWT: n=4065485531 r=68446485, 191.252 MB (14.7 s)
+explicit RLCSA: 579.342 MB (peak memory so far 1.25 GB)
+two-level: 4065485531 characters; 48388213 phrases, 3799631 distinct (1110.3 MB)
+dictionary: 3799542 phrases over A/C/G/T, 1 without a reverse complement (the first phrase of S can be one)
+B: 1852717 runs, 4.97 MB
+parse BWT: 4626214 runs, 19.76 MB
+blocks: 6256242 (7.73 phrases each), 943006 symbols; block BWT 1466341 runs
+two-level index built in 148.1 s
+two-level: parse 69.103 MB, blocks 19.404 MB (peak memory of this step 3.28 GB)
+index built in 171.9 s (peak memory 3.28 GB)
+index: 171.97 s wall, peak 3200872 KB

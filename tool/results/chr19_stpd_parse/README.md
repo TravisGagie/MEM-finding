@@ -132,3 +132,73 @@ gives occurrence counts equal to ep − sp. The RLZAP runs give byte-identical o
   and STPD over the text from 4.95 to 8.87 GB.
 
 So the c33 conclusion holds: STPD over the parse is not faster than blocks, and needs more than twice the memory.
+
+# 16 individuals with a sparser parse: closed syncmers k = 200, s = 20 (2026-11-04, a22b892)
+
+`run33_k200s20.sh` rebuilt c33's two-level index with `--syncmer 200,20`, in a separate directory with links to
+c33's text, BWT and character-level STPD sample. Then it ran `stpd_parse_chr19.sh` as above
+(`summary33_k200s20.txt`, `run33_k200s20.log`, `logs_sparse/`).
+
+## The two parses
+
+| | k, s = 51, 12 | k, s = 200, 20 |
+|---|---|---|
+| phrases m / distinct σ | 220.5 M / 8.51 M | **48.4 M** / 3.80 M |
+| `index --preset chr19` | 214 s, 4.6 GB | 172 s, 3.28 GB |
+| `.lvl`: parse + blocks | 166.4 + 42.2 MB | **69.1 + 19.4 MB** (88.5 MB in all) |
+| parse oracle: parse + starts + dictionary (+ offsets) | 661.4 + 191.8 + 151.2 (+ 31.9) MB | 133.1 + 55.5 + 278.3 (+ 14.7) MB |
+| RLZAP parse part (instead of parse + starts) | 133.4 MB, 17.3 phrases per factor | 68.9 MB, 5.13 phrases per factor |
+| parse STPD (sample + entry + C; + φ⁻¹) | 71.4 (+ 45.5) MB | 29.3 (+ 18.6) MB |
+
+## Queries (search time, single-threaded, CPU 9; L = 1000 / L = 100)
+
+| configuration | k, s = 51, 12 | k, s = 200, 20 | peak, 200,20 |
+|---|---|---|---|
+| plain search (RLCSA) | 40.66 / 39.18 s | 47.40 / 42.24 s (the same search; the difference is run-to-run noise) | 1.05 GB |
+| **two-level with blocks** | **5.62 / 5.72 s** | 6.52 / 5.95 s | 1.14 GB |
+| STPD over the parse, plain parse | 5.69 / 6.40 s | 7.00 / 12.77 s | 2.17 GB |
+| … with `--locate` | 5.73 / 9.26 s | 7.07 / 15.14 s | 2.17 GB |
+| STPD over the parse, RLZAP parse | 8.65 / 10.17 s | 8.89 / 26.64 s | 2.05 GB |
+| … with `--locate` | 8.98 / 17.96 s | 9.05 / 31.62 s | 2.05 GB |
+| character-level STPD through the parse oracle | 16.19 / 19.25 s | 13.48 / 17.13 s | 1.48 GB |
+
+**Correctness:** every configuration gives the same MEMs as plain search (22,711 and 38,984). Every `--locate` run
+gives counts equal to ep − sp. The RLZAP runs give byte-identical output to the plain parse's.
+
+## The parse-level part of the search (from `--stats`; there are no dedicated counters)
+
+For STPD over the parse:
+- **"Right-end" and "left-end" character steps** are the characters crossed at character level, after the pattern's
+  last syncmer and before its first. Per search they are an upper bound on the length added at each end to turn
+  the parse-level match into an exact MEM, including one failing step.
+- **"Parse-sample binary searches"** count the entries into the parse level.
+
+| per search (STPD over the parse) | 51,12, L = 1000 | 200,20, L = 1000 | 51,12, L = 100 | 200,20, L = 100 |
+|---|---|---|---|---|
+| searches | 70,246 | 70,246 | 101,241 | 101,241 |
+| parse-level entries (parse-sample binary searches) | 157,005 | 90,276 | 181,242 | 86,456 |
+| right-end characters | 60.3 | **238.2** | 59.7 | **96.2** |
+| left-end characters | 15.9 | **75.3** | 18.8 | **119.4** |
+| middle phrase comparisons | 198.4 | 41.6 | 132.0 | 27.8 |
+
+For two-level search with blocks at L = 1000, the sparse parse raises character steps from 6.80 M to 28.23 M, and
+lowers parse steps from 2.55 M to 0.85 M and block steps from 1.81 M to 0.42 M. At L = 100 the character steps go
+from 10.26 M to 25.73 M.
+
+Without timers, the time of the end steps can't be separated from the parse-level time. An upper estimate: a
+character step costs about plain search's time per step, 40.7 s / 259.8 M = 0.16 µs. At L = 1000 the sparse parse's
+22.0 M end steps of STPD over the parse would then take about 3.4 s of its 7.0 s, against 0.8 s of 5.7 s at 51,12.
+
+## Reading
+
+**Space:** the sparser parse shrinks the two-level structures to 42% (209 → 88.5 MB) and the parse to 4.6 times fewer
+phrases. But the dictionary of longer phrases grows from 151 to 278 MB, so the parse oracle only drops from 1,036
+to 482 MB, and RLZAP's factors get shorter (5.1 against 17.3 phrases).
+
+**Time:**
+- **Two-level with blocks:** a little slower (6.52 against 5.62 s at L = 1000; 5.95 against 5.72 s at L = 100).
+  Longer phrases mean longer character-level ends.
+- **STPD over the parse:** slower too, sharply at L = 100 (12.8 against 6.4 s). Its ends grow from about 76 to 314
+  characters per search at L = 1000.
+- **Character-level STPD through the parse oracle:** the only configuration that gets faster, since its seeks find
+  longer phrases (13.5 against 16.2 s).
