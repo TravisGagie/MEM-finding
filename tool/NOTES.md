@@ -50,7 +50,39 @@ Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like
   $T index --tags --by-tag --no-rmq --tag-out /dev/null --tag-lcp 0,10,30,100,1000 zy
   ```
 
-  It loads the text into memory for the comparisons, and stops each comparison after max λ + 1 characters. On the synthetic data, per-species tags have B_30 = 29,501 of 267,599 boundaries, against 706,851 of 1,004,033 boundaries with B_10 for per-genome tags.
+  On the synthetic data, per-species tags have B_30 = 29,501 of 267,599 boundaries, against 706,851 of 1,004,033 boundaries with B_10 for per-genome tags.
+
+  **Memory, rewritten 2026-11-04 so that Zymo fits in 11 GB.** The old code read the whole text into memory (39 GB on Zymo), and the tag-run vectors grew by doubling during the φ pass. That pass alone held about 11 GB on Zymo: the RLBWT, the φ samples, and the vectors. Now (`tag_runs::compute`, `src/tag_build.hpp`):
+  - **The tag runs** are streamed to a temporary file during the φ pass. Once the φ samples are freed, they are read back into vectors of exactly their size: 12 bytes per run, 5.4 GB on Zymo.
+  - **A text within `--blam-mem`** (default 6 GB; SILVA) is mapped with `mmap`, and the two suffixes at each boundary are compared directly, as before.
+  - **A larger text** (Zymo) is never read at random:
+    - During the pass, the two text positions of every tag boundary (and how many characters each has before its dataset's end) are written to 256 files by position.
+    - Then, a group of λ values at a time, the files are read in position order with the text mapped and read sequentially. Each suffix's first λ + 1 characters get a Karp–Rabin fingerprint (mod 2⁶¹ − 1).
+    - A boundary counts if both suffixes have λ + 1 characters before their dataset's end and their fingerprints are equal. A count can only be too high, by a collision, with probability at most (λ + 1)/2⁶¹ per boundary.
+    - The fingerprint arrays take 8 bytes per boundary per λ (3.6 GB on Zymo), and the λ values are grouped to fit `--blam-mem`. On Zymo with the default, that means one λ per pass. Each pass reads the 39 GB text and the 10.8 GB of records once, sequentially.
+  - **`--tmp DIR`** puts the large temporary files there: the φ samples' spill (about 8 GB on Zymo), the tag runs (5.4 GB) and the boundary records (10.8 GB). The desktop's internal disk has about 24 GB free, so use the external drive.
+  - **`--blam-external`** forces the records and fingerprints, for testing.
+
+  **Checks:**
+  - Against brute force: the default and the external path, each with one λ per pass and with `--tmp`, on the self-test's reads collection.
+  - On a collection with one terminator per dataset (`z`, as Zymo is built), against a new brute force over T₀ $₀ T₁ $₁ ⋯, the string `katka bwt -d` sorts. The old brute force used S$ with one terminator, whose LCPs run across dataset ends, so it disagreed slightly with both the old and the new implementation there (217,323 against 217,319 at λ = 0). The old and new implementations agree with each other and with the new brute force.
+  - The tag arrays are byte-identical to the old code's.
+  - On the 64 Mbp synthetic collection with per-genome tags (63.7 million boundaries), both paths give the same B_λ and tag array as the old code: 0.89 GB and 62 s direct (old: 0.92 GB, 66 s), 2.19 GB and 183 s external. There, boundaries outnumber the text's bytes.
+
+  **Expected on Zymo:**
+  - the φ pass: the RLBWT (1.0 GB) and the φ samples (about 3 GB), after `sample_rindex`'s own peak (its LF structure, about 5–6 GB as before);
+  - B_λ: the RLBWT and 3.6 GB per λ;
+  - then the tag runs (5.4 GB) and the tag array build, as before (about 7 GB).
+
+  **For the desktop.** Zymo, with the temporary files on the external drive (`/mnt/ext/tmp` stands for a directory there). The φ pass rereads the BWT file (39 GB), and each λ pass the text (39 GB) and the records. Run it as a `systemd-run --user --unit=...` service:
+
+  ```
+  mkdir -p /mnt/ext/tmp
+  systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "blam: %e s, peak %M KB" \
+    ~/rz/MEM-finding/tool/bin/katka index --tags --by-tag --no-rmq --tag-out /dev/null --tag-lcp 0,10,30,100,1000 --tmp /mnt/ext/tmp ~/zymo/hpc/zy > blam.zymo.err 2>&1
+  ```
+
+  For SILVA, the same command on its index without `--by-tag` if its tags are per genome, as in `results/silva_profile/`. Its text fits the budget, so it is compared directly. Report the `tag runs rho` and `lambda = ...` lines (B_λ and the bound), the time and peak, and the run count against the cached `.tagruns` (it must be equal). Put the results in `tool/results/blam/`.
 - **The KeBaB experiment** (`tests/exp_kebab.sh`, Section 3.2's TODO). On 20 synthetic 100-kb queries, each with three 3-kb segments copied from the 64-Mb synthetic collection, with L = 1000 and k = 20 (median of 5 runs, same 71 MEMs):
 
   | method | time | k-mer tests | backward steps |

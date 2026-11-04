@@ -785,7 +785,13 @@ static int stpd_vs(const string &prefix, const string &colex) {
 // B_lambda by brute force (suffix array and LCP of S$): tag boundaries p (tag of row p-1 != tag of row p)
 // with lcp(p) > lambda, tags by genome (bycol 0) or by tag column (1).  Prints the same lines as
 // katka index --tag-lcp.
+static int blam_datasets(const string &prefix, bool bycol, const string &ls, u64 K);
 static int blam(const string &prefix, bool bycol, const string &ls) {
+    {   // one string per dataset (katka bwt -d): the brute force over T_0 $_0 T_1 $_1 ...
+        rlbwt R; FILE *f = open_or_die(prefix + ".rlbwt", "rb"); rmagic(f, "KTRLBW01", prefix + ".rlbwt"); R.load(f); fclose(f);
+        const u64 K = R.n - file_size(prefix + ".S");
+        if (K > 1) return blam_datasets(prefix, bycol, ls, K);
+    }
     brute BF; BF.build(prefix);
     genome_table G; G.load(prefix + ".tbl");
     vector<uint32_t> gt = G.tags(bycol);
@@ -806,6 +812,45 @@ static int blam(const string &prefix, bool bycol, const string &ls) {
     u64 rho = 1;
     vector<u64> B(lambdas.size(), 0);
     for (u64 x = 1; x < N; ++x) if (tag(x) != tag(x - 1)) { ++rho; for (size_t i = 0; i < lambdas.size(); ++i) if (lcp[x] > lambdas[i]) ++B[i]; }
+    printf("tag runs rho = %lu\n", rho);
+    for (size_t i = 0; i < lambdas.size(); ++i) printf("  lambda = %lu: B_lambda = %lu\n", lambdas[i], B[i]);
+    return 0;
+}
+
+// B_lambda by brute force for a BWT of the datasets as separate strings: the suffix array and LCP of
+// T = T_0 $_0 T_1 $_1 ... with distinct terminators below every base, as katka bwt -d sorts them; no LCP runs
+// through a terminator; a terminator's tag is that of its dataset's last character
+static int blam_datasets(const string &prefix, bool bycol, const string &ls, u64 K) {
+    genome_table G; G.load(prefix + ".tbl");
+    std::vector<u64> ds = G.dataset_starts();
+    if (ds.size() != K) die("blam: the datasets do not match the BWT's terminators");
+    const u64 N = file_size(prefix + ".S");
+    std::vector<uint8_t> S(N);
+    { FILE *f = open_or_die(prefix + ".S", "rb"); if (fread(S.data(), 1, N, f) != N) die("read S"); fclose(f); }
+    ds.push_back(N);
+    std::vector<uint8_t> T; std::vector<u64> spos;          // spos: the S position of each T position
+    for (u64 j = 0; j < K; ++j) {
+        for (u64 i = ds[j]; i < ds[j + 1]; ++i) { T.push_back(S[i]); spos.push_back(i); }
+        T.push_back((uint8_t)(1 + j)); spos.push_back(ds[j + 1] - 1);
+    }
+    const u64 M = T.size();
+    std::vector<int32_t> SA(M), rk(M);
+    if (libsais(T.data(), SA.data(), (int32_t)M, 0, nullptr) != 0) die("libsais failed");
+    for (u64 x = 0; x < M; ++x) rk[SA[x]] = (int32_t)x;
+    std::vector<u64> lcp(M, 0);
+    for (u64 i = 0, h = 0; i < M; ++i) {
+        if (rk[i] == 0) { h = 0; continue; }
+        u64 j = SA[rk[i] - 1];
+        while (i + h < M && j + h < M && T[i + h] == T[j + h] && T[i + h] > K) ++h;
+        lcp[rk[i]] = h;
+        if (h) --h;
+    }
+    vector<uint32_t> gt = G.tags(bycol);
+    auto tag = [&](u64 x) { u64 p = spos[SA[x]]; return gt[std::upper_bound(G.start.begin(), G.start.end(), p) - G.start.begin() - 1]; };
+    vector<u64> lambdas; { string w; for (char c : ls + ",") { if (c == ',') { if (!w.empty()) lambdas.push_back(std::stoull(w)); w.clear(); } else w += c; } }
+    u64 rho = 1;
+    vector<u64> B(lambdas.size(), 0);
+    for (u64 x = 1; x < M; ++x) if (tag(x) != tag(x - 1)) { ++rho; for (size_t i = 0; i < lambdas.size(); ++i) if (lcp[x] > lambdas[i]) ++B[i]; }
     printf("tag runs rho = %lu\n", rho);
     for (size_t i = 0; i < lambdas.size(); ++i) printf("  lambda = %lu: B_lambda = %lu\n", lambdas[i], B[i]);
     return 0;

@@ -87,4 +87,13 @@ inline u64 lce_bytes(const uint8_t *a, const uint8_t *b, u64 len) {
     return i;
 }
 
+// Where large temporary files go: next to the file they belong to (base), or in the directory set by
+// index --tmp DIR (then named after base's file name)
+inline std::string &tmp_dir() { static std::string d; return d; }
+inline std::string tmp_path(const std::string &base) {
+    if (tmp_dir().empty()) return base;
+    size_t sl = base.find_last_of('/');
+    return tmp_dir() + "/" + (sl == std::string::npos ? base : base.substr(sl + 1));
+}
+
 }  // namespace katka

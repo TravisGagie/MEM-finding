@@ -160,6 +160,13 @@ quiet $K find --preset zymo z "$D/reads.fq" a.out
 quiet $K find -U -X -L 20 -K 20 -D 14 -c -T z.tag z "$D/reads.fq" b.out
 same a.out b.out "preset zymo"
 grep -q "{0:" a.out && echo "  species tags present"
+mkdir -p blamtmp
+quiet $K index --tags --by-tag --no-rmq --tag-out z.blam.tag --tag-lcp 0,5,20,50 --blam-external --blam-mem 0.000001 --tmp blamtmp z
+grep -E "rho|lambda" log.txt | sed 's/; r = .*//; s/, bound .*//' > blam.out
+$KT blam z 1 0,5,20,50 > blam.ref
+same blam.out blam.ref "B_lambda with one terminator per dataset (boundary records and fingerprints, one value of lambda per pass, temporary files in --tmp) against brute force"
+same z.blam.tag z.tag "the tag array built with --tag-lcp"
+[ -z "$(ls blamtmp)" ] && echo "  temporary files removed"
 
 if [ -n "${KATKA_OLD:-}" ]; then step "regression against katka-readable"; "$HERE/tests/regress_katka.sh" "$KATKA_OLD" "$D" "$W/regress_katka"; fi
 if [ -n "${RZ_OLD:-}" ]; then step "regression against rz-index digests"; "$HERE/tests/regress_digest.sh" "$RZ_OLD" "$D" "$W/regress_digest"; fi

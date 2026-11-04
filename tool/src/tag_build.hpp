@@ -16,8 +16,20 @@
 #include <numeric>
 #include <sstream>
 #include <unistd.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 
 namespace katka {
+
+// a Karp-Rabin fingerprint of x[0..len), modulo the prime 2^61 - 1 (two strings of length len that differ
+// collide with probability at most len / 2^61 over the choice of the base)
+inline uint64_t hash_bytes(const uint8_t *x, u64 len) {
+    const uint64_t P = (1ull << 61) - 1, base = 0x1d3c5a7b9e2f4c61ull % P;
+    auto mulmod = [&](uint64_t a, uint64_t b) { unsigned __int128 z = (unsigned __int128)a * b; uint64_t lo = (uint64_t)(z & P), hi = (uint64_t)(z >> 61); uint64_t r = lo + hi; return r >= P ? r - P : r; };
+    uint64_t h = 0;
+    for (u64 i = 0; i < len; ++i) { h = mulmod(h, base) + x[i] + 1; if (h >= P) h -= P; }
+    return h;
+}
 
 // prefix.tbl: one line per genome: index, tag, name, length, start in S
 struct genome_table {
@@ -148,7 +160,7 @@ inline phi_samples sample_rindex(const std::string &Sfile, const std::string &bw
     const u64 R = B.R, n = B.n;
     // the samples are spilled to temporary files during the pass, to keep them out of its peak memory
     struct __attribute__((packed)) entry { uint32_t run; u64 sa; };
-    const std::string tmp = Sfile + ".samples.tmp";
+    const std::string tmp = tmp_path(Sfile + ".samples.tmp");
     FILE *fs = open_or_die(tmp + ".s", "wb"), *fe = open_or_die(tmp + ".e", "wb");
     std::vector<std::pair<u64, u64>> term;
     for (u64 j = K; j-- > 0;) {
@@ -225,30 +237,69 @@ struct tag_runs {
     void save(const std::string &f) const { FILE *o = open_or_die(f, "wb"); wmagic(o, "KTRUNS01"); wr(o, n); wvec(o, start); wvec(o, tag); fclose(o); }
 
     // lambdas (optional): also count, for each lambda, the tag boundaries p with lcp(p) > lambda (B_lambda
-    // of Lemma "runs" in the paper), comparing the text at each boundary (it is loaded for that); blam gets
-    // the counts
+    // of Lemma "runs" in the paper).  Memory: the phi pass holds the RLBWT (the caller's) and the phi samples;
+    // the tag runs are streamed to a temporary file and read back at their exact size once the samples are
+    // freed.  If the text is within mem_budget, it is mapped and the suffixes at each boundary are compared
+    // directly.  Otherwise (or force_external), B_lambda does not read the text at random: the pass writes, for every tag boundary, the text
+    // positions of its two suffixes (and how many characters each has before its dataset's end) to files by
+    // position; then, a group of lambdas at a time (8 bytes per boundary per lambda, within mem_budget bytes),
+    // the files are read in position order with the text mapped (mmap) and read sequentially, and each
+    // suffix's first lambda + 1 characters are fingerprinted; a boundary counts if both suffixes have
+    // lambda + 1 characters and their fingerprints are equal (a count can only be wrong by a collision,
+    // probability at most (lambda + 1) / 2^61 per boundary: Karp-Rabin).  Temporary files go to tmp_path() (index --tmp DIR).
     void compute(const std::string &Sfile, const std::string &bwtfile, const rlbwt &B, const genome_table &G, bool by_column,
-                 const std::vector<u64> &lambdas = {}, std::vector<u64> *blam = nullptr) {
+                 const std::vector<u64> &lambdas = {}, std::vector<u64> *blam = nullptr, u64 mem_budget = 6ull << 30, bool force_external = false) {
+        double t0 = now();
         phi_samples P = sample_rindex(Sfile, bwtfile, B, G);
-        std::vector<uint8_t> text;
+        const u64 N = file_size(Sfile);
         u64 cap = 0;
-        if (!lambdas.empty()) {
-            text.resize(file_size(Sfile));
-            FILE *f = open_or_die(Sfile, "rb");
-            if (fread(text.data(), 1, text.size(), f) != text.size()) die("cannot read " + Sfile);
-            fclose(f);
-            for (u64 l : lambdas) cap = std::max(cap, l + 1);
-            blam->assign(lambdas.size(), 0);
+        for (u64 l : lambdas) cap = std::max(cap, l + 1);
+        if (cap > 65535) die("--tag-lcp: lambda must be below 65535");
+        if (!lambdas.empty()) blam->assign(lambdas.size(), 0);
+        // a text within the budget is mapped and compared directly at each boundary (random reads, from
+        // memory); a larger one goes through the boundary records and fingerprints
+        const bool external = !lambdas.empty() && (force_external || N > mem_budget);
+        int tfd = -1;
+        const uint8_t *dtext = nullptr;
+        if (!lambdas.empty() && !external && N) {
+            tfd = open(Sfile.c_str(), O_RDONLY);
+            if (tfd < 0) die("cannot open " + Sfile);
+            dtext = (const uint8_t *)mmap(nullptr, N, PROT_READ, MAP_PRIVATE, tfd, 0);
+            if (dtext == (const uint8_t *)MAP_FAILED) die("cannot map " + Sfile);
         }
+        // boundary records, by text position, in NB files
+        struct __attribute__((packed)) brec { u64 pa; uint32_t id; };      // pa: position | min(avail, 65535) << 40; id: boundary << 1 | side
+        const u64 NB = 256, W = std::max<u64>(1, (N + NB - 1) / NB);
+        const std::string tbase = tmp_path(Sfile + ".tagruns.tmp");
+        std::vector<FILE *> bf;
+        std::vector<std::vector<brec>> bbuf;
+        auto put = [&](u64 pos, u64 av, u64 id, int side) {
+            u64 k = std::min(NB - 1, pos / W);
+            bbuf[k].push_back({pos | (std::min<u64>(av, 65535) << 40), (uint32_t)(id << 1 | side)});
+            if (bbuf[k].size() == 4096) { fwrite(bbuf[k].data(), sizeof(brec), bbuf[k].size(), bf[k]); bbuf[k].clear(); }
+        };
+        if (external) {
+            bf.resize(NB); bbuf.resize(NB);
+            for (u64 k = 0; k < NB; ++k) bf[k] = open_or_die(tbase + ".b" + std::to_string(k), "w+b");
+        }
+        // the tag runs, in the order found (last row first), to a file
+        struct __attribute__((packed)) rrec { u64 top; uint32_t tag; };
+        FILE *fr = open_or_die(tbase + ".runs", "w+b");
+        std::vector<rrec> rbuf; rbuf.reserve(1 << 16);
+        u64 nruns = 0;
+        auto put_run = [&](u64 top, uint32_t t) {
+            rbuf.push_back({top, t}); ++nruns;
+            if (rbuf.size() == rbuf.capacity()) { fwrite(rbuf.data(), sizeof(rrec), rbuf.size(), fr); rbuf.clear(); }
+        };
         std::vector<uint32_t> gt = G.tags(by_column);
         n = P.n;
         const u64 K = P.dstart.size();
         std::vector<u64> ds(P.dstart); ds.push_back(n);
-        std::vector<u64> rs; std::vector<uint32_t> rt;
         u64 d = P.esa[P.R - 1], j = K - 1;                  // SA[n-1], in D
         u64 g = 0, g0 = 0, g1 = G.start.size() > 1 ? G.start[1] : ~0ULL;
         int64_t cur = -1; u64 top = 0;
         u64 pd = 0, pj = 0;                                 // the previous row's D position and dataset
+        u64 nbound = 0;
         auto avail = [&](u64 dd, u64 jj) { return ds[jj + 1] - 1 - dd; };   // characters before the terminator
         for (u64 row = n; row-- > 0;) {
             u64 q;                                          // D position -> S position (a terminator: its dataset's last)
@@ -265,10 +316,16 @@ struct tag_runs {
             int64_t t = gt[g];
             if (t != cur) {
                 if (cur >= 0) {
-                    rs.push_back(top); rt.push_back((uint32_t)cur);
-                    if (!lambdas.empty()) {                  // a tag boundary at row + 1: lcp of the suffixes at rows row, row + 1
-                        u64 jc = K == 1 ? 0 : j, m = std::min({avail(d, jc), avail(pd, pj), cap});
-                        u64 l = m ? lce_bytes(text.data() + (d - jc), text.data() + (pd - pj), m) : 0;
+                    put_run(top, (uint32_t)cur);
+                    if (external) {                          // a tag boundary at row + 1: the suffixes at rows row, row + 1
+                        u64 jc = K == 1 ? 0 : j;
+                        if (nbound >= (1ull << 31)) die("too many tag boundaries for B_lambda");
+                        put(d - jc, avail(d, jc), nbound, 0);
+                        put(pd - pj, avail(pd, pj), nbound, 1);
+                        ++nbound;
+                    } else if (!lambdas.empty()) {           // directly: lcp of the suffixes at rows row, row + 1
+                        u64 jc = K == 1 ? 0 : j, mm = std::min({avail(d, jc), avail(pd, pj), cap});
+                        u64 l = mm ? lce_bytes(dtext + (d - jc), dtext + (pd - pj), mm) : 0;
                         for (size_t i = 0; i < lambdas.size(); ++i) if (l > lambdas[i]) (*blam)[i]++;
                     }
                 }
@@ -277,9 +334,61 @@ struct tag_runs {
             top = row; pd = d; pj = K == 1 ? 0 : j;
             if (row) d = P.phi(d);
         }
-        rs.push_back(top); rt.push_back((uint32_t)cur);
-        std::reverse(rs.begin(), rs.end()); std::reverse(rt.begin(), rt.end());
-        start.swap(rs); tag.swap(rt);
+        put_run(top, (uint32_t)cur);
+        if (!rbuf.empty()) fwrite(rbuf.data(), sizeof(rrec), rbuf.size(), fr);
+        std::vector<rrec>().swap(rbuf);
+        for (u64 k = 0; k < bf.size(); ++k) { if (!bbuf[k].empty()) fwrite(bbuf[k].data(), sizeof(brec), bbuf[k].size(), bf[k]); std::vector<brec>().swap(bbuf[k]); }
+        P = phi_samples();                                  // (the samples are not needed any more)
+        if (dtext) { munmap((void *)dtext, N); close(tfd); }
+        fprintf(stderr, "tag runs: %lu runs (%.1f s)\n", nruns, now() - t0);
+        // B_lambda, from the boundary records, a group of lambdas at a time
+        if (external && nbound) {
+            int fd = open(Sfile.c_str(), O_RDONLY);
+            if (fd < 0) die("cannot open " + Sfile);
+            const uint8_t *text = N ? (const uint8_t *)mmap(nullptr, N, PROT_READ, MAP_PRIVATE, fd, 0) : nullptr;
+            if (N && text == (const uint8_t *)MAP_FAILED) die("cannot map " + Sfile);
+            const u64 per = std::max<u64>(1, mem_budget / (8 * nbound));
+            for (size_t l0 = 0; l0 < lambdas.size(); l0 += per) {
+                const size_t ng = std::min<size_t>(per, lambdas.size() - l0);
+                std::vector<uint64_t> slot(nbound * ng, 0);  // 0: no side seen; 1: a side without lambda + 1 characters; else fingerprint + 2
+                std::vector<brec> rec;
+                for (u64 k = 0; k < NB; ++k) {
+                    fflush(bf[k]);
+                    u64 cnt = (u64)ftello(bf[k]) / sizeof(brec);
+                    rec.resize(cnt);
+                    rewind(bf[k]);
+                    if (cnt && fread(rec.data(), sizeof(brec), cnt, bf[k]) != cnt) die("cannot read " + tbase);
+                    std::sort(rec.begin(), rec.end(), [](const brec &x, const brec &y) { return (x.pa & ((1ull << 40) - 1)) < (y.pa & ((1ull << 40) - 1)); });
+                    for (const brec &r : rec) {
+                        const u64 pos = r.pa & ((1ull << 40) - 1), av = r.pa >> 40, id = r.id >> 1;
+                        for (size_t gi = 0; gi < ng; ++gi) {
+                            const u64 len = lambdas[l0 + gi] + 1;
+                            const uint64_t h = av >= len && pos + len <= N ? hash_bytes(text + pos, len) + 2 : 1;   // (fingerprints < 2^61)
+                            uint64_t &sl = slot[id * ng + gi];
+                            if (sl == 0) sl = h;
+                            else if (sl >= 2 && h >= 2 && sl == h) (*blam)[l0 + gi]++;
+                        }
+                    }
+                }
+                fprintf(stderr, "B_l: fingerprints for %zu values of l (%.1f s)\n", ng, now() - t0);
+            }
+            if (N) munmap((void *)text, N);
+            close(fd);
+        }
+        for (u64 k = 0; k < bf.size(); ++k) { fclose(bf[k]); remove((tbase + ".b" + std::to_string(k)).c_str()); }
+        // the runs, read back at their exact size (the file has them from the last row up)
+        start.assign(nruns, 0); tag.assign(nruns, 0);
+        {
+            fflush(fr); rewind(fr);
+            std::vector<rrec> buf(1 << 16);
+            u64 i = 0;
+            while (i < nruns) {
+                size_t want = std::min<u64>(buf.size(), nruns - i);
+                if (fread(buf.data(), sizeof(rrec), want, fr) != want) die("cannot read " + tbase + ".runs");
+                for (size_t q = 0; q < want; ++q, ++i) { start[nruns - 1 - i] = buf[q].top; tag[nruns - 1 - i] = buf[q].tag; }
+            }
+            fclose(fr); remove((tbase + ".runs").c_str());
+        }
         if (start.empty() || start[0] != 0) die("internal error: no tag run at row 0");
     }
 };

@@ -214,6 +214,11 @@ static const char *INDEX_USAGE =
     "    --tag-out FILE    write the tag array to FILE instead of PREFIX.tag\n"
     "    --tag-lcp l1,l2,..  also report B_l, the tag boundaries whose suffixes share more than l characters,\n"
     "                      and the bound (r + sigma + 2d)(l + 1) + B_l + 1 on the number of tag runs\n"
+    "    --blam-mem G      memory budget for B_lambda (default 6 GB): a text within it is mapped and compared\n"
+    "                      at each boundary; a larger one goes through boundary records (on disk) and\n"
+    "                      fingerprints, 8 bytes per tag boundary per lambda, lambdas grouped to fit\n"
+    "    --blam-external   the boundary records and fingerprints even for a text within the budget\n"
+    "  --tmp DIR           large temporary files (the phi samples, the tag runs, B_lambda's records) in DIR\n"
     "  --kebab k           KeBaB Bloom filter of the k-mers of S (PREFIX.k<k>.kbf)\n"
     "    --kebab-eps e     its false-positive rate (default 0.1)\n"
     "  --stpd              suffix-tree path decomposition sample (PREFIX.stpd; needs one terminator)\n"
@@ -292,12 +297,14 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"twolevel-locate", 0, 0, 'W'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"tmp", 1, 0, 1001}, {"blam-mem", 1, 0, 1002}, {"blam-external", 0, 0, 1003}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"twolevel-locate", 0, 0, 'W'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
     bool poracle = false, pstpd = false, rlzap = false, tlocate = false;
     u64 rz_J = 4, rz_M = 2; int64_t rz_D = 4;
     std::vector<u64> lambdas;
+    u64 blam_mem = 6ull << 30;
+    bool blam_ext = false;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "h", longopts, nullptr)) != -1) {
         switch (c) {
@@ -317,6 +324,9 @@ static int cmd_index(int argc, char **argv) {
             case 'y': if (sscanf(optarg, "%d,%d", &to.k, &to.s) != 2) die("--syncmer k,s"); break;
             case 'B': to.blocks = false; break;
             case 'P': stpd = std::max(stpd, 1); break;
+            case 1001: tmp_dir() = optarg; break;
+            case 1002: blam_mem = (u64)(std::stod(optarg) * (1ull << 30)); break;
+            case 1003: blam_ext = true; break;
             case 'l': { std::string v = optarg, w; for (char ch : v + ",") { if (ch == ',') { if (!w.empty()) lambdas.push_back(std::stoull(w)); w.clear(); } else w += ch; } break; }
             case 'Q': stpd = 2; break;
             case 'O': poracle = true; break;
@@ -400,7 +410,7 @@ static int cmd_index(int argc, char **argv) {
         const string cache = prefix + (by_tag ? ".sp.tagruns" : ".tagruns");
         if (!lambdas.empty() || !TR.load(cache) || TR.n != B.n) {
             std::vector<u64> blam;
-            TR.compute(Sfile, bwtfile, B, G, by_tag, lambdas, &blam);
+            TR.compute(Sfile, bwtfile, B, G, by_tag, lambdas, &blam, blam_mem, blam_ext);
             TR.save(cache);
             if (!lambdas.empty()) {                    // Lemma "runs": rho <= (r + sigma + 2d)(lambda + 1) + B_lambda + 1
                 u64 sigma = 0, dseg = 0;

@@ -59,7 +59,9 @@ Reads `PREFIX.S`, `PREFIX.tbl` and the BWT, and always writes the RLBWT `PREFIX.
 | `--grammar` | | grammar-compress the runs' tags with the built-in approximate RePair |
 | `--bigrepair P` | | grammar-compress them with `bigrepair -i` output `P.R`, `P.C` (as KATKA did) |
 | `--tag-out FILE` | | write the tag array somewhere other than `PREFIX.tag` |
-| `--tag-lcp l1,l2,…` | | also report B_λ for each λ: the tag boundaries whose two suffixes share more than λ characters. It compares the text at each boundary while φ streams the suffix array, and prints the bound (r + σ + 2d)(λ + 1) + B_λ + 1 of Lemma 11 against the number of tag runs |
+| `--tag-lcp l1,l2,…` | | also report B_λ for each λ: the tag boundaries whose two suffixes share more than λ characters. It prints the bound (r + σ + 2d)(λ + 1) + B_λ + 1 of Lemma 11 against the number of tag runs. A text within `--blam-mem` (default 6 GB) is mapped and compared at each boundary while φ streams the suffix array; a larger one goes through boundary records on disk and Karp–Rabin fingerprints, read in text order (see NOTES.md) |
+| `--blam-mem G`, `--blam-external` | | B_λ's memory budget in GB; force the records and fingerprints |
+| `--tmp DIR` | | large temporary files (φ samples, tag runs, B_λ's records) in DIR |
 | `--kebab k` | `PREFIX.k<k>.kbf` | KeBaB: a blocked Bloom filter of the canonical k-mers of S |
 | `--kebab-eps e` | | its false-positive rate (default 0.1) |
 | `--twolevel` | `PREFIX.lvl` | two-level index with blocks; needs a BWT with one terminator |
