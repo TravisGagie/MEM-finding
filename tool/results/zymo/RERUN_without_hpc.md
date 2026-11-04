@@ -37,9 +37,28 @@ cap $K find -L 30 -D 16 -c -j 12 zp ~/zymo/pfx/p720.fq p720.L30.plain     # pref
 # the KeBaB rules (results/zymo_kebab/): the same commands without -U and with -D 16
 ```
 
-Scoring is as in `results/zymo/`:
-- `credit_schemes.py` and `score_spu2.py` for L = 30;
-- `scripts/maxmem_roc_stream.py` for the longest MEMs. Without `-U`, lengths are in bases.
+Scoring is as in `results/zymo/`, with lengths in bases. The scripts that take the reads score each MEM by its
+homopolymer-compressed length unless given `--plain`, or `--info zp.info` (plain when the index's `hpc` line is 0).
+With either option, a MEM's length is end - start + 1:
+- `credit_schemes.py` and `score_spu2.py` for L = 30 (they do not use lengths);
+- `scripts/maxmem_roc_stream.py --info zp.info` for the longest MEMs. Its output is then that of
+  `katka-readable/scripts/maxmem_roc.py` without the reads (thresholds in steps of 5, not 2), with the reads
+  streamed;
+- `scripts/same_longest_mems.py --info zp.info X.plain X1.plain $R` for the check that KeBaB keeps the longest MEMs;
+- for the KeBaB rules (`results/zymo_kebab/run.sh`, `check_run.sh`), the same scripts with `--info zp.info`
+  (`maxmem_roc_stream.py`, `compare_longest_t.py`, and `results/zymo_kebab/topt_lengths.py`), and the tbl `zp.tbl`.
+
+```bash
+S=~/rz/MEM-finding/tool/scripts; T=~/zymo/all.truth; I="$W/zp.info"; R=~/zymo/all.fq
+python3 -I $S/maxmem_roc_stream.py --info $I X.plain $T zp.tbl $R
+python3 -I $S/same_longest_mems.py --info $I X.plain X1.plain $R
+python3 -I $S/compare_longest_t.py --info $I c.3.plain d.3.plain $R 3     # e.g., for the KeBaB rules
+```
+
+Without either option these scripts would compress homopolymers that the index did not compress, and report the
+wrong lengths. The plain mode was checked on `tests/gen_data.py` data, with indexes built with and without `-U`.
+Without `-U`, `maxmem_roc_stream.py --plain` gives output byte-identical to `maxmem_roc.py` without the reads. With
+`--info` on a `-U` index, all four scripts give their default output, which is unchanged.
 
 Disk: about 60 GB on the external drive for the new index files and outputs. The text and BWT are reused there.
 
