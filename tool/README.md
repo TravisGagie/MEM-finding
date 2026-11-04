@@ -66,6 +66,7 @@ Reads `PREFIX.S`, `PREFIX.tbl` and the BWT, and always writes the RLBWT `PREFIX.
 | `--stpd` | `PREFIX.stpd` | suffix-tree path decomposition sample for `find --stpd`: the needed BWT run starts, from the LF pass and text comparisons; needs one terminator |
 | `--stpd-all` | | keep every BWT run start (no pruning) |
 | `--stpd-parse` | `PREFIX.pstpd` | STPD over the parse: the parse sample, entry table, C and parse φ⁻¹, from `PREFIX.ptxt` (built first if missing) and `PREFIX.lvl`'s k, s; alone, it reads no BWT |
+| `--twolevel-locate` | `PREFIX.tloc` | samples at the run starts of the BWT, the parse BWT and the block BWT, block → phrase and phrase → text maps, and φ⁻¹, for `find --twolevel --locate`; needs `PREFIX.lvl` with blocks and the BWT |
 | `--rlzap[=J,D,M]` | `PREFIX.rptxt` | the parse oracle with the parse as an RLZAP-style factorization against the first sequence's parse, both strands (default 4,4,2); from `PREFIX.ptxt`; alone, it reads no BWT |
 | `--parse-oracle` | `PREFIX.ptxt` | the text read through the two-level parse (phrase starts, parse, dictionary), for `find --stpd --parse-oracle`; uses `--syncmer`; run alone, it reads only `PREFIX.S` |
 | `--syncmer k,s` | | closed syncmers (default 51,12), canonical under reverse complement |
@@ -105,6 +106,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--stpd-parse` | STPD over the parse (`PREFIX.lvl`'s B and dictionary, `PREFIX.pstpd`, `PREFIX.ptxt`, `PREFIX.stpd`; the RLCSA with `--csa`, else the RLBWT, at the right end). Same MEMs as plain search. With `--locate`, φ⁻¹ over the parse; the mems format then prints the occurrences and the distinct sequences among them |
 | `--rlzap-oracle` | with `--stpd-parse` or `--stpd --parse-oracle`: read the text through `PREFIX.rptxt` |
 | `--parse-oracle` | with `--stpd`: read the text through `PREFIX.ptxt` instead of holding `PREFIX.S` (same output; see NOTES.md) |
+| `--twolevel --locate` | two-level search with blocks keeps a toehold (SA at the interval's first row) through character, parse and block steps (`PREFIX.tloc`), and lists every occurrence by φ⁻¹; the mems format prints the occurrences and the distinct sequences |
 | `--locate` | with `--stpd`: locate every occurrence of each MEM (of its reverse complement, for BML and FB) by φ⁻¹ steps from the first one, checked against the text at the end of each batch of doubling size, then a binary search in the batch that overshot, as Becker et al. locate; the mems format gets a sixth column, the number of occurrences |
 | `--stpd --twolevel` | STPD finds the MEMs, and two-level search (with blocks unless `--no-jumps`) computes their intervals |
 | `-c`, `--count` | each tag with its number of occurrences (proportional credit) |

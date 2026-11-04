@@ -14,6 +14,7 @@
 #include "mems.hpp"
 #include "tag_build.hpp"
 #include "rmq.hpp"
+#include "tloc_build.hpp"
 #include "libsais.h"
 #include <map>
 #include <random>
@@ -207,8 +208,14 @@ static int mems_test(int argc, char **argv) {
     } else LT.build(base, 6);
     two_level L2;
     vector<config> cfgs = {{"rlbwt"}, {"csa", &X}, {"efcsa", &Y}, {"rlbwt+F6", nullptr, &LT}, {"csa+F6", &X, &LT}};
+    twolevel_locate TLC;
     if (tl) {
         L2.load(prefix + ".lvl");
+        if (L2.has_blocks) {                      // the toehold samples (with the two-level index's own parse)
+            parse_text PTl;
+            PTl.build(prefix + ".S", L2.K, L2.SM, prefix + ".ptxt.tmp");
+            build_twolevel_locate(prefix + ".bwt", B, L2, PTl, TLC);
+        }
         cfgs.push_back({"twolevel", &X, nullptr, &L2, false});
         cfgs.push_back({"twolevel+jumps", &X, nullptr, &L2, true});
         cfgs.push_back({"twolevel+jumps/rlbwt", nullptr, nullptr, &L2, true});
@@ -324,6 +331,7 @@ static int mems_test(int argc, char **argv) {
     }
 
     u64 nmems = 0, nchecked = 0, nlongest = 0, ntop = 0, ntop_differ = 0, kb_multi = 0, kb_fall = 0;
+    u64 ntoe = 0, nblk = 0, nlocc = 0;
     u64 kc_runs = 0, kc_fall = 0, nfixed = 0, kc_seeded = 0, kc_s1 = 0, kc_s2 = 0, kc_fewer = 0, kc_more = 0;
     for (size_t pi = 0; pi < pats.size(); ++pi) {
         const string &P = pats[pi];
@@ -580,8 +588,31 @@ static int mems_test(int argc, char **argv) {
                     u64 j0 = Q0.back(dir, lo, end, I0), j1 = Q1.back(dir, lo, end, I1), j2 = Q2.back(dir, lo, end, I2);
                     CHECK(j0 == j1 && I0 == I1, "two-level (parse) differs: pattern %zu dir %d [%lu,%lu)", pi, dir, lo, end);
                     CHECK(j0 == j2 && I0 == I2, "two-level (blocks) differs: pattern %zu dir %d [%lu,%lu)", pi, dir, lo, end);
+                    if (TLC.n && j0 < end) {               // the toehold: SA at the interval's first row
+                        for (int jm = 0; jm < 2; ++jm) {
+                            const char *X = dir ? Q2.rc.data() : Q2.R;
+                            u64 t = 0; interval I3; search_counters c3;
+                            u64 j3 = search2(S, L2, dir ? Q2.qi : Q2.pi, X, (int64_t)lo, (int64_t)end, jm, I3, c3, &TLC, &B, &t);
+                            CHECK(j3 == j0 && I3 == I0 && t == (u64)BF.SA[I0.sp], "two-level locate: toehold %lu, SA[sp] %d: pattern %zu dir %d [%lu,%lu) jumps %d", t, BF.SA[I0.sp], pi, dir, lo, end, jm);
+                            ++ntoe; nblk += c3.block_steps;
+                        }
+                    }
                 }
             }
+            // every occurrence of every MEM (BML and FB, L = 1 and 25), against the suffix array
+            if (TLC.n)
+                for (u64 Lx : {1ul, 25ul})
+                    for (int fb = 0; fb < 2; ++fb) {
+                        segment_search Q; Q.S = &S; Q.TL = &L2; Q.TLC = &TLC; Q.locate = true;
+                        mem_options o; o.L = Lx; o.fb = fb;
+                        find_mems(Q, P, o, [&](const mem &M) {
+                            vector<u64> got = Q.occbuf, want;
+                            for (u64 x = M.I.sp; x < M.I.ep; ++x) want.push_back(BF.SA[x]);
+                            std::sort(got.begin(), got.end()); std::sort(want.begin(), want.end());
+                            CHECK(got == want && M.occ == want.size(), "two-level locate: pattern %zu MEM [%lu,%lu): %zu occurrences, SA %zu", pi, M.a, M.e, got.size(), want.size());
+                            nlocc += got.size();
+                        });
+                    }
         }
     }
     if (stpd) {   // every STPD search ends at the lexicographically smallest occurrence: t = SA[sp]
@@ -668,6 +699,7 @@ static int mems_test(int argc, char **argv) {
     }
     printf("longest t (t = 1, 3, 5; -D 0 and 14): %lu exact runs checked (no filter, KeBaB streaming, KeBaB batch: %lu second batches, %lu whole-read fallbacks); KeBaB top: %lu of %lu runs differ from the t longest\n",
            nlongest, kb_multi, kb_fall, ntop_differ, ntop);
+    if (TLC.n) printf("two-level locate: %lu toeholds checked against SA[sp] (%lu block steps among them), %lu occurrences of MEMs checked against the suffix array\n", ntoe, nblk, nlocc);
     printf("KeBaB check (T = t, 2t, t + 2; strict and not): %lu runs checked, %lu fell back; --check-seed: same output, %lu seeded fallbacks, backward steps %lu -> %lu (fewer in %lu runs, more in %lu); KeBaB top with a fixed L: %lu runs checked\n",
            kc_runs, kc_fall, kc_seeded, kc_s1, kc_s2, kc_fewer, kc_more, nfixed);
     printf("MEM tests on %zu patterns (%lu runs, %lu MEMs from plain BML/FB): %s\n", pats.size(), nchecked, nmems, failures ? "FAILED" : "passed");

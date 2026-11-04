@@ -13,6 +13,7 @@
 #include "stpd_export.hpp"
 #include "parse_text.hpp"
 #include "pstpd.hpp"
+#include "tloc_build.hpp"
 #include "libsais.h"
 #include "libsais64.h"
 #include <atomic>
@@ -226,6 +227,9 @@ static const char *INDEX_USAGE =
     "                      find --stpd-parse also needs PREFIX.stpd (index --stpd); alone, reads no BWT\n"
     "                      (--stpd --parse-oracle: the STPD sample is built reading the text through PREFIX.ptxt,\n"
     "                      not holding PREFIX.S: for collections whose text does not fit in memory)\n"
+    "  --twolevel-locate   PREFIX.tloc: samples at the run starts of the BWT, the parse BWT and the block BWT,\n"
+    "                      block -> phrase and phrase -> text maps, and phi^-1, for find --twolevel --locate\n"
+    "                      (needs PREFIX.lvl with blocks, the BWT; builds PREFIX.ptxt if missing)\n"
     "  --rlzap[=J,D,M]     PREFIX.rptxt: the parse oracle with the parse as an RLZAP-style factorization against\n"
     "                      the first sequence's (both strands) parse (default 4,4,2), for find --rlzap-oracle;\n"
     "                      from PREFIX.ptxt (built first if missing); alone, reads no BWT\n"
@@ -288,10 +292,10 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"twolevel-locate", 0, 0, 'W'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
-    bool poracle = false, pstpd = false, rlzap = false;
+    bool poracle = false, pstpd = false, rlzap = false, tlocate = false;
     u64 rz_J = 4, rz_M = 2; int64_t rz_D = 4;
     std::vector<u64> lambdas;
     optind = 1;
@@ -317,6 +321,7 @@ static int cmd_index(int argc, char **argv) {
             case 'Q': stpd = 2; break;
             case 'O': poracle = true; break;
             case 'Y': pstpd = true; break;
+            case 'W': tlocate = true; break;
             case 'Z':
                 rlzap = true;
                 if (optarg && sscanf(optarg, "%lu,%ld,%lu", &rz_J, &rz_D, &rz_M) != 3) die("--rlzap[=J,D,M]");
@@ -447,6 +452,22 @@ static int cmd_index(int argc, char **argv) {
     }
     if (pstpd) build_parse_stpd();
     if (rlzap) build_rlzap();
+    if (tlocate) {                                  // after the two-level step, which may have freed the RLBWT
+        reset_step_peak();
+        if (B.n == 0) load_rlbwt(B, prefix + ".rlbwt");
+        two_level L; L.load(prefix + ".lvl");
+        parse_text PT;
+        if (parse_text::current_format(prefix + ".ptxt")) PT.load(prefix + ".ptxt");
+        if (PT.rlz || (int32_t)PT.K != L.K || (int32_t)PT.SM != L.SM || PT.n != L.n) {
+            PT = parse_text();
+            PT.build(Sfile, L.K, L.SM, prefix + ".ptxt.tmp");
+            PT.save(prefix + ".ptxt");
+        }
+        twolevel_locate T;
+        build_twolevel_locate(bwtfile, B, L, PT, T);
+        T.save(prefix + ".tloc");
+        fprintf(stderr, "two-level locate: %.3f MB (peak memory of this step %.2f GB)\n", (T.bytes_char() + T.bytes_parse() + T.bytes_blocks()) / 1e6, step_peak_gb());
+    }
     fprintf(stderr, "index built in %.1f s (peak memory %.2f GB)\n", now() - t0, peak_gb());
     return 0;
 }
@@ -525,6 +546,7 @@ struct finder {
     const unsigned char *comp = nullptr;      // digests: complement of each symbol
     const stpd_index *SP = nullptr;
     const parse_stpd *PS = nullptr;
+    const twolevel_locate *TLC = nullptr;
     const std::vector<u64> *gstarts = nullptr;
     bool intervals = true, locate = false;
 
@@ -649,7 +671,7 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
         string name, seq;
         segment_search Q;
         Q.S = &K.S; Q.T = K.table; Q.TL = K.TL; Q.jumps = K.jumps; Q.comp = K.comp; Q.SP = K.SP; Q.intervals = K.intervals; Q.locate = K.locate;
-        Q.PS = K.PS; Q.gstarts = K.gstarts;
+        Q.PS = K.PS; Q.gstarts = K.gstarts; Q.TLC = K.TLC;
         for (;;) {
             u64 my;
             {
@@ -817,10 +839,10 @@ static int cmd_find(int argc, char **argv) {
         fprintf(stderr, "STPD: %lu sampled positions (r = %lu), %.3f MB on top of the text\n", SD.pos.size(), SD.runs, SD.bytes() / 1e6);
     }
     if (!K.intervals && (!use_stpd || K.mode != NONE)) die("--no-intervals needs --stpd and no tags (--format mems or --no-tags)");
-    if (K.locate && !use_stpd) die("--locate needs --stpd");
+    if (K.locate && !use_stpd && !twolevel) die("--locate needs --stpd, --stpd-parse or --twolevel");
     // locating lists the occurrences by phi^-1 from the first one and counts them, so the intervals (a
     // backward search over every MEM) are needed only for tags
-    if (K.locate && K.mode == NONE) K.intervals = false;
+    if (K.locate && K.mode == NONE && use_stpd) K.intervals = false;
     two_level L2;
     parse_stpd PS;
     genome_table GT;
@@ -828,9 +850,19 @@ static int cmd_find(int argc, char **argv) {
         GT.load(prefix + ".tbl");
         K.gstarts = &GT.start;
     }
+    twolevel_locate TLc;
     if (twolevel) {
         L2.load(prefix + ".lvl", use_pstpd);
         K.TL = &L2;
+        if (K.locate && !use_stpd) {
+            TLc.load(prefix + ".tloc");
+            if (TLc.n != L2.n || TLc.m != L2.m || TLc.nblocks != L2.nblocks || TLc.n != B.n) die(prefix + ".tloc does not match the index (katka index --twolevel-locate)");
+            K.TLC = &TLc;
+            fprintf(stderr, "two-level locate (MB): characters %.3f (run samples %.3f, phi^-1 %.3f), parse %.3f (run samples %.3f, phrase -> text %.3f), blocks %.3f (run samples %.3f, block -> phrase %.3f)\n",
+                    TLc.bytes_char() / 1e6, TLc.csamp.bytes() / 1e6, (TLc.ikeys.bytes() + TLc.ivals.bytes()) / 1e6, TLc.bytes_parse() / 1e6,
+                    (TLc.prow.bytes() + TLc.psamp.bytes()) / 1e6, TLc.pstarts.bytes() / 1e6, TLc.bytes_blocks() / 1e6,
+                    (TLc.brow.bytes() + TLc.bsamp.bytes()) / 1e6, TLc.bstarts.bytes() / 1e6);
+        }
         if (use_pstpd) {
             PS.load(prefix + ".pstpd");
             if (PS.m != PT.m || PS.K != PT.K || PS.SM != PT.SM || (int32_t)PT.K != L2.K || (int32_t)PT.SM != L2.SM || L2.n != SD.n)

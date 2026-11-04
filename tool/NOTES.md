@@ -385,6 +385,73 @@ cd ~/tool/chr19 && ~/rz/MEM-finding/tool/bin/katka index --parse-oracle c33 2>&1
 
 That rebuilds `c33.ptxt` (reading only `c33.S`). Its line gives the new dictionary size, the number of phrases with exceptions and the total. (`stpd_parse_chr19.sh` also rebuilds a `.ptxt` of the old format by itself. The `.pstpd` does not depend on the dictionary's format.)
 
+### Locating with two-level search and blocks (`index --twolevel-locate`, `find --twolevel --locate`, 2026-11-04)
+
+Two-level search with blocks now keeps a toehold, SA at the first row of the current interval, through every kind of step (`twolevel_locate` and `search2` in `src/twolevel.hpp`, the builder in `src/tloc_build.hpp`). Every occurrence then comes from φ⁻¹, and each is mapped to its sequence with the sequence starts.
+
+**`PREFIX.tloc`:**
+
+| part | what |
+|---|---|
+| character run samples | SA[x] − 1 at the start x of every BWT run, in each character's run order (`csamp`, r entries) |
+| φ⁻¹ | SA at the end of every run → SA at the start of the next (as `index --stpd`'s) |
+| parse run samples | SA_Z at the start of every run of the parse BWT, in row order (`prow`, `psamp`) |
+| block run samples | the same for the block BWT, with block indices (`brow`, `bsamp`) |
+| block → phrase | Elias–Fano over the first phrase of each block (`bstarts`) |
+| phrase → text | Elias–Fano over the start of each phrase (`pstarts`) |
+
+The sequence starts come from `PREFIX.tbl` at query time. `index --twolevel-locate` builds `PREFIX.tloc` with:
+- one LF pass over the BWT (characters and φ⁻¹, as `index --stpd`);
+- a suffix array of the parse (from `PREFIX.ptxt`, built if missing);
+- the run lists of the parse BWT and block BWT, read from the two-level index, with each run's symbol checked against the parse.
+
+**The toehold**, t = SA[sp] (as the r-index keeps one at the last row, mirrored):
+- **Character step** c on [sp, ep): if BWT[sp] = c, the new toehold is t − 1. Otherwise the first c in the range is at a row x that starts a BWT run (BWT[x − 1] ≠ c, and x − 1 is in the range). LF maps x to the new sp, so the new toehold is SA[x] − 1, a sample. Its index is c's run number, found from the RLBWT's count of c's runs before the new sp.
+- **Parse step** a on parse rows [plo, phi] with toehold u (a phrase): the same over BWT_Z, with the parse samples. Whether BWT_Z[plo] = a, and the first a-run starting after plo, both come from the parse BWT's runs.
+- **Block step:** the same over the block BWT, with block indices.
+- **Into the blocks.** Every row of [plo, phi] is a suffix starting with the pattern phrase p = pid[i]. A row is a block row exactly when the phrase before it, BWT_Z, is not a phrase z with succ(z) = p. So the first block row x ≥ plo (`BS`) is plo itself, or a row whose BWT symbol is not in {z : succ(z) = p} while the row before it is. That makes x the start of a run, and SA_Z[x] is u or a parse sample. Its block is found with block → phrase.
+- **Out of the blocks:** both exits of the block stage (exact, and the backup to the interval before the last block) set plo to a block row. The toehold becomes the first phrase of the block held there (or before the last block step, for the backup).
+- **Out of the parse:** the toehold becomes the text start of the phrase, via phrase → text.
+- **Locating:** from SA[sp], apply φ⁻¹ ep − sp − 1 times. Locating runs one more two-level search, with the toehold, per reported MEM; the window searches of BML don't pay for it.
+
+**Tests** (`katka-test mems --twolevel`):
+- After random two-level searches on both strands, with and without blocks, the toehold equals SA[sp]: 3,120 checks on the chromosome-like collection.
+- Every occurrence of every MEM, for BML and FB at L = 1 and 25, equals the suffix array's (110,456 occurrences).
+- `selftest.sh` checks `find --twolevel --locate` against plain search: the same MEMs and intervals, and occurrence counts equal to ep − sp.
+
+**On the synthetic collection** (search time, minimum of 3 runs):
+- **Time:** two-level with blocks 0.32 → 0.49 s with `--locate` at L = 1000 (1,996 MEMs, 4,410 occurrences), and 0.44 → 0.77 s at L = 100 (4,663 MEMs, 29,460 occurrences). The difference includes the second search per MEM.
+- **Agreement:** the MEMs and intervals equal plain search's. Every MEM's number of occurrences and of distinct sequences equals that of character-level STPD with `--locate`, which is checked separately against the suffix array. 3,487 of those MEMs occur in more than one sequence.
+
+**Extra space** on the synthetic collection (n = 64.0 × 10⁶, r = 3.82 million, r_Z = 514 thousand, r_B = 154 thousand), 33.5 MB in all:
+- characters 28.1 MB: run samples 12.4, φ⁻¹ 15.7;
+- parse 4.6 MB: run samples 1.8, phrase → text 2.8;
+- blocks 0.8 MB: run samples 0.45, block → phrase 0.32.
+
+On c33 (r = 68.4 million, r_Z = 10.3 million, m = 220 million), I estimate about 880 MB:
+- characters about 625 MB: run samples about 274 MB, φ⁻¹ 350 MB (as in `c33.stpd`);
+- parse about 240 MB: samples about 45 MB, phrase → text about 192 MB;
+- blocks about 20 MB.
+
+For comparison: two-level search with blocks reads 979 MB (RLBWT, RLCSA, `.lvl`), and STPD over the parse with `--locate` reads 2,378 MB.
+
+**For the desktop (c33, then c65 if it fits):**
+
+```
+cd ~/rz/MEM-finding && git pull origin tool && make -C tool && tool/selftest.sh
+cd ~/tool/chr19
+systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "tloc: %e s, peak %M KB" ~/rz/MEM-finding/tool/bin/katka index --twolevel-locate c33 > tloc33.err 2>&1
+for L in 1000 100; do
+  taskset -c 9 ~/rz/MEM-finding/tool/bin/katka find -L $L --format mems --csa --twolevel --locate --stats c33 queries.fa tlloc$L.33.tsv 2> tlloc$L.33.err
+done
+```
+
+`index --twolevel-locate` needs `c33.bwt`, `c33.lvl` and `c33.ptxt`; the last is rebuilt if it is missing or of the old format. Check each output against plain search (`plain$L.33.tsv` from `run_n.sh`): columns 1–5 must be equal, and column 6 (occurrences) must equal ep − sp. Report:
+- the build's time and peak, and the `two-level locate` lines (component sizes);
+- the search times next to two-level with blocks without `--locate` and STPD over the parse with `--locate`, from `results/chr19_stpd_parse/`.
+
+Put the results in `tool/results/chr19_stpd_parse/`.
+
 ### The RLZAP parse oracle (`index --rlzap`, `find --rlzap-oracle`, 2026-11-03)
 
 `PREFIX.rptxt` is the parse oracle with the parse (ids and phrase starts) replaced by an RLZAP-style factorization (`rlz_parse` and `parse_text::make_rlz` in `src/parse_text.hpp`). The dictionary (2 bits per base) and its offsets are unchanged.

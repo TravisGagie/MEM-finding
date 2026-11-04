@@ -64,6 +64,7 @@ struct segment_search {
     const stepper *S = nullptr;
     const lookup_table *T = nullptr;      // plain search only
     const two_level *TL = nullptr;        // if set, two-level search
+    const twolevel_locate *TLC = nullptr; // with TL and locate (no STPD): the toehold samples and phi^-1
     bool jumps = true;
     const unsigned char *comp = nullptr;  // complement of each symbol (digest symbols), if not DNA
     const stpd_index *SP = nullptr;       // if set, STPD search (stpd.hpp)
@@ -296,9 +297,17 @@ struct segment_search {
     }
     // with STPD, the interval of rc(R[a..e)) for a MEM about to be reported, by plain backward search
     void rc_interval(u64 a, u64 e, interval &J) {
-        if (!SP) return;
+        if (!SP && !(locate && TLC)) return;
+        interval I2;
         if (locate) {                                   // the forward search left the first occurrence of rc(R[a..e)) in sst[1]
             occbuf.clear();
+            if (!SP) {                                  // two-level search with a toehold: SA[sp], then phi^-1
+                u64 t = 0;
+                u64 j2 = search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, I2, cnt, TLC, S->bwt, &t);
+                if (j2 != n - e || I2.sp >= I2.ep) die("internal error: two-level locate (the MEM does not occur)");
+                for (u64 x = I2.sp; x < I2.ep; ++x) { occbuf.push_back(t); if (x + 1 < I2.ep) t = TLC->phi_inv(t); }
+                last_occ = occbuf.size();
+            } else
             last_occ = PS ? ps_locate(a, e) : SP->locate((const uint8_t *)rc.data() + (n - e), e - a, sst[1].t, occbuf, locate_checks);
             if (gstarts) {                          // distinct sequences among the occurrences
                 static thread_local std::vector<u64> hs;
@@ -308,6 +317,7 @@ struct segment_search {
                 last_haps = std::unique(hs.begin(), hs.end()) - hs.begin();
             }
         }
+        if (!SP) { J = I2; return; }                    // (two-level locating gave the interval too)
         if (!intervals) { J = {0, 0}; return; }
         // by two-level search (with blocks) if there is a two-level index, else by plain backward search
         u64 j = TL && TL->pbwt.n ? search2(*S, *TL, qi, rc.data(), (int64_t)(n - e), (int64_t)(n - a), jumps, J, cnt) : plain_back(1, n - e, n - a, J);

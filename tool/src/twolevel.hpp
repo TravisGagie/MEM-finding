@@ -289,17 +289,97 @@ struct search_counters {
     }
 };
 
+// Locating with two-level search (and blocks): a toehold, SA at the first row of the current interval, kept
+// through every kind of step (NOTES.md, "Locating with two-level search"), as the r-index keeps one at the
+// last row:
+//   character step c on [sp, ep):  if BWT[sp] = c, t - 1; otherwise the first c in the range starts a BWT run,
+//     and its sample SA[x] - 1 is stored per character (csamp, in the order of each character's runs);
+//   parse step a on parse rows [plo, phi], toehold u (a phrase index):  if BWT_Z[plo] = a, u - 1; otherwise
+//     the sample of the first a-run starting in the range (SA_Z at the starts of the parse BWT's runs, psamp,
+//     in row order: prow), minus 1;
+//   block step: the same over the block BWT, with block indices (bsamp, brow);
+//   into the blocks: the first block row x >= plo is plo itself or the start of a parse BWT run (every row
+//     of the range before x holds a phrase that continues into the range's first phrase, every block row one
+//     that does not), so SA_Z[x] is u or a sample, and its block is found with bstarts;
+//   out of the blocks: the first phrase of the block (bstarts); out of the parse: its text start (pstarts).
+// Every occurrence then comes from the toehold by phi^-1 (ikeys, ivals: SA at the ends of the BWT's runs).
+struct twolevel_locate {
+    u64 n = 0, m = 0, nblocks = 0;
+    u64 Cr[257];                        // character c's runs are csamp[Cr[c] .. Cr[c+1])
+    PackedInts csamp;
+    EliasFano ikeys; PackedInts ivals; u64 last_sa = 0;
+    EliasFano prow; PackedInts psamp;   // parse BWT run starts (rows) and SA_Z there
+    EliasFano brow; PackedInts bsamp;   // block BWT run starts and SA_B there
+    EliasFano bstarts;                  // the first phrase of each block
+    EliasFano pstarts;                  // the text start of each phrase
+    twolevel_locate() { std::fill(Cr, Cr + 257, 0); }
+
+    inline u64 phi_inv(u64 i) const { u64 t = ikeys.count_less(i + 1) - 1; return ivals.get(t) + (i - ikeys.access(t)); }
+    // the toehold after a character step c from [sp, ...) with toehold t; nsp: the new sp (C[c] + rank_c(sp))
+    inline u64 char_step(const rlbwt &B, unsigned char c, u64 sp, u64 nsp, u64 t) const {
+        if (B.at(sp) == c) return t - 1;
+        u64 k = nsp - B.C[c], jc = B.cum[c].count_less(k);
+        return csamp.get(Cr[c] + jc);
+    }
+    // the toehold after a step by symbol c of an EFRank E from rows [i1, ...) with toehold u
+    static inline u64 rank_step(const EFRank &E, const EliasFano &row, const PackedInts &samp, uint32_t c, u64 i1, u64 u) {
+        const u64 base = (u64)c * E.n, b = E.KS.count_less(base), a1 = E.KS.count_less(base + i1 + 1);
+        if (a1 > b) {                                           // the last c-run starting at or before i1
+            u64 j = a1 - 1, start = E.KS.access(j) - base, f, fn;
+            if (j + 1 < E.nruns) E.FP.access2(j, f, fn); else { f = E.FP.access(j); fn = E.n; }
+            if (i1 < start + (fn - f)) return u - 1;
+        }
+        const u64 s = E.KS.access(a1) - base;                  // the first c-run starting after i1
+        return samp.get(row.count_less(s + 1) - 1) - 1;
+    }
+    inline u64 block_of(u64 v) const {                          // the block starting at phrase v (v = m: the end)
+        if (v >= m) return nblocks;
+        u64 b = bstarts.pred_index(v);
+        if (bstarts.access(b) != v) die("internal error: two-level locate (a block row not at a block start)");
+        return b;
+    }
+    // SA_Z at parse row x, given u = SA_Z[plo], plo <= x, x = plo or a parse BWT run start
+    inline u64 parse_sa_at(u64 x, u64 plo, u64 u) const {
+        if (x == plo) return u;
+        u64 q = prow.count_less(x + 1) - 1;
+        if (prow.access(q) != x) die("internal error: two-level locate (the first block row is not a run start)");
+        return psamp.get(q);
+    }
+    u64 bytes_char() const { return csamp.bytes() + ikeys.bytes() + ivals.bytes(); }
+    u64 bytes_parse() const { return prow.bytes() + psamp.bytes() + pstarts.bytes(); }
+    u64 bytes_blocks() const { return brow.bytes() + bsamp.bytes() + bstarts.bytes(); }
+    void save(const std::string &f) const {
+        FILE *o = open_or_die(f, "wb"); wmagic(o, "KTTLOC01");
+        wr(o, n); wr(o, m); wr(o, nblocks); fwrite(Cr, 8, 257, o);
+        csamp.save(o); ikeys.save(o); ivals.save(o); wr(o, last_sa);
+        prow.save(o); psamp.save(o); brow.save(o); bsamp.save(o); bstarts.save(o); pstarts.save(o);
+        fclose(o);
+    }
+    void load(const std::string &f) {
+        FILE *i = open_or_die(f, "rb"); rmagic(i, "KTTLOC01", f);
+        rd(i, n); rd(i, m); rd(i, nblocks); if (fread(Cr, 8, 257, i) != 257) die("short read " + f);
+        csamp.load(i); ikeys.load(i); ivals.load(i); rd(i, last_sa);
+        prow.load(i); psamp.load(i); brow.load(i); bsamp.load(i); bstarts.load(i); pstarts.load(i);
+        fclose(i);
+    }
+};
+
 // The longest suffix X[j..end) of X[begin..end) that occurs in S, and its interval: the same result as
 // plain backward search (Theorem "twolevel"; with jumps, Lemmas "blockstart" and "backup").  Returns j.
+// With TL (and B, the RLBWT), *toehold is set to SA[out.sp] (if out is not empty).
 inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &pi, const char *X, int64_t begin, int64_t end,
-                   bool jumps, interval &out, search_counters &cnt) {
+                   bool jumps, interval &out, search_counters &cnt, const twolevel_locate *TLc = nullptr, const rlbwt *RB = nullptr,
+                   u64 *toehold = nullptr) {
     const int K = L.K;
     interval I = st.full();
     int64_t j = end;
+    u64 t = TLc ? TLc->n - 1 : 0;                          // SA[0]: the suffix $
     auto char_steps_to = [&](int64_t stop) -> bool {      // false if a step fails
         while (j > stop) {
             ++cnt.char_steps;
+            const u64 sp0 = I.sp;
             if (!st.step(I, (unsigned char)X[j - 1])) return false;
+            if (TLc) t = TLc->char_step(*RB, (unsigned char)X[j - 1], sp0, I.sp, t);
             --j;
         }
         return true;
@@ -310,6 +390,8 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
     if (idx >= 0 && S[idx] >= begin && char_steps_to(S[idx])) {
         // parse rows [plo, phi] (inclusive) for X[S[i] .. end)
         uint64_t plo = L.B.rank1(I.sp) + 1, phi = L.B.rank1(I.ep);
+        u64 u = TLc ? TLc->pstarts.pred_index(t) : 0;       // the toehold's phrase (t starts one: it is at a boundary)
+        if (TLc && TLc->pstarts.access(u) != t) die("internal error: two-level locate (the toehold is not at a boundary)");
         int64_t i = idx, noblock_above = idx - 1;
         jumps = jumps && L.has_blocks;
         while (i > 0 && S[i - 1] >= begin && pi.pid[i - 1]) {
@@ -317,6 +399,8 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
                 uint64_t blo = L.BS.count_less(plo), bhi = L.BS.count_less(phi + 1);
                 int64_t cur = i, taken = 0;
                 uint64_t pblo = 0, pbhi = 0; int64_t pcur = i;
+                u64 bt = 0, pbt = 0;                         // the block toehold, and the one before the last block step
+                if (TLc && blo < bhi) bt = TLc->block_of(TLc->parse_sa_at(L.BS.access(blo), plo, u));
                 while (cur > 0 && blo < bhi) {
                     int32_t t0 = pi.bstart[cur - 1];
                     if (S[t0] < begin || !pi.pid[t0]) break;
@@ -327,17 +411,20 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
                     L.bbwt.lf2(y, blo, bhi, o1, o2);
                     ++cnt.block_steps;
                     if (o1 >= o2) break;
-                    pblo = blo; pbhi = bhi; pcur = cur;
+                    pblo = blo; pbhi = bhi; pcur = cur; pbt = bt;
+                    if (TLc) bt = twolevel_locate::rank_step(L.bbwt, TLc->brow, TLc->bsamp, y, blo, bt);
                     blo = o1; bhi = o2; cur = t0; ++taken;
                 }
                 if (taken >= 1 && !L.can_continue(pi.pid[cur])) {     // exact (Lemma "backup", first case)
                     plo = L.BS.access(blo); phi = L.BS.access(bhi - 1);
+                    if (TLc) u = TLc->bstarts.access(bt);
                     i = cur;
                     noblock_above = i;
                     continue;
                 }
                 if (taken >= 2) {             // back up to the interval before the last block
                     plo = L.BS.access(pblo); phi = L.BS.access(pbhi - 1);
+                    if (TLc) u = TLc->bstarts.access(pbt);
                     i = pcur;
                 }
                 noblock_above = pi.bstart[i - 1];
@@ -346,15 +433,18 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
             L.pbwt.lf2(pi.pid[i - 1], plo, phi + 1, o1, o2);
             ++cnt.parse_steps;
             if (o1 >= o2) break;
+            if (TLc) u = twolevel_locate::rank_step(L.pbwt, TLc->prow, TLc->psamp, pi.pid[i - 1], plo, u);
             plo = o1; phi = o2 - 1; --i;
         }
         I.sp = L.B.select1(plo - 1); I.ep = L.B.select1(phi - 1) + 1;
+        if (TLc) t = TLc->pstarts.access(u);
         j = S[i];
         char_steps_to(begin);
     } else if (idx < 0 || S[idx] < begin) {
         char_steps_to(begin);
     }
     out = I;
+    if (toehold) *toehold = t;
     return (u64)j;
 }
 
