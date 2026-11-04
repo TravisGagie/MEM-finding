@@ -1,0 +1,17 @@
+[M::rb3_fmi_load_all::0.650*0.51] loaded the BWT
+[M::worker_pipeline::49.910*1.00] processed 747183 sequences
+[M::worker_pipeline::99.001*1.00] processed 737540 sequences
+[M::worker_pipeline::147.559*1.00] processed 737297 sequences
+[M::worker_pipeline::196.841*1.00] processed 759793 sequences
+[M::worker_pipeline::245.603*1.01] processed 736231 sequences
+[M::worker_pipeline::294.598*1.01] processed 759928 sequences
+[M::worker_pipeline::343.740*1.01] processed 750931 sequences
+[M::worker_pipeline::392.586*1.01] processed 746108 sequences
+[M::worker_pipeline::441.022*1.01] processed 735326 sequences
+[M::worker_pipeline::489.811*1.01] processed 753427 sequences
+[M::worker_pipeline::538.293*1.01] processed 756151 sequences
+[M::worker_pipeline::557.620*1.01] processed 292073 sequences
+[M::main] Version: 3.10-r285-dirty
+[M::main] CMD: bin/ropebwt3 mem -l 40 -t 1 zymo.fmd b.10.T15.fa
+[M::main] Real time: 557.681 sec; CPU: 560.654 sec; Peak RSS: 1.232 GB
+b.10.T15 mem: 557.69 s wall, 559.29 s user, peak 1292096 KB

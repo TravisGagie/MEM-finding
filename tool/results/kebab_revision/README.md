@@ -103,3 +103,70 @@ reference is `--longest t -L 1`. Full details are in `../zymo_kebab/README.md`.
 - **Fallback reasons:** every fallback was for "fewer than t long MEMs".
 - **KeBaB's own pipeline at the journal's fixed L = 25:** `--kebab-top t --fixed-L`, every MEM voting, gives 98.66,
   99.23 and 99.40% for t = 1, 3 and 5. Every MEM ≥ 25 gives 99.58%, but takes 4.3–5.4 times longer.
+
+# The check rule with smaller T (Section 5.1 setting, 2026-11-04)
+
+Same setting and pipeline as (b) above, single-threaded (`run3.sh`, `run3b.sh`, `run3c.sh`; logs
+`logs/run3*.log`). Time is scan + ropebwt3 on the T longest pseudo-MEMs + ropebwt3 on the fallback reads. Splitting
+and checking add 2–9 s, not included. (a) is the heuristic: ropebwt3 on the t longest pseudo-MEMs only.
+
+| t | T | time | × (a) | fallbacks | reads whose t longest lengths differ from (c) | reads whose spans (with ties) differ |
+|---|---|---|---|---|---|---|
+| 1 | (a) | 221 + 56 = 277 s | 1 | — | 30,235 (5.20%) | 39,675 (6.82%) |
+| 1 | **2** (= t + 1 = ⌈1.25t⌉ = 2t) | 221 + 102 + 39 = 362 s | **1.31** | 2,413 (0.42%) | 0 | 1,038 (0.18%) |
+| 1 | 3 (t + 2) | 227 + 149 + 4 = 380 s | 1.37 | 225 (0.04%) | 0 | 109 (0.02%) |
+| 5 | (a) | 224 + 222 = 446 s | 1 | — | 89,424 (15.37%) | 129,141 (22.20%) |
+| 5 | 6 (t + 1) | 226 + 273 + 236 = 735 s | 1.65 | 14,207 (2.47%) | 0 | 10,142 (1.74%) |
+| 5 | **7** (t + 2 = ⌈1.25t⌉) | 226 + 302 + 43 = 571 s | **1.28** | 2,261 (0.39%) | 0 | 2,065 (0.36%) |
+| 5 | 10 (2t) | 226 + 397 + 1 = 624 s | 1.40 | 20 (0.003%) | 0 | 16 (0.003%) |
+| 10 | (a) | 225 + 397 = 621 s | 1 | — | 125,200 (21.52%) | 190,291 (32.71%) |
+| 10 | 11 (t + 1) | 225 + 437 + 459 = 1,121 s | 1.81 | 27,160 (4.72%) | 0 | 25,655 (4.41%) |
+| 10 | 12 (t + 2) | 228 + 467 + 105 = 800 s | 1.29 | 5,458 (0.95%) | 0 | 7,506 (1.29%) |
+| 10 | **13** (⌈1.25t⌉) | 227 + 497 + 25 = 749 s | **1.21** | 1,177 (0.20%) | 0 | 1,870 (0.32%) |
+| 10 | 15 (1.5t) | 227 + 558 + 2 = 787 s | 1.27 | 76 (0.01%) | 0 | 102 (0.02%) |
+| 10 | 20 (2t) | 227 + 688 + 1 = 916 s | 1.48 | 3 (0.001%) | 0 | 0 |
+
+How the table was read:
+- **Fallback reasons:** all of them are "fewer than t MEMs reach the (T+1)st pseudo-MEM's length". Reads with at
+  most T pseudo-MEMs need no check.
+- **Exactness:** every check-rule run gets every read's t longest lengths right. The remaining span differences are
+  MEMs tied at exactly λ, the length of the (T+1)st pseudo-MEM. A `--strict`-style test ("longer than λ") would
+  catch them at the cost of more fallbacks.
+
+**Reading:**
+- **The cost curve is U-shaped in T.** With T = t + 1 the fallbacks dominate: 2.5–4.7% of reads go to whole-read
+  ropebwt3, and each costs a full read. With T = 2t the extra pseudo-MEMs dominate.
+- **T = ⌈1.25t⌉ is the best of those tried for every t:** 1.31, 1.28 and 1.21 times the heuristic, with 0.2–0.4%
+  fallbacks.
+- **The fixed cost:** the `kebab scan` step (about 225 s, single-threaded) is the same for every rule. Against
+  ropebwt3's share alone, the check rule at T = ⌈1.25t⌉ costs 2.5×, 1.6× and 1.3× the heuristic's (141 / 56,
+  345 / 222 and 522 / 397 s).
+
+# KeBaB's pipeline at the journal's fixed L = 25, and the check rule, under the zymo preset
+
+Homopolymer compression, θ = 14, KeBaB k = 20, RLCSA, 12 threads (`fixedL.sh`, `logs/fixedL.log`).
+- **KeBaB's pipeline:** `-L 25 -K 20 --kebab-top t --fixed-L` reports every MEM of length ≥ 25 in the t longest
+  pseudo-MEMs, and every MEM votes (`credit_schemes.py`).
+- **The check rule:** `-L 20 -K 20 --kebab-check 2 1`, runs from 2026-11-03 (`../zymo_kebab/`), scored both ways.
+  L counts compressed characters.
+
+| run | wall | pseudo-MEMs searched / read | backward steps / read | MEMs | unclassified | accuracy, every MEM votes (prop / even) | accuracy, longest MEMs vote (prop / even) |
+|---|---|---|---|---|---|---|---|
+| KeBaB pipeline, t = 1 | 87.5 s | 1.00 | 322 | 758,336 | 1.05% | 98.66% / 98.37% | |
+| KeBaB pipeline, t = 3 | 98.0 s | 3.00 | 836 | 2,195,477 | 0.46% | 99.23% / 99.19% | |
+| KeBaB pipeline, t = 5 | 109.7 s | 5.00 | 1,281 | 3,587,812 | 0.28% | 99.40% / 99.40% | |
+| KeBaB pipeline, t = 10 | 137.9 s | 10.00 | 2,248 | 6,975,234 | 0.09% | 99.53% / 99.59% | |
+| KeBaB pipeline, t = 20 | 169.5 s | 20.00 | 3,864 | 13,529,233 | 0.02% | 99.60% / 99.68% | |
+| KeBaB pipeline, t = 30 | 199.3 s | 29.97 | 5,244 | 19,896,633 | 0.01% | 99.61% / 99.70% | |
+| all MEMs ≥ 25 (`-L 25 -K 20`) | 468.9 s | all | — | 108,366,876 | 0.003% | 99.58% / 99.69% | |
+| **check rule, t = 1, T = 2** | 103.3 s | 1.15 | 743 | 591,459 | 0 | **99.63%** / 99.29% | 99.61% / 99.27% |
+| check rule, t = 1, T = 2, `--strict` | 97.7 s | 1.15 | 794 | 592,877 | 0 | 99.63% / 99.29% | 99.61% / 99.27% |
+
+**Reading:**
+- **KeBaB's pipeline:** it improves with t and reaches the all-MEMs accuracy at t = 20–30, as the journal reports
+  with Tagger. That takes 1.6–1.9 times the check rule's time.
+- **The check rule with t = 1:** the longest MEMs alone, about 1 per read, give 99.63% with proportional credit.
+  That is above the pipeline at t = 30 (99.61%) and above every MEM ≥ 25 (99.58%), in about half the time of t = 30
+  and less than a quarter of all MEMs'.
+- **Even credit:** it favours the pipeline (99.70% at t = 30, against 99.29%). With only the longest MEMs,
+  proportional and even credit differ more.

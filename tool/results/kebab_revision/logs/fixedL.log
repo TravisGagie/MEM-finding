@@ -1,0 +1,33 @@
+== f.10 09:59:18
+exit 0
+kebab (top, fixed L = 25, t = 10): pseudo-MEMs 600809096 (1032.67 per read), searched 5817976 (10.00 per read), backward steps 2248.2 per read
+f.10: 137.90 s wall, 1390.05 s user, peak 7346748 KB
+== f.20 10:01:36
+exit 0
+kebab (top, fixed L = 25, t = 20): pseudo-MEMs 600809096 (1032.67 per read), searched 11633243 (20.00 per read), backward steps 3864.2 per read
+f.20: 169.51 s wall, 1756.76 s user, peak 7345444 KB
+== f.30 10:04:26
+exit 0
+kebab (top, fixed L = 25, t = 30): pseudo-MEMs 600809096 (1032.67 per read), searched 17435137 (29.97 per read), backward steps 5244.4 per read
+f.30: 199.33 s wall, 2072.10 s user, peak 7349292 KB
+-- f.10: every MEM votes
+reads 581802, unclassified 543 (0.09%); 6975234 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.533%
+  even     99.589%
+-- f.20: every MEM votes
+reads 581802, unclassified 116 (0.02%); 13529233 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.595%
+  even     99.676%
+-- f.30: every MEM votes
+reads 581802, unclassified 40 (0.01%); 19896633 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.606%
+  even     99.701%
+-- e.2.1: every MEM votes
+reads 581802, unclassified 0 (0.00%); 591459 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.629%
+  even     99.290%
+-- es.2.1: every MEM votes
+reads 581802, unclassified 0 (0.00%); 592877 MEMs, 1.01 tags per MEM, 1.01 in the cliffs-style sample
+  prop     99.629%
+  even     99.291%
+== done 10:14:29
