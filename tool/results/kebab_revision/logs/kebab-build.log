@@ -1,0 +1,14 @@
+
+Estimating Cardinality: 100.00% [926.82s]
+	Estimate: 308721725
+	Error Bounds: 313231.96
+
+Indexing: 100.00% [1524.48s]
+	k: 20
+	Desired FP Rate: 0.100000
+	Observed FP Rate: 0.129680
+	# Hashes: 1
+	# Set Bits: 278486605
+	# Bits: 2147483648
+	Load: 0.129680
+kebab-build: 2451.48 s wall, 1340.75 s user, peak 274236 KB

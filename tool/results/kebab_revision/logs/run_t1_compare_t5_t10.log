@@ -1,0 +1,97 @@
+######## t = 1 (runs done before the stop; comparisons only)
+-- (a) t = 1 against (c)
+reads 581802, t = 1: the t longest lengths differ in 30235 (5.197%), spans (with ties) differ in 39675 (6.819%); reads with no MEM >= L: 6585 in the reference, 85 more in this run
+-- (b) t = 1 against (c)
+reads 581802, t = 1: the t longest lengths differ in 0 (0.000%), spans (with ties) differ in 1038 (0.178%); reads with no MEM >= L: 6585 in the reference, 0 more in this run
+######## t = 5, T = 10
+a.5 scan: 223.60 s wall, 218.35 s user, peak 268024 KB
+read bases 11456712680; fragments 2860304, 472321966 bases: filtration ratio 0.0412 (4.12% of the read bases kept)
+a.5 mem: 222.20 s wall, 222.15 s user, peak 1233840 KB
+b.5 scan: 226.47 s wall, 220.69 s user, peak 268024 KB
+b.5 split: 4.85 s wall
+read bases 11456712680; fragments 5695576, 829178381 bases: filtration ratio 0.0724 (7.24% of the read bases kept)
+b.5 mem: 396.52 s wall, 397.45 s user, peak 1275380 KB
+reads 575392: 10632 with at most T fragments (no check needed), 20 fall back (0.003%)
+b.5 check: 3.75 s wall
+b.5 fallback mem: 1.08 s wall, 0.37 s user, peak 755432 KB
+-- (a) t = 5 against (c)
+reads 581802, t = 5: the t longest lengths differ in 89424 (15.370%), spans (with ties) differ in 129141 (22.197%); reads with no MEM >= L: 6585 in the reference, 1 more in this run
+-- (b) t = 5 against (c)
+reads 581802, t = 5: the t longest lengths differ in 0 (0.000%), spans (with ties) differ in 16 (0.003%); reads with no MEM >= L: 6585 in the reference, 0 more in this run
+######## t = 10, T = 20
+a.10 scan: 224.67 s wall, 218.92 s user, peak 267896 KB
+read bases 11456712680; fragments 5695576, 829178381 bases: filtration ratio 0.0724 (7.24% of the read bases kept)
+a.10 mem: 396.50 s wall, 397.49 s user, peak 1275264 KB
+b.10 scan: 227.17 s wall, 220.59 s user, peak 268028 KB
+b.10 split: 8.57 s wall
+read bases 11456712680; fragments 11309629, 1420442203 bases: filtration ratio 0.1240 (12.40% of the read bases kept)
+b.10 mem: 688.11 s wall, 690.64 s user, peak 1307496 KB
+reads 575392: 18236 with at most T fragments (no check needed), 3 fall back (0.001%)
+b.10 check: 6.76 s wall
+b.10 fallback mem: 0.76 s wall, 0.04 s user, peak 754596 KB
+-- (a) t = 10 against (c)
+reads 581802, t = 10: the t longest lengths differ in 125200 (21.519%), spans (with ties) differ in 190291 (32.707%); reads with no MEM >= L: 6585 in the reference, 0 more in this run
+-- (b) t = 10 against (c)
+reads 581802, t = 10: the t longest lengths differ in 0 (0.000%), spans (with ties) differ in 0 (0.000%); reads with no MEM >= L: 6585 in the reference, 0 more in this run
+total 4558648
+-rw-rw-r-- 1 travis travis  43540368 Nov  4 03:02 a.1.fa.zst
+-rw-rw-r-- 1 travis travis       385 Nov  4 03:04 a.1.mem.err
+-rw-rw-r-- 1 travis travis   7890689 Nov  4 03:04 a.1.mem.zst
+-rw-rw-r-- 1 travis travis        55 Nov  4 03:02 a.1.scan.err
+-rw-rw-r-- 1 travis travis 321159996 Nov  4 03:42 a.10.fa.zst
+-rw-rw-r-- 1 travis travis       827 Nov  4 03:49 a.10.mem.err
+-rw-rw-r-- 1 travis travis  69380846 Nov  4 03:49 a.10.mem.zst
+-rw-rw-r-- 1 travis travis        56 Nov  4 03:42 a.10.scan.err
+-rw-rw-r-- 1 travis travis 179467184 Nov  4 03:20 a.5.fa.zst
+-rw-rw-r-- 1 travis travis       577 Nov  4 03:24 a.5.mem.err
+-rw-rw-r-- 1 travis travis  35843724 Nov  4 03:24 a.5.mem.zst
+-rw-rw-r-- 1 travis travis        55 Nov  4 03:20 a.5.scan.err
+-rw-rw-r-- 1 travis travis 115630574 Nov  4 03:07 b.1.all.fa.zst
+-rw-rw-r-- 1 travis travis  81046894 Nov  4 03:07 b.1.fa.zst
+-rw-rw-r-- 1 travis travis       338 Nov  4 03:10 b.1.fb.err
+-rw-rw-r-- 1 travis travis   4481944 Nov  4 03:10 b.1.fb.mem.zst
+-rw-rw-r-- 1 travis travis  14231758 Nov  4 03:07 b.1.lambda.tsv
+-rw-rw-r-- 1 travis travis       452 Nov  4 03:09 b.1.mem.err
+-rw-rw-r-- 1 travis travis  15044556 Nov  4 03:09 b.1.mem.zst
+-rw-rw-r-- 1 travis travis  18524675 Nov  4 03:10 b.1.rerun.fq.zst
+-rw-rw-r-- 1 travis travis     45506 Nov  4 03:09 b.1.rerun.txt
+-rw-rw-r-- 1 travis travis        55 Nov  4 03:07 b.1.scan.err
+-rw-rw-r-- 1 travis travis 586480558 Nov  4 03:52 b.10.all.fa.zst
+-rw-rw-r-- 1 travis travis 564134098 Nov  4 03:53 b.10.fa.zst
+-rw-rw-r-- 1 travis travis       332 Nov  4 04:05 b.10.fb.err
+-rw-rw-r-- 1 travis travis      3510 Nov  4 04:05 b.10.fb.mem.zst
+-rw-rw-r-- 1 travis travis  14509022 Nov  4 03:53 b.10.lambda.tsv
+-rw-rw-r-- 1 travis travis      1199 Nov  4 04:04 b.10.mem.err
+-rw-rw-r-- 1 travis travis 134013934 Nov  4 04:04 b.10.mem.zst
+-rw-rw-r-- 1 travis travis     10042 Nov  4 04:05 b.10.rerun.fq.zst
+-rw-rw-r-- 1 travis travis        57 Nov  4 04:05 b.10.rerun.txt
+-rw-rw-r-- 1 travis travis        56 Nov  4 03:52 b.10.scan.err
+-rw-rw-r-- 1 travis travis 347445900 Nov  4 03:28 b.5.all.fa.zst
+-rw-rw-r-- 1 travis travis 321159996 Nov  4 03:28 b.5.fa.zst
+-rw-rw-r-- 1 travis travis       331 Nov  4 03:35 b.5.fb.err
+-rw-rw-r-- 1 travis travis     45363 Nov  4 03:35 b.5.fb.mem.zst
+-rw-rw-r-- 1 travis travis  14656699 Nov  4 03:28 b.5.lambda.tsv
+-rw-rw-r-- 1 travis travis       825 Nov  4 03:35 b.5.mem.err
+-rw-rw-r-- 1 travis travis  69380846 Nov  4 03:35 b.5.mem.zst
+-rw-rw-r-- 1 travis travis    163579 Nov  4 03:35 b.5.rerun.fq.zst
+-rw-rw-r-- 1 travis travis       378 Nov  4 03:35 b.5.rerun.txt
+-rw-rw-r-- 1 travis travis        55 Nov  4 03:28 b.5.scan.err
+drwxrwxr-x 2 travis travis      4096 Nov  3 21:18 bin
+-rw-rw-r-- 1 travis travis    246184 Nov  4 00:14 build.log
+-rwxrwxr-x 1 travis travis      1025 Nov  3 21:25 build.sh
+-rw-rw-r-- 1 travis travis       419 Nov  4 00:56 build2.log
+-rwxrwxr-x 1 travis travis       832 Nov  4 00:15 build2.sh
+-rw-rw-r-- 1 travis travis      7287 Nov  4 02:59 c.err
+-rw-rw-r-- 1 travis travis 670623218 Nov  4 02:59 c.mem.zst
+-rw-rw-r-- 1 travis travis    714313 Nov  4 00:56 kebab-build.err
+-rw-rw-r-- 1 travis travis      1984 Nov  4 00:28 kebab_leak_note.md
+-rw-rw-r-- 1 travis travis     24076 Nov  3 23:50 ropebwt3-build.err
+-rw-rw-r-- 1 travis travis      1027 Nov  4 03:10 run.log
+-rwxrwxr-x 1 travis travis      3157 Nov  4 00:15 run.sh
+-rw-rw-r-- 1 travis travis      2615 Nov  4 04:07 run2.log
+-rwxrwxr-x 1 travis travis      3277 Nov  4 03:14 run2.sh
+-rw-rw-r-- 1 travis travis        55 Nov  4 01:00 scan_all.err
+-rw-rw-r-- 1 travis travis 769505608 Nov  3 23:50 zymo.fmd
+-rw-rw-r-- 1 travis travis 268435496 Nov  4 00:56 zymo.kbb
+/dev/nvme0n1p2  228G  208G  8.4G  97% /
+== done 04:08:06

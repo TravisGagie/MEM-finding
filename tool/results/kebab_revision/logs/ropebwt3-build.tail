@@ -1,0 +1,5 @@
+[M::main_build::8700.728*9.60] merged the partial BWT for 665190420 symbols
+[M::main] Version: 3.10-r285-dirty
+[M::main] CMD: bin/ropebwt3 build -t 12 -m 1g -do zymo.fmd /home/travis/zymo/ref/Bacillus_subtilis.fa.gz /home/travis/zymo/ref/Enterococcus_faecalis.fa.gz /home/travis/zymo/ref/Escherichia_coli.fa.gz /home/travis/zymo/ref/Listeria_monocytogenes.fa.gz /home/travis/zymo/ref/Pseudomonas_aeruginosa.fa.gz /home/travis/zymo/ref/Salmonella_enterica.fa.gz /home/travis/zymo/ref/Staphylococcus_aureus.fa.gz
+[M::main] Real time: 8706.679 sec; CPU: 83508.935 sec; Peak RSS: 9.595 GB
+ropebwt3-build: 8706.68 s wall, 83312.01 s user, peak 10060844 KB

@@ -1,0 +1,17 @@
+== filtration: all pseudo-MEMs (kebab scan -l 40 -s, no top-t) 00:56:10
+read bases 11456712680; fragments 86626626, 6147995346 bases: filtration ratio 0.5366 (53.66% of the read bases kept)
+scan-all: 252.61 s wall, 230.07 s user, peak 267672 KB
+== (c) ropebwt3 on whole reads 01:00:23
+c-mem: 7123.71 s wall, 7141.68 s user, peak 1045512 KB
+######## t = 1, T = 2
+a.1 scan: 220.80 s wall, 216.11 s user, peak 267944 KB
+read bases 11456712680; fragments 575392, 117668933 bases: filtration ratio 0.0103 (1.03% of the read bases kept)
+a.1 mem: 56.30 s wall, 55.56 s user, peak 982412 KB
+b.1 scan: 221.29 s wall, 216.28 s user, peak 267900 KB
+b.1 split: 1.53 s wall
+read bases 11456712680; fragments 1148512, 217171995 bases: filtration ratio 0.0190 (1.90% of the read bases kept)
+b.1 mem: 102.31 s wall, 101.77 s user, peak 1124904 KB
+reads 575392: 3747 with at most T fragments (no check needed), 2413 fall back (0.419%)
+b.1 check: 2.64 s wall
+b.1 fallback mem: 38.75 s wall, 37.96 s user, peak 835196 KB
+-- (a) t = 1 against (c)

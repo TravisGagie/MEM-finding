@@ -1,0 +1,6 @@
+[M::rb3_fmi_load_all::0.661*0.48] loaded the BWT
+[M::worker_pipeline::1.037*0.67] processed 20 sequences
+[M::main] Version: 3.10-r285-dirty
+[M::main] CMD: bin/ropebwt3 mem -l 40 -t 1 zymo.fmd b.5.rerun.fq
+[M::main] Real time: 1.083 sec; CPU: 0.739 sec; Peak RSS: 0.720 GB
+b.5 fallback mem: 1.08 s wall, 0.37 s user, peak 755432 KB
