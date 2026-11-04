@@ -274,7 +274,10 @@ def main():
             nz = [x for x in v if x > 0]
             if not nz:
                 raise Missing(c.miss(f, "uniform", "no reads"))
-            return "{:,} pairs, {:,} of {:,} genera, {}..{} each".format(sum(v), len(nz), len(v), min(nz), max(nz))
+            dr = c.path("uniform/%s.dropped.txt" % r)
+            nd = sum(1 for l in open(dr) if l.strip()) if os.path.exists(dr) else None
+            return "{:,} pairs, {:,} of {:,} genera, {}..{} each; {}".format(sum(v), len(nz), len(v), min(nz), max(nz),
+                "%d dropped (too few reads)" % nd if nd is not None else c.miss(dr, "uniform"))
         sc = lambda k, r=r: c.score(c.path("uniform/%s.score.csv" % r), "uniform")[k]
         rows.append([r, cell(counts, str), cell(lambda: sc("strict"), pct), cell(lambda: sc("acc"), pct)])
     rows.append(["mean", "", cell(lambda: c.mean_score("uniform/{r}.score.csv", "uniform"), pct),

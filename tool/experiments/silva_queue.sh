@@ -95,7 +95,7 @@ step_blam() {     # B_lambda and the lemma's bound (the per-genus tags of the de
 }
 step_grammar() {  # grammar tags: built-in RePair against bigrepair, then the timing protocol with each
   need "$IDX.tagruns"
-  [ -s "$Q/grammar/summary.txt" ] || { stamp "grammar tags"; THREADS=1 "$HERE/experiments/grammar_tags.sh" "$IDX" "$READS/V1_V2_1.fq" "$Q/grammar" -L 30 --csa -F 10; }
+  [ -s "$Q/grammar/summary.txt" ] || { stamp "grammar tags"; THREADS=1 bash "$HERE/experiments/grammar_tags.sh" "$IDX" "$READS/V1_V2_1.fq" "$Q/grammar" -L 30 --csa -F 10; }
   timed "$Q/timing" grammar "$IDX" --preset silva -T "$Q/grammar/g.tag"
   local G="grammar"; [ -s "$Q/grammar/bg.tag" ] && G="grammar bigrepair" || echo "no bigrepair tag array (see $Q/grammar/summary.txt): only the built-in RePair is timed"
   [ -s "$Q/grammar/bg.tag" ] && timed "$Q/timing" bigrepair "$IDX" --preset silva -T "$Q/grammar/bg.tag"
@@ -146,9 +146,9 @@ step_digests() {  # the digested index (App. B): explicit and Elias-Fano RLCSA w
 }
 step_uniform() {  # the uniform-abundance simulation and its accuracy (proportional credit)
   need "$MM/src/sim_16s_reads.py" "$FASTA"
-  KATKA=$IDX EXP=$EXP TRAV_TO_LENGTH=$T2L "$HERE/experiments/uniform_microbemixer.sh" "$MM" "$FASTA" "$TAX" "$D2T" "$Q/uniform/work" ${NREADS:-200000} "$REGIONS"
+  KATKA=$IDX EXP=$EXP TRAV_TO_LENGTH=$T2L bash "$HERE/experiments/uniform_microbemixer.sh" "$MM" "$FASTA" "$TAX" "$D2T" "$Q/uniform/work" ${NREADS:-200000} "$REGIONS"
   cp "$Q/uniform/work/summary.txt" "$Q/uniform/summary.txt"
-  for r in $REGIONS; do cp "$Q/uniform/work/$r/score.csv" "$Q/uniform/$r.score.csv"; cp "$Q/uniform/work/$r/counts.txt" "$Q/uniform/$r.counts.txt"; done
+  for r in $REGIONS; do cp "$Q/uniform/work/$r/score.csv" "$Q/uniform/$r.score.csv"; cp "$Q/uniform/work/$r/counts.txt" "$Q/uniform/$r.counts.txt"; cp "$Q/uniform/work/$r/dropped.txt" "$Q/uniform/$r.dropped.txt"; done
 }
 
 step_collect() {  # the small outputs (all that scripts/silva_tables.py reads), to OUT
