@@ -96,6 +96,10 @@ Posted. Superseded by `tool/`'s `zymo` and `silva` presets. Each repository's RE
   - **`bayesauto` on the grid to 0.99:** ε = 0.5 in 9 of 12 runs and 0.6 in 3, none at the edge, so it is a real fit
     now. The grid is coarse there (0.3, 0.5, 0.6, 0.7). Accuracy 91.42, 94.26, 95.19 at α = 1, 0, −1.
 
+  - **And `aa8294f`, which landed while this was written:** `bayesauto` on the aquatic reads, naive Bayes on the
+    uniform reads, timing with one thread and all threads, and what each SILVA index size counts. All are in
+    `results/silva/README.md`.
+
   **Owner:** the desktop, to update the digest, or the chat session, to read these from the README directly.
 - **Main findings so far** (details and sources in the digest):
   - **Proportional credit wins on Cliffy-style reads** (93.77% strict, aquatic), but much of that is the prior: it
