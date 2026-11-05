@@ -1,0 +1,9 @@
+RLBWT: n=307799425 r=487041, 1.747 MB (1.5 s)
+two-level: 307799425 characters; 15356629 phrases, 40584 distinct (2.9 MB)
+dictionary: 40581 phrases over A/C/G/T, 1 without a reverse complement (the first phrase of S can be one)
+B: 32099 runs, 0.11 MB
+parse BWT: 52830 runs, 0.25 MB
+blocks: 1958632 (7.84 phrases each), 35116 symbols; block BWT 45184 runs
+two-level index built in 8.1 s
+two-level: parse 0.812 MB, blocks 0.842 MB (peak memory of this step 0.15 GB)
+index built in 9.6 s (peak memory 0.15 GB)

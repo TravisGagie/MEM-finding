@@ -1,0 +1,5 @@
+index loaded in 0.0 s
+reads=20 MEMs=106 without MEMs=0 | threads=1 wall 0.14 s, 7200.7 us/read
+timing: 20 reads, 1 threads; mean per-read time 6567.63 us; total time / reads 7200.67 us (total 0.144 s)
+searches=370 char_steps=27877 parse_steps=56087 block_steps=37752 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
+parse steps: entry=3056 inside=48668 end=4363; block attempts=3622, symbol absent=91, failed block steps=746, back-ups=27, exact exits=137
