@@ -865,7 +865,7 @@ cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv   
 
 - **As on the synthetic pangenomes, the expectation holds for block length but search doesn't get faster.** Under the smallest successor, phrases per block fall from 9.52 to 7.15 as the individuals quadruple. Under the most frequent they stay at about 30, and as the patterns see them they rise from 21.5 to 25.5.
 - **The fall on chr19 is mild.** As the patterns see it, the smallest successor's block length barely moves (6.93, 6.95, 6.37).
-- **The most frequent successor takes more steps at every n,** in parse plus block steps, and its extra parse steps are again at the ends of searches (entry and end, in the table's second part). Times are the same within noise, and block steps save about 40% of the time under both rules.
+- **The most frequent successor takes more steps at every n,** in parse plus block steps, and its extra parse steps are again at the ends of searches (entry and end, in the table's second part). Times are the same within noise, and block steps save 30–40% of the time under both rules.
 - **The c129 run:** `c129.S` and `c129.bwt` had been deleted for disk space, so they were rebuilt on the external drive and linked (`~/ext/chr19_c129`; prep and Big-BWT took 33 minutes, the `.tbl` and `.info` match). `c129.rlbwt`, which `index` rewrites from the BWT, kept the same SHA-256, so the rebuilt BWT gives the same RLBWT as the original. The `.lvl` builds at 129 took about 30 minutes each against the estimated 12, reading from that drive. DATA was `~/shortcuts/chr19_scaling/hprc_chr19`, so no link was needed.
 
 ### Cliffy (2026-11-04)
