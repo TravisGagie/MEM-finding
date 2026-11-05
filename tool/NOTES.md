@@ -452,6 +452,90 @@ BIGREPAIR=~/bigrepair/bigrepair tool/experiments/grammar_tags.sh ~/tool/silva/ba
   - **Use `-m 0`.** bigrepair's memory-bounded RePair (`largeb_repair`) is what it uses for any `-m` above 0, and by default with 95% of the machine's RAM, which is also above the 11 GB cap. It stalled on the 64 million runs: more than 30 minutes, killed. It took 30 s on either half of them, and 0.7, 8 and 14 s on the first 1, 4 and 16 million.
   - The script also gives bigrepair a time limit, `BGTIME` (default 8 h). If bigrepair does not finish in time, the rest of the step runs without its tag array, and the tables mark the bigrepair row as not finished.
 
+### SILVA: credit schemes when the sample doesn't match the database (2026-11-05)
+
+On SILVA reads simulated as in Cliffy's paper, proportional credit is the best scheme. The question is whether that holds only because the sample's genera follow the database's composition, and whether a guard helps when they don't. For the desktop, after its current SILVA queue; everything below was tested on a toy only.
+
+**What the existing read sets are.** `katka/silva/run_silva.sh` simulates them with MicrobeMixer from its `data/aquatic.tsv`: the 100 most abundant genera of an MGnify aquatic sample, with MGnify's read counts as shares. Their composition comes from that sample, not from SILVA's N_g (the number of SILVA sequences of genus g). Whether it happens to track N_g, and which α it corresponds to, is what `scripts/silva_alpha_fit.py` measures (below). The fit could not be done here: it needs the reference's N_g, which needs the SILVA FASTA, and arb-silva.de is blocked from the cloud container.
+
+**The read sets with a dial: `ALPHA` in `experiments/uniform_microbemixer.sh`.**
+- Genus g gets exactly k_g read pairs, k_g ∝ N_g^α, for α = 1, 0 and −1, with the same 200,000 pairs per region and the same four regions as the existing experiment.
+- α = 0 is the uniform simulation already prepared, unchanged: MicrobeMixer with shares of 0, plus the drops.
+- Any other α goes through `scripts/simulate_dial.py`. It uses MicrobeMixer's own code to read SILVA, extract each genus's regions (2% mutated) and run ART, with MicrobeMixer's command line. It sets the counts itself, since MicrobeMixer's shares can't give exact counts:
+  - k_g is the largest-remainder rounding of N · N_g^α / Σ N_h^α, in exact rationals, over the genera with at least one region of 250 or more bases (ART makes no reads from a shorter one). The counts sum to N exactly.
+  - ART gets ceil(k_g / long regions) + 1 pairs per amplicon. A genus that falls short is rerun with twice the fold, and if it still falls short it is dropped and the counts are reallocated.
+  - Exactly k_g pairs are then sampled per genus.
+  - The truth file is MicrobeMixer's format, plus `<region>_counts.tsv` (N_g, regions, long regions, k_g).
+- N_g is the same table the scorer uses: the number of sequences of each document of the reference (`Q/nseq.txt`, which the runner writes).
+
+**The new schemes in `scripts/score_silva.py`.** All work from the existing `{doc:count}` listings and the N_g table (`--nseq`); N = Σ N_g and G is the number of genera.
+- **The existing "normalised" scheme (`norm`) is exactly c_g / N_g.** It computes c_g / (2 N_g): the text holds both strands, and so does the count. Each match's credits are normalised to sum to its length, so the factor 2 cancels.
+- **`--mode prior`:** credit ∝ (c_g / N_g) · ((1 − β) N_g / N + β / G), for each value in `--beta` (default 0, 0.1, 0.25, 0.5, 0.75, 1). β = 0 is proportional credit and β = 1 normalised credit, bit for bit.
+- **`--mode mix`:** (1 − β) · proportional + β · even, per match, for the same β. β = 0 and β = 1 are proportional and even credit, bit for bit.
+- **`--mode em`:** credit ∝ (c_g / N_g) · π_g. π starts as the database prior N_g / N and is re-estimated as each genus's share of the total credit over all reads and both mates. Results are reported after each number of iterations in `--em-iters` (default 5 and 20); 0 iterations is proportional credit, bit for bit.
+- Each β or iteration count is its own output line, labelled `prior0.25`, `mix0.5`, `em20`, and so on.
+- `--levels` limits the levels scored (default all six).
+- Every line now ends with `strict_correct=`, the exact count behind `strict=`. Otherwise the existing schemes are unchanged: their outputs on the toy were identical, line for line, to those of the previous version.
+- **Tests: `tests/test_score_schemes.py EXP TAX D2T T2L`** (30 checks, 6 s):
+  - the endpoints, at every level, on 400 random reads full of exact ties;
+  - every scheme against an independent implementation of its formula (exact rationals; floats for EM) on 400 random reads without ties;
+  - hand-worked cases:
+    - one match {A:1, B:3}, with N_A = 1, N_B = 9 and 12 genera. Proportional credit picks B; normalised credit picks A; the prior mixture picks A exactly when β > 9/14, so at 0.75 and 1; the linear mixture never picks A alone.
+    - a read {C, D}, true genus C, among 10 reads that match only C. Proportional credit ties; EM learns that C is common and picks it.
+
+**The runner step and the table.** `silva_queue.sh dial` does three things for α in `ALPHAS` (default "1 0 -1"):
+1. It simulates the reads (α = 0 reuses the `uniform` step's reads, running that step if needed).
+2. It runs `katka find --preset silva` on each mate, untimed, with `THREADS` threads.
+3. It scores every scheme at genus level: lca, one, cliffs, list, norm, freq, prior (6 β), mix (6 β), and em (5 and 20 iterations).
+
+Outputs go to `Q/dial/a<α>/{credit,out}`, with the truth files beside them; `collect` copies everything but the reads and the listings. `scripts/dial_tables.py Q [--latex]` then prints:
+- one summary table: each scheme's strict genus accuracy, the mean over the regions, for each α;
+- one table per α, with each region.
+
+Accuracy is defined as in `silva_tables.py` (strict, the mean of the regions' accuracies), from the exact counts. A missing input is printed as `MISSING:` or `BAD:` with its file, never as a blank.
+
+**Toy test: `tests/dial_toy.sh MICROBEMIXER EXP D2T WORK`** (47 s), on `tests/make_dial_toy.py`'s SILVA:
+- **The toy:** 12 real genus paths, in three groups of four. Sizes range from N_g = 1 to 50. Genera of a group differ in 0.6% of their bases. All four regions' primer sites are present.
+- **The run:** the reference is built and the `dial` step runs with 2,400 pairs per region.
+- **Checks:**
+  - the counts are exactly those asked for, and the α fit recovers 1.002, 0.000 and −0.999;
+  - the endpoints are equal;
+  - at α = −1, normalised credit and EM beat proportional credit.
+- **Results** (strict genus accuracy, mean of the four regions):
+
+  | scheme | α = 1 | α = 0 | α = −1 |
+  |---|---|---|---|
+  | proportional | 98.1% | 87.8% | 79.4% |
+  | normalised | 99.1% | 99.6% | 92.0% |
+  | prior mixture, β = 0.5 | 99.1% | 96.0% | 87.2% |
+  | EM, 20 iterations | 98.1% | 98.8% | 90.1% |
+
+  This is a toy; on it, normalised credit wins even at α = 1. The real data decides.
+
+**For the desktop, after its SILVA queue:**
+
+```
+cd ~/MEM-finding && git pull origin tool && make -C tool
+S=~/MEM-finding/katka/silva
+python3 tool/scripts/silva_alpha_fit.py $S/work/ref/rna/doc_to_traversal.txt ~/tool/silva/queue/nseq.txt \
+    $S/work/reads/aquatic/*/*_seqtax.txt $S/work/reads/sample50/*_seqtax.txt 2>/dev/null
+tool/experiments/silva_queue.sh dial
+tool/experiments/silva_queue.sh collect
+python3 tool/scripts/dial_tables.py tool/results/silva_queue
+```
+
+(If `sample50` has no truth files, the aquatic ones give the composition of the every-50th set too, since it is a uniform sample of them.) The α fit answers what the existing read sets correspond to. Its output line per region goes into `tool/results/silva/README.md` with the tables.
+
+**Time and memory on the desktop** (estimates; the toy runs in under a minute):
+- **The simulation,** for α = 1 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
+- **The searches:** 24 runs of 200,000 reads with 12 threads, a few seconds each.
+- **The scoring** (genus level only):
+  - Six single schemes at about 15 s each.
+  - prior and mix, 6 β each, about 30 s each.
+  - EM, 20 passes of about 3 s, so about 70 s.
+  - So about 4 minutes per region and α, or about 45 minutes in all.
+- **In all:** about 8 MicrobeMixer-sized simulations, plus under an hour.
+
 ### Cliffy (2026-11-04)
 
 Cliffy, github.com/oma219/cliffy at `3763529`, built here with `katka/silva/build_cliffy.sh`'s steps (`cliffy_rz.patch`, `gxx-compat`) under GCC 13 and CMake 3.28. Indexed: 20 synthetic genomes as 20 documents, with `--taxcomp --num-col 7 --two-pass`, with and without `--revcomp`.
