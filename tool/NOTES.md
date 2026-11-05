@@ -612,6 +612,18 @@ The code computes each in a form that gives these endpoints bit for bit. The exi
   - **database (`bayesdb`):** π_g = N_g / N, ε = 10⁻⁶.
 - The flat prior is the reference at α = 0 and the database prior is the reference at α = 1, bit for bit.
 
+*ε fitted to the reads (`bayesauto`).* The ε of the schemes above is not a probability, so it can't be fitted by likelihood: a larger ε raises every read's score. `bayesauto` uses the proper mixture model instead.
+- **Model:** each MEM M of a read comes from the read's genus g with probability 1 − ε, and is noise otherwise. Its likelihood is (1 − ε) c_g(M) / (2 N_g) + ε C(M) / (2N), where C(M) / (2N) is the fraction of all database sequences (both strands) containing it.
+- **The fit:** ε maximises Σ_reads log Σ_g (1/G) Π_M [(1 − ε) c_g / (2 N_g) + ε C / (2N)] over the grid 10⁻⁸, 3·10⁻⁸, …, 0.3, 0.5 (`--eps-grid`). The genera containing none of a read's MEMs enter as one lumped term.
+- **Classification:** reads are then classified by S_g = Σ_M log[(1 − ε) c_g / (2 N_g) + ε C / (2N)], with a flat prior, over the genera of the read's MEMs.
+- **Log:** the fitted ε and the log-likelihood at each grid point are written to the scoring log; `dial_tables.py` prints the ε per α and region.
+- **On the toy:** it fits ε = 0.03 at α = 1, mostly 0.1 at α = 0, and 0.1–0.2 at α = −1, and gets 99.18%, 99.51% and 99.81%. That is against 99.19%, 99.46% and 99.55% for the flat prior with ε = 10⁻³ (the ε chosen on α = 0), and 99.35%, 99.46% and 99.77% for each α's own best ε. So it is as robust as ε = 10⁻³, or better.
+- The prior is not fitted (flat); fitting it as well, by EM, is a possible extension.
+
+*Naive Bayes in the tool.* `find --classify bayes --nseq FILE [--epsilon E]` writes, per read, the name and the top documents (0-based tags, comma-separated if tied; `-` without MEMs), with a flat prior.
+- It accumulates in the same order and with the same arithmetic as `score_silva.py --mode bayes --prior flat`, so the calls are the same read by read: 28,800 calls on the toy (three values of α, two regions, two values of ε), checked by `tests/dial_toy.sh`.
+- It classifies each read on its own. For read pairs, the scorer combines both mates; `find` would need both mates of a pair in one run to do the same.
+
 *Accuracy.* Strict genus accuracy of a scheme on a region is A/R, where A is the number of read pairs whose true genus alone has the largest W_g. In detail:
 - a tie for the largest weight counts as wrong;
 - so does a read pair with no weight at all (no MEM in either mate);
