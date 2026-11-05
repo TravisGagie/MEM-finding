@@ -25,7 +25,10 @@ read pairs per genus, which MicrobeMixer cannot set exactly from shares:
 """
 import argparse, math, os, random, shutil, subprocess, sys
 from fractions import Fraction
-from multiprocessing import Pool
+import multiprocessing
+# fork, so the workers share the regions without pickling and the script is not re-run in them (Python 3.14
+# defaults to forkserver on Linux, which re-imports the main module; this script has no __main__ guard)
+Pool = multiprocessing.get_context("fork").Pool
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 for x in ("--mm", "--fasta", "--tax", "--primers", "--doc-to-traversal", "--nseq", "--name", "--out-dir"):
