@@ -1,0 +1,2 @@
+katka,em5,genus,0.8885,correct=177699,unclassified=0,wrong=22301,reads=200000,ambiguous_truth=0,theirs=0.8885,strict=0.8827,strict_correct=176536
+katka,em20,genus,0.9175,correct=183494,unclassified=0,wrong=16506,reads=200000,ambiguous_truth=0,theirs=0.9175,strict=0.911,strict_correct=182191

@@ -1,0 +1,101 @@
+full_path,read_count,percent_total
+Eukaryota;Archaeplastida;Rhodophyceae;Florideophycidae;Rhodymeniophycidae;Mastocarpus;	5823734	0.0610
+Bacteria;Fusobacteriota;Fusobacteriia;Fusobacteriales;Fusobacteriaceae;Propionigenium;	5605487	0.0587
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Lactobacillaceae;Leuconostoc;	4719220	0.0495
+Bacteria;Desulfobacterota;Desulfobacteria;Desulfobacterales;Desulfosarcinaceae;Candidatus Magnetoglobus;	3279405	0.0344
+Bacteria;Proteobacteria;Alphaproteobacteria;Caulobacterales;Hyphomonadaceae;SWB02;	3183673	0.0334
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Nostocaceae;Calothrix PCC-6303;	2743587	0.0288
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Hypocreales;Clavicipitaceae;Hypocrella;	2504414	0.0262
+Bacteria;Firmicutes;Bacilli;Exiguobacterales;Exiguobacteraceae;Exiguobacterium;	2444524	0.0256
+Bacteria;Planctomycetota;Planctomycetes;Isosphaerales;Isosphaeraceae;Paludisphaera;	1708266	0.0179
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Halovulum;	1672309	0.0175
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Tricholomataceae;Albomagister;	1658800	0.0174
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Rosales;Rousselia;	1644143	0.0172
+Bacteria;Firmicutes;Desulfotomaculia;Desulfotomaculales;Desulfurisporaceae;Desulfurispora;	1624976	0.0170
+Eukaryota;Archaeplastida;Rhodophyceae;Florideophycidae;Rhodymeniophycidae;Hemineura;	1596064	0.0167
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Celastrales;Gymnosporia;	1312203	0.0138
+Eukaryota;Amorphea;Amoebozoa;Schizoplasmodiida;Ceratiomyxella;	1289904	0.0135
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Sphaeropleales;Chlorolobion;	1173498	0.0123
+Eukaryota;Haptophyta;Pavlovophyceae;Diacronema;	1104919	0.0116
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Ulvophyceae;Dasycladales;Batophora;	1099954	0.0115
+Eukaryota;Discoba;Jakobida;Reclinomonas;	1081072	0.0113
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Diatomea;Coscinodiscophytina;Fragilariales;Fragilariforma;	1080179	0.0113
+Bacteria;Deferribacterota;Deferribacteres;Deferribacterales;Deferribacteraceae;Deferribacter;	1067052	0.0112
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Hypocreales;Nectriaceae;Neonectria;	1035293	0.0108
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Nitrosomonadaceae;Ellin6067;	996804	0.0104
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Eurotiomycetes;Eurotiales;Thermoascaceae;Byssochlamys;	975315	0.0102
+Bacteria;Proteobacteria;Gammaproteobacteria;Xanthomonadales;Rhodanobacteraceae;Rhodanobacter;	964108	0.0101
+Eukaryota;Excavata;Metamonada;Parabasalia;Cristamonadea;Coronympha;	961423	0.0101
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Weeksellaceae;Moheibacter;	906066	0.0095
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Sapindales;Litchi;	865671	0.0091
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Streptococcaceae;Streptococcus;	863967	0.0091
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Saccharomycotina;Saccharomycetes;Saccharomycetales;Saccharomycetaceae;Macrorhabdus;	839873	0.0088
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Conthreep;Oligohymenophorea;Astomatia;Njinella;	773160	0.0081
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Orbaceae;Orbus;	768469	0.0081
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Lactobacillaceae;Apilactobacillus;	750948	0.0079
+Bacteria;Proteobacteria;Alphaproteobacteria;Caulobacterales;Hyphomonadaceae;Hyphomonas;	730304	0.0077
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Ulvophyceae;Ulotrichales;Ulothrix;	704176	0.0074
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Croceibacter;	674625	0.0071
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Spirotrichea;Choreotrichia;Xystonella;	638217	0.0067
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Ulvophyceae;Cladophorales;Ernodesmis;	611354	0.0064
+Bacteria;Acidobacteriota;Holophagae;Holophagales;Holophagaceae;Holophaga;	600206	0.0063
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Spongiimicrobium;	581782	0.0061
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Saccharomycotina;Saccharomycetes;Saccharomycetales;Pichiaceae;Saturnispora;	565654	0.0059
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Myrtales;Oenothera;	548313	0.0057
+Archaea;Halobacterota;Halobacteria;Halobacterales;Halomicrobiaceae;Halomarina;	546979	0.0057
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Hypocreales;Nectriaceae;Nectria;	528050	0.0055
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Pleomorphomonadaceae;Pleomorphomonas;	522065	0.0055
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Diatomea;Bacillariophytina;Bacillariophyceae;Reimeria;	475411	0.0050
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Asterales;Helianthus;	471908	0.0049
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Santalales;Dufrenoya;	469878	0.0049
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Incertae Sedis;Elaeis;	462891	0.0049
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Zoopagomycota;Kickxellomycotina;Incertae Sedis;Harpellales;Harpellaceae;Stachylina;	457184	0.0048
+Bacteria;Chloroflexi;Chloroflexia;Thermomicrobiales;Thermomicrobiaceae;Nitrolancea;	451513	0.0047
+Bacteria;Aquificota;Aquificae;Hydrogenothermales;Hydrogenothermaceae;Hydrogenothermus;	431551	0.0045
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Laboulbeniomycetes;Pyxidiophorales;Pyxidiophoraceae;Pyxidiophora;	425551	0.0045
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Celerinatantimonadaceae;Celerinatantimonas;	421022	0.0044
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Saccharomycotina;Saccharomycetes;Saccharomycetales;Trichomonascaceae;Blastobotrys;	413889	0.0043
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Trebouxiophyceae;Prasiolales;Pabia;	405849	0.0043
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Hasllibacter;	403177	0.0042
+Bacteria;Verrucomicrobiota;Verrucomicrobiae;Verrucomicrobiales;Rubritaleaceae;Roseibacillus;	390290	0.0041
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Lecanoromycetes;Lecanorales;Cetradonia;	377677	0.0040
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Brassicales;Conringia;	374168	0.0039
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Nitrosomonadaceae;DSSD61;	340105	0.0036
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Santalales;Agonandra;	329038	0.0034
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Orbiliomycetes;Orbiliales;Orbiliaceae;Dactylellina;	324706	0.0034
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Vadicella;	321701	0.0034
+Archaea;Crenarchaeota;Nitrososphaeria;Nitrosopumilales;Nitrosopumilaceae;Candidatus Nitrosopumilus;	321329	0.0034
+Bacteria;Bacteroidota;Bacteroidia;Sphingobacteriales;Sphingobacteriaceae;Solitalea;	295445	0.0031
+Eukaryota;Amorphea;Amoebozoa;Incertae Sedis;Apusomonadidae;Planomonas;	286584	0.0030
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Asparagales;Narcissus;	282282	0.0030
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Holozoa;Choanozoa;Choanoflagellata;Choanoflagellida;Acanthoecida;Stephanoecidae;Bicosta;	279700	0.0029
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Comamonadaceae;Pseudorhodoferax;	274309	0.0029
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Xanthobacteraceae;Aquabacter;	274219	0.0029
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Diaporthales;Gnomoniaceae;Ophiognomonia;	270839	0.0028
+Bacteria;Proteobacteria;Gammaproteobacteria;Nitrosococcales;Nitrosococcaceae;FS142-36B-02;	262771	0.0028
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Alcaligenaceae;Candidimonas;	261871	0.0027
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Chlamydomonadales;Cephalomonas;	255345	0.0027
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Zingiberales;Maranta;	248981	0.0026
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Celastrales;Euonymus;	245771	0.0026
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Saccharomycotina;Saccharomycetes;Saccharomycetales;Saccharomycetaceae;Vanderwaltozyma;	245315	0.0026
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Eurotiomycetes;Onygenales;Ajellomycetaceae;Helicocarpus;	245068	0.0026
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Maribacter;	242066	0.0025
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Neocallimastigomycota;Incertae Sedis;Neocallimastigomycetes;Neocallimastigales;Neocallimastigaceae;Pecoramyces;	241134	0.0025
+Eukaryota;SAR;Alveolata;Ciliophora;Postciliodesmatophora;Heterotrichea;Stentor;	237273	0.0025
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Erwiniaceae;Izhakiella;	232563	0.0024
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Morganellaceae;Wigglesworthia;	231864	0.0024
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Carnobacteriaceae;Trichococcus;	228710	0.0024
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Savoryellales;Incertae Sedis;Savoryella;	220216	0.0023
+Archaea;Crenarchaeota;Thermoprotei;Sulfolobales;Sulfolobaceae;Stygiolobus;	214103	0.0022
+Bacteria;Proteobacteria;Alphaproteobacteria;Acetobacterales;Acetobacteraceae;Bombella;	211711	0.0022
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Incertae Sedis;Incertae Sedis;Incertae Sedis;Incertae Sedis;Incertae Sedis;Nephridiophaga;	208009	0.0022
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Gomphales;Gomphaceae;Kavinia;	202731	0.0021
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Dasypogonales;Dasypogon;	200589	0.0021
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Conthreep;Oligohymenophorea;Peritrichia;Trichodina;	198650	0.0021
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Malpighiales;Ixonanthes;	197595	0.0021
+Eukaryota;Archaeplastida;Rhodophyceae;Florideophycidae;Rhodymeniophycidae;Euptilota;	189620	0.0020
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Poales;Eriocaulon;	189412	0.0020
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Lecanoromycetes;Peltigerales;Lobaria;	187179	0.0020
+Bacteria;Firmicutes;Bacilli;Erysipelotrichales;Erysipelotrichaceae;Erysipelotrichaceae UCG-009;	185189	0.0019
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Pinguiophyceae;Pinguiochrysidales;Pinguiochrysis;	173546	0.0018
+Eukaryota;SAR;Alveolata;Dinoflagellata;Dinophyceae;Gymnodiniphycidae;Suessiaceae;Ansanella;	170342	0.0018

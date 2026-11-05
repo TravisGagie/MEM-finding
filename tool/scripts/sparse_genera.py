@@ -4,7 +4,8 @@
     sparse_genera.py --mm MM --fasta F --tax T --doc-to-traversal D2T --nseq NSEQ --primers-dir DIR --out OUT.tsv
 
 For each region, with MicrobeMixer's own reading and extraction: how many sequences give the region (nreg) and how
-many of those are at least 250 bases long (nlong), the ones ART can read.  Columns: document (0-based), N_g, path,
+many of those are at least 250 bases long and only A, C, G and T (nlong): ART silently makes no reads from an amplicon
+with an N.  Columns: document (0-based), N_g, path,
 then nreg and nlong per region.
 """
 import argparse, os, sys, random
@@ -19,11 +20,12 @@ genera = [l.split(None, 1)[1].strip() for l in open(a.doc_to_traversal) if l.str
 nseq = [int(l) for l in open(a.nseq) if l.strip()]
 _, _, lineage = parse_taxonomy_file(a.tax, ignore_eukaryotes=False)
 to_seqs = process_reference_file(a.fasta, {g: [] for g in genera}, lineage)
+ACGT = set("ACGT")
 cols = []; REG = [("V1_V2", "V1_V2"), ("V3_V4", "V3_V4"), ("V4_V4", "V4"), ("V4_V5", "V4_V5")]
 for r, p in REG:
     fwd, rev = process_primer_file(os.path.join(a.primers_dir, p + "_primers.txt"))
     regs, _ = extract_variable_regions({g: [] for g in genera}, to_seqs, fwd, rev)
-    cols.append(([len(regs[g]) for g in genera], [sum(1 for s in regs[g] if len(s) >= 250) for g in genera]))
+    cols.append(([len(regs[g]) for g in genera], [sum(1 for s in regs[g] if len(s) >= 250 and set(s) <= ACGT) for g in genera]))
     print(r, sum(1 for x in cols[-1][0] if x), sum(1 for x in cols[-1][1] if x), file=sys.stderr, flush=True)
 with open(a.out, "w") as o:
     o.write("doc\tN_g\tpath\t" + "\t".join("nreg_%s\tnlong_%s" % (r, r) for r, _ in REG) + "\n")

@@ -1,0 +1,101 @@
+full_path,read_count,percent_total
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Roseicyclus;	5823734	0.0610
+Archaea;Euryarchaeota;Methanobacteria;Methanobacteriales;Methanobacteriaceae;Methanobacterium;	5605487	0.0587
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Microcystaceae;Crocosphaera;	4719220	0.0495
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Gallaecimonadaceae;Gallaecimonas;	3279405	0.0344
+Bacteria;Proteobacteria;Gammaproteobacteria;Nitrosococcales;Nitrosococcaceae;MSB-1D1;	3183673	0.0334
+Bacteria;Desulfobacterota;Desulfuromonadia;Geobacterales;Geobacteraceae;Trichlorobacter;	2743587	0.0288
+Bacteria;Firmicutes;Clostridia;Peptostreptococcales-Tissierellales;Thermotaleaceae;Geosporobacter;	2504414	0.0262
+Bacteria;Firmicutes;Clostridia;Oscillospirales;Oscillospiraceae;Oscillospira;	2444524	0.0256
+Bacteria;Verrucomicrobiota;Verrucomicrobiae;Verrucomicrobiales;Rubritaleaceae;Haloferula;	1708266	0.0179
+Bacteria;Verrucomicrobiota;Verrucomicrobiae;Opitutales;Puniceicoccaceae;Verruc-01;	1672309	0.0175
+Bacteria;Bacteroidota;Bacteroidia;Bacteroidales;Dysgonomonadaceae;Candidatus Armantifilum;	1658800	0.0174
+Bacteria;Actinobacteriota;Actinobacteria;Micrococcales;Micrococcaceae;Neomicrococcus;	1644143	0.0172
+Bacteria;Firmicutes;Incertae Sedis;Gelria;	1624976	0.0170
+Bacteria;Proteobacteria;Gammaproteobacteria;Gammaproteobacteria Incertae Sedis;Unknown Family;Acidibacter;	1596064	0.0167
+Bacteria;Proteobacteria;Gammaproteobacteria;Pseudomonadales;Cellvibrionaceae;Cellvibrio;	1312203	0.0138
+Bacteria;Cyanobacteria;Cyanobacteriia;Phormidesmiales;Nodosilineaceae;Halomicronema;	1289904	0.0135
+Bacteria;Actinobacteriota;Actinobacteria;Micrococcales;Dermatophilaceae;Austwickia;	1173498	0.0123
+Bacteria;Firmicutes;Negativicutes;Veillonellales-Selenomonadales;Sporomusaceae;Sporomusa;	1104919	0.0116
+Bacteria;Proteobacteria;Alphaproteobacteria;Tistrellales;Tistrellaceae;Tistrella;	1099954	0.0115
+Bacteria;Bacteroidota;Bacteroidia;Chitinophagales;Chitinophagaceae;Asinibacterium;	1081072	0.0113
+Bacteria;Bacteroidota;Bacteroidia;Chitinophagales;Chitinophagaceae;Sediminibacterium;	1080179	0.0113
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Yersiniaceae;Samsonia;	1067052	0.0112
+Bacteria;Aquificota;Aquificae;Aquificales;Aquificaceae;Hydrogenivirga;	1035293	0.0108
+Bacteria;Actinobacteriota;Coriobacteriia;Coriobacteriales;Atopobiaceae;Atopobium;	996804	0.0104
+Bacteria;Proteobacteria;Gammaproteobacteria;Salinisphaerales;Solimonadaceae;Solimonas;	975315	0.0102
+Eukaryota;Amorphea;Amoebozoa;Discosea;Longamoebia;Centramoebida;Balamuthia;	964108	0.0101
+Bacteria;Cyanobacteria;Cyanobacteriia;Leptolyngbyales;Leptolyngbyaceae;EcFYyy-200;	961423	0.0101
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Nostocaceae;Rivularia PCC-7116;	906066	0.0095
+Bacteria;Actinobacteriota;Actinobacteria;Micrococcales;Sanguibacteraceae;Sanguibacter-Flavimobilis;	865671	0.0091
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Nitrosomonadaceae;MND1;	863967	0.0091
+Bacteria;Firmicutes;Thermoanaerobacteria;Thermoanaerobacterales;Family IV;Mahella;	839873	0.0088
+Bacteria;Spirochaetota;Leptospirae;Leptospirales;Leptospiraceae;Rs-H88 termite group;	773160	0.0081
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Chrysophyceae;Chromulinales;Oikomonas;	768469	0.0081
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Rhizobiales Incertae Sedis;Nordella;	750948	0.0079
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Microcystaceae;Synechocystis CCALA 700;	730304	0.0077
+Bacteria;Actinobacteriota;Actinobacteria;Pseudonocardiales;Pseudonocardiaceae;Haloechinothrix;	704176	0.0074
+Eukaryota;Excavata;Metamonada;Parabasalia;Cristamonadea;Coronympha;	674625	0.0071
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Crocinitomicaceae;Lishizhenia;	638217	0.0067
+Bacteria;Actinobacteriota;Coriobacteriia;Coriobacteriales;Atopobiaceae;Coriobacteriaceae UCG-002;	611354	0.0064
+Bacteria;Planctomycetota;Planctomycetes;Pirellulales;Pirellulaceae;Pir1 lineage;	600206	0.0063
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Conthreep;Phyllopharyngea;Cyrtophoria;Trichopodiella;	581782	0.0061
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Rhodocyclaceae;Z-35;	565654	0.0059
+Archaea;Halobacterota;Methanomicrobia;Methanomicrobiales;Methanoregulaceae;Methanosphaerula;	548313	0.0057
+Bacteria;Proteobacteria;Gammaproteobacteria;Gammaproteobacteria Incertae Sedis;Unknown Family;Wenzhouxiangella;	546979	0.0057
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Xenococcaceae;Xenococcus PCC-7305;	528050	0.0055
+Bacteria;Proteobacteria;Gammaproteobacteria;Salinisphaerales;Solimonadaceae;Oceanococcus;	522065	0.0055
+Eukaryota;Incertae Sedis;Ancyromonadida;Nutomonas;	475411	0.0050
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Marinibacterium;	471908	0.0049
+Bacteria;Proteobacteria;Gammaproteobacteria;Pseudomonadales;Halomonadaceae;Terasakiispira;	469878	0.0049
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Alcaligenaceae;Advenella;	462891	0.0049
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Conthreep;Phyllopharyngea;Cyrtophoria;Brooklynella;	457184	0.0048
+Bacteria;Proteobacteria;Alphaproteobacteria;Acetobacterales;Acetobacteraceae;Commensalibacter;	451513	0.0047
+Bacteria;Synergistota;Synergistia;Synergistales;Synergistaceae;Fretibacterium;	431551	0.0045
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Lelliottia;	425551	0.0045
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Comamonadaceae;Corticibacter;	421022	0.0044
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Blattabacteriaceae;Candidatus Sulcia;	413889	0.0043
+Bacteria;Bacteroidota;Bacteroidia;Chitinophagales;Chitinophagaceae;Parafilimonas;	405849	0.0043
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Nostocaceae;Cylindrospermum PCC-7417;	403177	0.0042
+Bacteria;Firmicutes;Clostridia;Clostridiales;Clostridiaceae;Clostridium sensu stricto 19;	390290	0.0041
+Bacteria;Patescibacteria;Saccharimonadia;Saccharimonadales;Saccharimonadaceae;TM7a;	377677	0.0040
+Bacteria;Bacteroidota;Bacteroidia;Bacteroidales;Marinilabiliaceae;Geofilum;	374168	0.0039
+Bacteria;Acidobacteriota;Holophagae;Holophagales;Holophagaceae;Holophaga;	340105	0.0036
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Oxalobacteraceae;Oxalobacter;	329038	0.0034
+Bacteria;Verrucomicrobiota;Verrucomicrobiae;Verrucomicrobiales;Akkermansiaceae;Akkermansia;	324706	0.0034
+Bacteria;Proteobacteria;Gammaproteobacteria;Arenicellales;Arenicellaceae;Arenicella;	321701	0.0034
+Bacteria;Bacteroidota;Bacteroidia;Sphingobacteriales;Sphingobacteriaceae;Pelobium;	321329	0.0034
+Bacteria;Bacteroidota;Rhodothermia;Balneolales;Balneolaceae;F1-37X2;	295445	0.0031
+Bacteria;Actinobacteriota;Actinobacteria;Frankiales;Geodermatophilaceae;Blastococcus;	286584	0.0030
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Burkholderiales Incertae Sedis;Candidatus Branchiomonas;	282282	0.0030
+Bacteria;Firmicutes;Clostridia;Lachnospirales;Lachnospiraceae;GCA-900066755;	279700	0.0029
+Bacteria;Proteobacteria;Gammaproteobacteria;Pseudomonadales;Nitrincolaceae;Marinobacterium;	274309	0.0029
+Bacteria;Firmicutes;Clostridia;Clostridiales;Clostridiaceae;Candidatus Arthromitus;	274219	0.0029
+Bacteria;Planctomycetota;Planctomycetes;Planctomycetales;Rubinisphaeraceae;Rubinisphaera;	270839	0.0028
+Bacteria;Bacteroidota;Ignavibacteria;Ignavibacteriales;Melioribacteraceae;Melioribacter;	262771	0.0028
+Bacteria;Planctomycetota;Phycisphaerae;Phycisphaerales;Phycisphaeraceae;Z195MB87;	261871	0.0027
+Bacteria;Firmicutes;Clostridia;Lachnospirales;Defluviitaleaceae;Defluviitalea;	255345	0.0027
+Bacteria;Verrucomicrobiota;Kiritimatiellae;Kiritimatiellales;Kiritimatiellaceae;Kiritimatiella;	248981	0.0026
+Bacteria;Planctomycetota;Brocadiae;Brocadiales;Brocadiaceae;Candidatus Anammoxoglobus;	245771	0.0026
+Bacteria;Firmicutes;Clostridia;Lachnospirales;Lachnospiraceae;Lachnotalea;	245315	0.0026
+Archaea;Euryarchaeota;Methanobacteria;Methanobacteriales;Methanothermobacteriaceae;Methanothermobacter;	245068	0.0026
+Bacteria;Firmicutes;Bacilli;Erysipelotrichales;Erysipelotrichaceae;Dubosiella;	242066	0.0025
+Bacteria;Spirochaetota;Spirochaetia;Spirochaetales;Spirochaetaceae;M2PT2-76 termite group;	241134	0.0025
+Bacteria;Deinococcota;Deinococci;Thermales;Thermaceae;Marinithermus;	237273	0.0025
+Bacteria;Bacteroidota;Bacteroidia;Bacteroidales;Tannerellaceae;Tannerella;	232563	0.0024
+Bacteria;Bdellovibrionota;Oligoflexia;Silvanigrellales;Silvanigrellaceae;Candidatus Turbabacter;	231864	0.0024
+Bacteria;Firmicutes;Clostridia;Peptostreptococcales-Tissierellales;Family XI;W5053;	228710	0.0024
+Archaea;Halobacterota;Halobacteria;Halobacterales;Haloferacaceae;Natronococcus;	220216	0.0023
+Bacteria;Proteobacteria;Gammaproteobacteria;Piscirickettsiales;Piscirickettsiaceae;Candidatus Endoecteinascidia;	214103	0.0022
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodospirillales;Rhodospirillaceae;Caenispirillum;	211711	0.0022
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Streptococcaceae;Pilibacter;	208009	0.0022
+Bacteria;Proteobacteria;Alphaproteobacteria;Holosporales;Holosporaceae;Candidatus Gortzia;	202731	0.0021
+Archaea;Halobacterota;Halobacteria;Halobacterales;Haloferacaceae;Halohasta;	200589	0.0021
+Bacteria;Actinobacteriota;Actinobacteria;Euzebyales;Euzebyaceae;Egibacter;	198650	0.0021
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Comamonadaceae;Inhella;	197595	0.0021
+Bacteria;Desulfobacterota;Desulfovibrionia;Desulfovibrionales;Desulfovibrionaceae;Desulfocurvus;	189620	0.0020
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Beijerinckiaceae;FFCH5858;	189412	0.0020
+Bacteria;Actinobacteriota;Actinobacteria;Streptosporangiales;Streptosporangiaceae;Streptosporangium;	187179	0.0020
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Rhizobiaceae;Chelativorans;	185189	0.0019
+Bacteria;Actinobacteriota;Actinobacteria;Pseudonocardiales;Pseudonocardiaceae;Allokutzneria;	173546	0.0018
+Bacteria;Actinobacteriota;Actinobacteria;Streptosporangiales;Streptosporangiaceae;Thermoactinospora;	170342	0.0018

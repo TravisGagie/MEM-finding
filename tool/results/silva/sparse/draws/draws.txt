@@ -1,0 +1,32 @@
+uniform V1_V2: 3002 usable genera, median N_g 21
+uniform V3_V4: 3781 usable genera, median N_g 16
+uniform V4_V4: 5009 usable genera, median N_g 10
+uniform V4_V5: 8135 usable genera, median N_g 4
+uniform.1 V1_V2: N_g median 24, range 1 to 15700
+uniform.1 V3_V4: N_g median 16.5, range 1 to 1367
+uniform.1 V4_V4: N_g median 9.5, range 1 to 7073
+uniform.1 V4_V5: N_g median 4, range 1 to 1367
+uniform.2 V1_V2: N_g median 19, range 1 to 1492
+uniform.2 V3_V4: N_g median 14, range 1 to 486
+uniform.2 V4_V4: N_g median 12.5, range 1 to 665
+uniform.2 V4_V5: N_g median 5, range 1 to 7073
+uniform.3 V1_V2: N_g median 22, range 1 to 1595
+uniform.3 V3_V4: N_g median 20.5, range 1 to 2199
+uniform.3 V4_V4: N_g median 7.5, range 1 to 6416
+uniform.3 V4_V5: N_g median 4, range 1 to 846
+small V1_V2: 151 usable genera, median N_g 2
+small V3_V4: 430 usable genera, median N_g 2
+small V4_V4: 1193 usable genera, median N_g 1
+small V4_V5: 3409 usable genera, median N_g 1
+small.1 V1_V2: N_g median 2, range 1 to 2
+small.1 V3_V4: N_g median 1, range 1 to 2
+small.1 V4_V4: N_g median 1, range 1 to 2
+small.1 V4_V5: N_g median 1, range 1 to 2
+small.2 V1_V2: N_g median 2, range 1 to 2
+small.2 V3_V4: N_g median 2, range 1 to 2
+small.2 V4_V4: N_g median 1, range 1 to 2
+small.2 V4_V5: N_g median 1, range 1 to 2
+small.3 V1_V2: N_g median 2, range 1 to 2
+small.3 V3_V4: N_g median 1, range 1 to 2
+small.3 V4_V4: N_g median 1, range 1 to 2
+small.3 V4_V5: N_g median 1, range 1 to 2

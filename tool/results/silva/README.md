@@ -341,3 +341,38 @@ Genus-level accuracy on the aquatic reads:
 | mean | 88.91 | 87.33 | −1.58 |
 
   The difference changes sign by region, so a single offset, such as "our reads are harder", doesn't describe it. Cliffy's query and our range rule also differ, so this is not a test of the reads alone.
+
+## The sparse dial (2026-11-05)
+
+Is EM's lead on the aquatic reads, and proportional credit's, due to the sample having few genera, or to which genera they are?
+
+**Design** (`scripts/sparse_genera.py`, `sparse_draws.py`, `experiments/aquatic_art_profiles.sh` with `AB=`; `results/silva/sparse/`; sampled reads on the external drive, `moved_2026-11-05/sparse_samples`):
+- The aquatic sample's 100 abundances, in order, go to 100 random genera. Then MicrobeMixer at 6409f5d, MSv1, the same regions, 10 million pairs per region, every 50th pair kept, `find --preset silva`, every scheme.
+- 3 draws, each with its own simulation, of two sets. **uniform:** any usable genus. **small:** usable genera with N_g ≤ 2, which are SILVA's smallest 3,974 genera (the third, with ties).
+- **Deviation from "drawn from all 9,118 genera":** each region gets its own draw from the genera that can supply reads in that region. Of 8,721 uniquely named genera, the usable ones are 3,002 in V1–V2, 3,781 in V3–V4, 5,009 in V4 and 8,135 in V4–V5, and a genus outside these gets no reads. MicrobeMixer would spread such a genus's reads evenly over the others, destroying the table. Requiring all four regions would leave about 3,000 genera, with median N_g 21 against 4 overall. So the genera differ by region. Usable means over 55% of its amplicons are at least 250 bases and only A, C, G and T: ART silently makes no reads from an amplicon with an N.
+- **Median N_g:** aquatic 111.5; the uniform draws range from 2 to 22 by region, the smallest being V4–V5; small 1 to 2.
+- **Limit of the small set:** only 151 such genera are usable in V1–V2, so its draws share about 70 of their 100 genera there.
+
+Strict genus accuracy, mean of the four regions, mean of the draws (range). No read is from a genus with an ambiguous name, so that exclusion changes nothing here:
+
+| scheme | aquatic | uniform | small |
+|---|---:|---:|---:|
+| range | 86.68 (86.45–86.95) | 84.72 (83.36–86.23) | 84.40 (82.98–86.77) |
+| one label per MEM | 92.01 (91.81–92.17) | 86.99 (85.84–88.40) | 80.46 (79.36–82.09) |
+| sample (simulated cliffs) | 90.34 (90.22–90.46) | 88.07 (86.64–89.07) | 86.73 (85.08–89.45) |
+| even | 90.20 (90.06–90.28) | 88.05 (86.50–89.20) | 86.71 (84.80–89.38) |
+| normalised | 92.66 (92.52–92.76) | 92.10 (91.23–92.84) | 91.22 (89.65–93.59) |
+| proportional | 93.59 (93.44–93.77) | 88.98 (88.05–90.23) | 83.78 (82.02–86.64) |
+| prior mixture, β = 0.5 | 93.47 (93.28–93.63) | 91.22 (90.18–91.84) | 89.84 (88.32–92.70) |
+| EM, 20 iterations | 96.32 (96.13–96.43) | 96.80 (96.47–97.15) | 95.40 (94.42–96.64) |
+| naive Bayes, flat, ε = 10⁻⁶ | 94.57 (94.41–94.70) | 94.69 (93.75–95.67) | 94.54 (92.70–95.68) |
+| `bayesauto` | 93.95 (93.74–94.12) | 94.45 (93.67–95.26) | 94.94 (93.40–96.05) |
+
+The aquatic column is the 3 MSv1 repeats, so its range is simulation noise alone. The other two also vary by which genera were drawn, so their ranges are wider. Other schemes and each region are in `sparse_tables.txt`.
+
+- **EM's lead comes from sparsity, not from the aquatic genera:** it stays at 95.4 to 96.8 on genera of any size. On the dial, with thousands of genera, it was 90.2 to 92.3.
+- **Proportional credit's advantage on the aquatic reads comes from those genera being large:** it falls from 93.59 to 88.98 to 83.78 as N_g falls, with the same abundances and number of genera.
+- **Normalised credit and naive Bayes are stable:** normalised falls by 1.4 points across the sets, and flat naive Bayes stays at 94.5 to 94.7.
+- **Range falls by 2 to 2.3 points** from the aquatic genera to random ones.
+- **`bayesauto`:** ε is 0.5 or 0.6 in all 24 runs, none at the edge.
+- **Regions vary a lot between draws,** especially V4 and V4–V5 (range in V4, small: 74.89 to 87.45), because a few genera get most of the reads and each draw's top genera differ.

@@ -1,0 +1,6 @@
+katka,mix0,genus,0.9124,correct=182486,unclassified=11,wrong=17503,reads=200000,ambiguous_truth=0,theirs=0.9125,strict=0.9123,strict_correct=182452
+katka,mix0.1,genus,0.914,correct=182806,unclassified=11,wrong=17183,reads=200000,ambiguous_truth=0,theirs=0.9141,strict=0.9139,strict_correct=182771
+katka,mix0.25,genus,0.916,correct=183196,unclassified=11,wrong=16793,reads=200000,ambiguous_truth=0,theirs=0.916,strict=0.9158,strict_correct=183162
+katka,mix0.5,genus,0.9171,correct=183421,unclassified=11,wrong=16568,reads=200000,ambiguous_truth=0,theirs=0.9172,strict=0.9169,strict_correct=183387
+katka,mix0.75,genus,0.9146,correct=182925,unclassified=11,wrong=17064,reads=200000,ambiguous_truth=0,theirs=0.9147,strict=0.9144,strict_correct=182890
+katka,mix1,genus,0.9121,correct=182422,unclassified=11,wrong=17567,reads=200000,ambiguous_truth=0,theirs=0.9122,strict=0.8936,strict_correct=178721
