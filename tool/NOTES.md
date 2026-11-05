@@ -667,7 +667,7 @@ The question: with the smallest successor, every new genome can only add success
   - 2,013 variant sites;
   - diversity 4.6·10⁻⁴ per base (humans: 6·10⁻⁴ to 10⁻³, with SVs);
   - singletons are 44% of the segregating sites;
-  - each new haplotype adds about 26 new variants at N ≈ 16, 5 at 64, 1.8 at 256 and 0.8 at 1,024, about one of them private.
+  - each new haplotype adds about 24 new variants at N ≈ 16, 2.9 at 64, 2.1 at 256 and 0.9 at 1,024, and has about one private variant.
 - It takes 2 s.
 
 **The measurement: `experiments/block_scaling.sh DATA WORK "n1 n2 ..." [L]`.**
@@ -697,13 +697,13 @@ The question: with the smallest successor, every new genome can only add success
 | 1024 | frequent | 169.9 | 99.4% | 157.3 | 0.0093 | 0.0004 | 0.13 |
 
 - **The expectation holds for block length.**
-  - Under the smallest successor, the mean block length falls steadily, from 63 phrases at N = 16 to 16 at N = 1024, roughly halving with every fourfold increase in N. As the patterns see it, it falls from 52 to 16 phrases per block step.
+  - Under the smallest successor, the mean block length falls steadily, from 63 phrases at N = 16 to 16 at N = 1024, by a factor of 0.6 to 0.7 with every fourfold increase in N. As the patterns see it, it falls from 52 to 16 phrases per block step.
   - Under the most frequent successor it stays flat, 185 to 170 phrases per block, and as the patterns see it, it even rises, from 117 to 157.
 - **It doesn't make the search faster on these data.**
   - The most frequent successor takes 2.4 to 9 times as many parse steps per pattern character, so its parse and block steps together exceed the smallest successor's at every N: 0.0558 against 0.0244 at 16, and 0.0097 against 0.0052 at 1024.
-  - These are the extra parse steps at the ends of matches and when backing up that the paper's §4 mentions. A block whose phrases follow the frequent path is crossed in one step, but wherever the pattern leaves the frequent path the search falls back to parse steps.
+  - These are probably the extra parse steps at the ends of matches and when backing up that the paper's §4 mentions for the earlier implementation; the counters don't separate them, so this is not checked.
   - The search times are the same within noise (0.10–0.18 s), because character steps dominate and are the same under both rules (0.0029–0.0245 per character).
-  - So block length as genomes are added is not what limits two-level search here. Under the smallest successor, the count of parse plus block steps per character even falls as N grows, since longer matches cross more phrases in one block step.
+  - So block length as genomes are added is not what limits two-level search here. Under the smallest successor, parse plus block steps per character even fall as N grows (0.0244 at 16, 0.0052 at 1024).
 - **Caveat:** the synthetic haplotypes are short (300 kb), have no repeats or structural variants, and their patterns are held-out haplotypes from the same population. Real chr19 decides.
 
 **For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
