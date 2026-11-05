@@ -302,7 +302,7 @@ Range by region, with Cliffy's scoring, mean of the repeats:
 | V4_V4 | 85.55 | 85.89 |
 | V4_V5 | 86.74 | 85.11 |
 
-- **The profile doesn't explain the gap to Cliffy's published LCA accuracy.** `silva.tex` line 256 gives 87.5 to 90.2% for Cliffy's own reads (read from their figures; no table of these values is in the paper's text). Range with Cliffy's scoring is 85.55 to 89.34 under MSv1 and 85.11 to 89.03 under MSv3. So MSv3 is slightly further away on average, not closer.
+- **The profile doesn't explain the gap to Cliffy's published LCA accuracy.** `silva.tex` line 256 gives 87.5 to 90.2% for Cliffy's own reads. Those values aren't in the paper's text as extracted here, so they probably come from its figures or supplement, and weren't re-traced. Range with Cliffy's scoring is 85.55 to 89.34 under MSv1 and 85.11 to 89.03 under MSv3. So MSv3 is slightly further away on average, not closer.
 - **The profile's effect is small:** range is lower under MSv3 by 0.67 points strict and 0.47 with Cliffy's scoring. Every scheme is lower under MSv3, by 0.2 to 0.8 points, and the strict means' ranges don't overlap for most schemes. By region it isn't uniform: V4_V5 falls by 1.6, while V4_V4 rises by 0.3.
 - **Repeats vary by about ±0.15 to 0.25 points.** Repeat MSv1.1 is the best of the three under nearly every scheme, so the numbers used so far (93.77, 94.70, 86.95) are at the top of their ranges; 93.59, 94.57 and 86.68 are the better estimates.
 - **Range here isn't Cliffy itself:** it is our MEMs at L = 30 with an LCA rule, not Cliffy's own query.
