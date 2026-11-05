@@ -1,0 +1,4 @@
+index loaded in 0.2 s
+reads=200000 MEMs=2024111 without MEMs=0 | threads=1 wall 14.96 s, 74.8 us/read
+timing: 200000 reads, 1 threads; mean per-read time 72.55 us; total time / reads 74.79 us (total 14.959 s)
+wall 15.2 s, peak 0.39 GB, exit 0

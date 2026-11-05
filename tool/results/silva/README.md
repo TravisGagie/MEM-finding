@@ -85,3 +85,58 @@ Strict genus accuracy:
 
 The uniform reads have fewer reads per genus and many more rare genera than the aquatic ones, so the two columns are
 not the same difficulty. All the schemes lose accuracy; the comparison that matters is between schemes within a column.
+
+## The SILVA queue (items 1, 3, 4, 5; 2026-11-05, a22b892 + the queue's commits)
+
+`experiments/silva_queue.sh timing blam grammar digests`, on an otherwise idle machine, each timed run in an 11 GB
+cgroup, one thread pinned to CPU 9, then 12 threads. `tables.txt` and `tables.tex` are `silva_tables.py`'s output, from
+`../silva_queue/`. All outputs with 12 threads are byte-identical to those with one, and the grammar tags' and the
+Elias-Fano and sampled digests' answers are byte-identical to the default's.
+
+**Rescoring item 2.** `score_silva.py`'s "exact strict count" (1edd8ee) adds a column, `strict_correct`, and doesn't
+change the definition. All 144 rows of item 2's scores are identical to before, apart from that column. No number changed.
+
+**Time, space and accuracy** (genus, 200,000 pairs per region; 53 µs is the mean per-read time with one thread):
+
+| classifier | space (GB) | µs per read | total / reads (µs) | reads/s, 12 threads | strict | ties correct |
+|---|---|---|---|---|---|---|
+| long MEMs, proportional credit | 1.87 | 52.3 | 53.9 | 145,500 | 93.77% | 93.79% |
+| … grammar tags, built-in RePair | 1.17 | 53.2 | 54.6 | 142,800 | 93.77% | 93.79% |
+| … grammar tags, bigrepair | 1.23 | 56.0 | 57.1 | 137,200 | 93.77% | 93.79% |
+| minimizer digests, L = 30 | 0.59 | 31.5 | 33.1 | 217,600 | 92.48% | 92.51% |
+
+The default's 1.87 GB includes the tag array's RMQ (0.31 GB), which counting does not use; the paper's 1.44 GB did not
+have it as a separate file.
+
+**Run-to-run noise.** The timing step (00:59) gave 52.3 µs for the default, while the same configuration in the digests
+step (02:29, `undigested.L30`) gave 45.9 µs. The two runs give identical outputs, so a 14% difference between idle-machine
+runs is a measure of the noise. Compare times here only with care; repeats would be needed for a fine comparison.
+
+**Grammar-compressed tags (item 4):**
+
+| tag array | file (MB) | build | peak |
+|---|---|---|---|
+| plain (+ RMQ) | 836.4 (+ 313.9) | | |
+| built-in RePair | 449.7 | 1,139 s | 9.33 GB |
+| bigrepair | 509.5 | 275 s | 6.74 GB |
+
+The built-in RePair's tag array is smaller, at about four times the build time; bigrepair's grammar is .R 456.7 MB and
+.C 9.2 MB.
+
+**The digested index (item 5):** build: `prep` 37 s, Big-BWT 128 s (2.11 GB), `index --csa --efcsa --tags` 81 s (1.43 GB),
+sampled tags 84 s (2.26 GB). Strict accuracy, then the mean µs per read with one thread:
+
+| | space | L = 15 | L = 20 | L = 30 | L = 40 | L = 50 |
+|---|---|---|---|---|---|---|
+| digests: strict accuracy | | 92.47% | 92.47% | 92.48% | 92.36% | 92.05% |
+| explicit RLCSA, tags | 0.59 GB | 54.8 | 46.8 | 31.5 | 22.7 | 18.7 |
+| Elias-Fano RLCSA, tags | 0.38 GB | 88.5 | 82.0 | 65.3 | 53.3 | 46.0 |
+| RLBWT, tags sampled with s = 4 | 0.20 GB | | | 232.7 | 141.2 | 103.8 |
+| undigested: strict accuracy | | 93.74% | 93.77% | 93.77% | 93.48% | |
+| default configuration | 1.87 GB | 65.6 | 56.9 | 45.9 | 37.7 | |
+
+**The aquatic reads' composition (`silva_alpha_fit.py`, `alpha_fit.txt`).** Over the about 100 genera with reads, the
+fitted α of k_g ∝ N_g^α is 0.056, with Spearman's correlation about −0.04: within those genera, read counts do not follow
+SILVA's sequence counts. But the genera themselves are well represented: they hold 14.7% of SILVA's sequences, with a
+median rank by N_g of 620 of 9,118, and 12 in the top 1%. This qualifies the reading of the uniform simulation above:
+the aquatic reads favour well-represented genera through which genera are present, not through how many reads each gets.

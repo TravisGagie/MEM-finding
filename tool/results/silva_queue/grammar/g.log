@@ -1,0 +1,5 @@
+RLBWT: n=1173771557 r=68324430, 155.265 MB (7.5 s)
+grammar: 21436701 rules, top level 38893154 symbols, 242.181 MB (tags as an array: 628.865 MB)
+tag array: n=1173771557, 359351512 tag runs, 763.628 MB (1131.6 s; peak memory so far 9.33 GB)
+index built in 1139.4 s (peak memory 9.33 GB)
+wall 1139.4 s, peak 9.33 GB, exit 0

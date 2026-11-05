@@ -1,0 +1,5 @@
+preset silva (short reads, many taxa): -L 30 --count --csa -F 10
+index loaded in 0.7 s
+reads=200000 MEMs=1004719 without MEMs=0 | threads=1 wall 10.16 s, 50.8 us/read
+timing: 200000 reads, 1 threads; mean per-read time 49.45 us; total time / reads 50.80 us (total 10.159 s)
+wall 11.0 s, peak 1.20 GB, exit 0

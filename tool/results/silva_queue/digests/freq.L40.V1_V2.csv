@@ -1,0 +1,6 @@
+katka,freq,genus,0.941,correct=188192,unclassified=0,wrong=11808,reads=200000,ambiguous_truth=0,theirs=0.941,strict=0.94,strict_correct=187997
+katka,freq,family,0.9805,correct=196101,unclassified=0,wrong=3899,reads=200000,ambiguous_truth=0,theirs=0.9805,strict=0.9805,strict_correct=196100
+katka,freq,order,0.9852,correct=197045,unclassified=0,wrong=2955,reads=200000,ambiguous_truth=0,theirs=0.9852,strict=0.9852,strict_correct=197044
+katka,freq,class,0.989,correct=197803,unclassified=0,wrong=2197,reads=200000,ambiguous_truth=0,theirs=0.989,strict=0.989,strict_correct=197803
+katka,freq,phylum,0.9914,correct=198284,unclassified=0,wrong=1716,reads=200000,ambiguous_truth=0,theirs=0.9914,strict=0.9914,strict_correct=198284
+katka,freq,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=200000

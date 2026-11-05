@@ -1,0 +1,6 @@
+default	1870808832	/home/travis/tool/silva/bac.rlbwt /home/travis/tool/silva/bac.csa /home/travis/tool/silva/bac.tag /home/travis/tool/silva/bac.tag.rmq
+grammar	1170231028	/home/travis/tool/silva/bac.rlbwt /home/travis/tool/silva/bac.csa /home/travis/tool/silva/queue/grammar/g.tag
+bigrepair	1230044716	/home/travis/tool/silva/bac.rlbwt /home/travis/tool/silva/bac.csa /home/travis/tool/silva/queue/grammar/bg.tag
+digests.csa	594629639	/home/travis/tool/silva/dg.rlbwt /home/travis/tool/silva/dg.csa /home/travis/tool/silva/dg.tag /home/travis/tool/silva/dg.map
+digests.efcsa	383055267	/home/travis/tool/silva/dg.rlbwt /home/travis/tool/silva/dg.efcsa /home/travis/tool/silva/dg.tag /home/travis/tool/silva/dg.map
+digests.rlbwt.s4	201797094	/home/travis/tool/silva/dg.rlbwt /home/travis/tool/silva/dg.s4.tag /home/travis/tool/silva/dg.map

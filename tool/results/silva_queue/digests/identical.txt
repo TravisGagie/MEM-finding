@@ -1,0 +1,1 @@
+yes, the outputs of all 64 of their runs were byte-identical to the explicit RLCSA's

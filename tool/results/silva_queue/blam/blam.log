@@ -1,0 +1,11 @@
+RLBWT: n=1173771557 r=68324430, 155.265 MB (7.5 s)
+tag runs: 359351512 runs (379.2 s)
+tag runs rho = 359351512; r = 68324430, sigma = 6, d = 9118 segments
+  lambda = 0: B_lambda = 359351506, bound 427694179
+  lambda = 10: B_lambda = 352215328, bound 1103984721
+  lambda = 30: B_lambda = 243877805, bound 2362500638
+  lambda = 100: B_lambda = 107860112, bound 7010469985
+  lambda = 1000: B_lambda = 372456, bound 68411387129
+tag array: n=1173771557, 359351512 tag runs, 836.419 MB (396.2 s; peak memory so far 5.35 GB)
+index built in 404.0 s (peak memory 5.35 GB)
+wall 404.1 s, peak 5.35 GB, exit 0

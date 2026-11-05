@@ -1,0 +1,47 @@
+==== Command line:
+ /home/travis/bigrepair/ctph/newscanNT.x /home/travis/tool/silva/queue/grammar/tags.int32 -w 10 -p 100 -b4 -c
+Windows size: 10
+Stop word modulus: 100
+Total input symbols: 359351512
+Found 2171311 distinct words
+Parsing took: 27 wall clock seconds
+starting... second pass
+Sum of lenghts of dictionary words: 259175866
+Total number of words: 3580980
+Writing plain dictionary and len file
+Dictionary construction took: 13 wall clock seconds
+Generating remapped parse file
+Remapping parse file took: 4 wall clock seconds
+==== Elapsed time: 44 wall clock seconds
+malloc_count ### exiting, peak: 1190534.14, current: 4.00 (KBs)
+==== Command line:
+ /home/travis/bigrepair/iprocdic /home/travis/tool/silva/queue/grammar/tags.int32.dicz
+2171311 strings
+=== Preprocessing completed!
+==== Command line:
+ /home/travis/bigrepair/repair/irepair /home/travis/tool/silva/queue/grammar/tags.int32.dicz.int
+IRePair succeeded
+   Original ints: 261347177
+   Number of rules: 17654548
+   Final sequence length: 43426597
+   Estimated output size (bytes): 241103074
+   Compression ratio: 23.81%
+==== Command line:
+ /home/travis/bigrepair/repair/irepair /home/travis/tool/silva/queue/grammar/tags.int32.parse
+IRePair succeeded
+   Original ints: 3580980
+   Number of rules: 351679
+   Final sequence length: 2307466
+   Estimated output size (bytes): 7400569
+   Compression ratio: 75.15%
+==== Command line:
+ /home/travis/bigrepair/ipostproc /home/travis/tool/silva/queue/grammar/tags.int32
+Size of the original input alphabet: 9118
+Prefix-Free + Repair succeeded
+  Original file size: 359351512 (integers)
+  Size of the original input alphabet: 9118
+  Number of rules: 57090202
+  Final sequence length: 2307466 (integers)
+  Estimated output size (bytes): 207314972
+  Compression ratio: 32.97%
+=== postprocessing completed!

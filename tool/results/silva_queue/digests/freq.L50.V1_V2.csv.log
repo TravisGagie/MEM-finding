@@ -1,0 +1,13 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+katka,freq,genus,0.9396,correct=187922,unclassified=1,wrong=12077,reads=200000,ambiguous_truth=0,theirs=0.9396,strict=0.9381,strict_correct=187625
+katka,freq,family,0.9809,correct=196177,unclassified=1,wrong=3822,reads=200000,ambiguous_truth=0,theirs=0.9809,strict=0.9808,strict_correct=196162
+katka,freq,order,0.9857,correct=197130,unclassified=1,wrong=2869,reads=200000,ambiguous_truth=0,theirs=0.9857,strict=0.9856,strict_correct=197124
+katka,freq,class,0.99,correct=198001,unclassified=1,wrong=1998,reads=200000,ambiguous_truth=0,theirs=0.99,strict=0.99,strict_correct=197995
+katka,freq,phylum,0.9921,correct=198429,unclassified=1,wrong=1570,reads=200000,ambiguous_truth=0,theirs=0.9921,strict=0.9921,strict_correct=198421
+katka,freq,domain,1.0,correct=199999,unclassified=1,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=199999

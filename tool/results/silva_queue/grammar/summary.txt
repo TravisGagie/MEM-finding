@@ -1,0 +1,15 @@
+grammar tags on /home/travis/tool/silva/bac; reads /home/travis/rz/MEM-finding/katka/silva/work/compare/reads_every50/V1_V2_1.fq; find -L 30 --csa -F 10; katka 98beab5 tool/results/blam: B_lambda on Zymo (per-species tag
+tag runs: 359351512 runs over 1173771557 rows
+1. built-in RePair: tag array: n=1173771557, 359351512 tag runs, 763.628 MB; wall 1139.4 s, peak 9.33 GB
+2. bigrepair -i: .R 456721620 bytes, .C 9229864 bytes; wall 205.9 s, peak 4.08 GB
+3. from bigrepair's grammar: tag array: n=1173771557, 359351512 tag runs, 823.442 MB; wall 69.5 s, peak 6.74 GB
+   tag array files: plain 836418793 bytes (+ RMQ 313893632), built-in RePair 449734621, bigrepair 509548309
+4. find -c: outputs byte-identical with the tag arrays (plain g bg): yes
+     plain: timing: 200000 reads, 1 threads; mean per-read time 42.98 us; total time / reads 44.65 us (total 8.929 s); wall 10.9 s, peak 1.58 GB
+     g: timing: 200000 reads, 1 threads; mean per-read time 50.21 us; total time / reads 51.41 us (total 10.283 s); wall 11.2 s, peak 1.20 GB
+     bg: timing: 200000 reads, 1 threads; mean per-read time 53.98 us; total time / reads 55.20 us (total 11.040 s); wall 11.9 s, peak 1.26 GB
+4. find -l: outputs byte-identical with the tag arrays (plain g bg): yes
+     plain: timing: 200000 reads, 1 threads; mean per-read time 44.72 us; total time / reads 45.84 us (total 9.168 s); wall 10.6 s, peak 1.90 GB
+     g: timing: 200000 reads, 1 threads; mean per-read time 54.03 us; total time / reads 55.18 us (total 11.036 s); wall 12.1 s, peak 1.51 GB
+     bg: timing: 200000 reads, 1 threads; mean per-read time 58.06 us; total time / reads 59.23 us (total 11.845 s); wall 12.8 s, peak 1.57 GB
+done

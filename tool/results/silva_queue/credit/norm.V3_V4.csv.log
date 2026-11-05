@@ -5,9 +5,9 @@
 [0;32m[docprof::log][00m finished truthset initialization.
 [0;32m[docprof::log][00m finished loading node lists.
 [0;32m[docprof::log][00m finished loading 200000 read pairs
-katka,norm,genus,0.9336,correct=186728,unclassified=0,wrong=13272,reads=200000,ambiguous_truth=0,theirs=0.9336,strict=0.9336
-katka,norm,family,0.9937,correct=198730,unclassified=0,wrong=1270,reads=200000,ambiguous_truth=0,theirs=0.9937,strict=0.9937
-katka,norm,order,0.9969,correct=199382,unclassified=0,wrong=618,reads=200000,ambiguous_truth=0,theirs=0.9969,strict=0.9969
-katka,norm,class,0.9994,correct=199878,unclassified=0,wrong=122,reads=200000,ambiguous_truth=0,theirs=0.9994,strict=0.9994
-katka,norm,phylum,0.9992,correct=199847,unclassified=0,wrong=153,reads=200000,ambiguous_truth=0,theirs=0.9992,strict=0.9992
-katka,norm,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0
+katka,norm,genus,0.9336,correct=186728,unclassified=0,wrong=13272,reads=200000,ambiguous_truth=0,theirs=0.9336,strict=0.9336,strict_correct=186727
+katka,norm,family,0.9937,correct=198730,unclassified=0,wrong=1270,reads=200000,ambiguous_truth=0,theirs=0.9937,strict=0.9937,strict_correct=198730
+katka,norm,order,0.9969,correct=199382,unclassified=0,wrong=618,reads=200000,ambiguous_truth=0,theirs=0.9969,strict=0.9969,strict_correct=199382
+katka,norm,class,0.9994,correct=199878,unclassified=0,wrong=122,reads=200000,ambiguous_truth=0,theirs=0.9994,strict=0.9994,strict_correct=199878
+katka,norm,phylum,0.9992,correct=199847,unclassified=0,wrong=153,reads=200000,ambiguous_truth=0,theirs=0.9992,strict=0.9992,strict_correct=199847
+katka,norm,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=200000

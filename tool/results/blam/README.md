@@ -37,3 +37,21 @@ Time and memory: 45,571 s (12.7 h), peak 10.77 GB.
 **Check of the tag runs:** the `zy.sp.tagruns` this run computed from the BWT is **byte-identical** to the index's,
 which was converted from KATKA's laptop file (`results/zymo/`). So the converted file is confirmed in full, not only
 on the 35 M rows of `check_tagruns`. The run count also equals the 448,723,822 of the laptop's log.
+
+## SILVA (per-genus tags), 2026-11-05
+
+`silva_queue.sh blam` (`index --tags --tag-lcp 0,10,30,100,1000 bac`; log in `../silva_queue/blam/blam.log`): 404 s, peak
+5.35 GB, on the internal disk with the text mapped.
+
+ρ = 359,351,512, r = 68,324,430, σ = 6, d = 9,118.
+
+| λ | B_λ | bound | ρ / bound |
+|---|---|---|---|
+| 0 | 359,351,506 | 427,694,179 | 0.840 |
+| 10 | 352,215,328 | 1,103,984,721 | 0.326 |
+| 30 | 243,877,805 | 2,362,500,638 | 0.152 |
+| 100 | 107,860,112 | 7,010,469,985 | 0.051 |
+| 1000 | 372,456 | 68,411,387,129 | 0.005 |
+
+The bound holds at every λ. Unlike Zymo, where 14.6% of tag boundaries still share more than 1,000 characters, almost
+none do on SILVA (its sequences are about 1,500 bases long), while 68% share more than 30.

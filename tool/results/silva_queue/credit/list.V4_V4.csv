@@ -1,6 +1,6 @@
-katka,list,genus,0.9033,correct=180660,unclassified=1,wrong=19339,reads=200000,ambiguous_truth=0,theirs=0.9033,strict=0.8779
-katka,list,family,0.993,correct=198595,unclassified=0,wrong=1405,reads=200000,ambiguous_truth=0,theirs=0.993,strict=0.9928
-katka,list,order,0.9964,correct=199288,unclassified=0,wrong=712,reads=200000,ambiguous_truth=0,theirs=0.9964,strict=0.9963
-katka,list,class,0.9994,correct=199883,unclassified=0,wrong=117,reads=200000,ambiguous_truth=0,theirs=0.9994,strict=0.9994
-katka,list,phylum,0.9996,correct=199915,unclassified=0,wrong=85,reads=200000,ambiguous_truth=0,theirs=0.9996,strict=0.9996
-katka,list,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0
+katka,list,genus,0.9033,correct=180660,unclassified=1,wrong=19339,reads=200000,ambiguous_truth=0,theirs=0.9033,strict=0.8779,strict_correct=175586
+katka,list,family,0.993,correct=198595,unclassified=0,wrong=1405,reads=200000,ambiguous_truth=0,theirs=0.993,strict=0.9928,strict_correct=198556
+katka,list,order,0.9964,correct=199288,unclassified=0,wrong=712,reads=200000,ambiguous_truth=0,theirs=0.9964,strict=0.9963,strict_correct=199270
+katka,list,class,0.9994,correct=199883,unclassified=0,wrong=117,reads=200000,ambiguous_truth=0,theirs=0.9994,strict=0.9994,strict_correct=199882
+katka,list,phylum,0.9996,correct=199915,unclassified=0,wrong=85,reads=200000,ambiguous_truth=0,theirs=0.9996,strict=0.9996,strict_correct=199915
+katka,list,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=200000

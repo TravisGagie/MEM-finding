@@ -1,0 +1,79 @@
+SILVA tables from /home/travis/rz/MEM-finding/tool/results/silva_queue (regions V1_V2, V3_V4, V4_V4, V4_V5)
+
+== tab:credit, SILVA (genus, strict, L = 30; mean over the regions, then each region)
+  (the Zymo column comes from the Zymo runs, not from this queue)
+  credit scheme                             mean   V1_V2   V3_V4   V4_V4   V4_V5
+  --------------------------------------  ------  ------  ------  ------  ------
+  range (Cliffy's LCA query)              86.95%  89.04%  87.57%  84.66%  86.51%
+  one label per MEM (drawn by counts)     92.17%  93.95%  92.33%  91.20%  91.20%
+  sample (simulated cliffs)               90.46%  92.25%  91.12%  88.41%  90.07%
+  even                                    90.28%  91.90%  91.32%  87.79%  90.10%
+  proportional, normalised by taxon size  92.76%  94.36%  93.36%  91.15%  92.17%
+  proportional                            93.77%  95.29%  94.20%  92.67%  92.92%
+  LaTeX:
+    range (Cliffy's LCA query) &  & 86.95\% \\
+    one label per MEM (drawn by counts) &  & 92.17\% \\
+    sample (simulated cliffs) &  & 90.46\% \\
+    even &  & 90.28\% \\
+    proportional, normalised by taxon size &  & 92.76\% \\
+    proportional &  & 93.77\% \\
+
+== tab:others, our rows (time per read: mean per-read time with one thread; total/reads beside it)
+  classifier                                   space (GB)  time (us)  total/reads (us)  reads/s  threads  strict acc.  acc. (ties correct)
+  -------------------------------------------  ----------  ---------  ----------------  -------  -------  -----------  -------------------
+  long MEMs, proportional credit                     1.87       52.3              53.9  145,500       12       93.77%               93.79%
+    grammar-compressed runs (built-in RePair)        1.17       53.2              54.6  142,800       12       93.77%               93.79%
+    grammar-compressed runs (bigrepair)              1.23       56.0              57.1  137,200       12       93.77%               93.79%
+    minimizer digests (L = 30)                       0.59       31.5              33.1  217,600       12       92.48%               92.51%
+  LaTeX:
+    long MEMs, proportional credit & 1.87 & 52.3 & 145\,500 & 93.77\% \\
+    grammar-compressed runs (built-in RePair) & 1.17 & 53.2 & 142\,800 & 93.77\% \\
+    grammar-compressed runs (bigrepair) & 1.23 & 56.0 & 137\,200 & 93.77\% \\
+    minimizer digests (L = 30) & 0.59 & 31.5 & 217\,600 & 92.48\% \\
+
+== tab:digest (space in GB, then the mean per-read time in us with one thread, for L = 15 .. 50)
+  (the Elias-Fano and sampled rows answer the same MEMs as the explicit row: yes, the outputs of all 64 of their runs were byte-identical to the explicit RLCSA's)
+  configuration                       space  L = 15  L = 20  L = 30  L = 40  L = 50
+  ----------------------------------  -----  ------  ------  ------  ------  ------
+  digests: strict accuracy                   92.47%  92.47%  92.48%  92.36%  92.05%
+    explicit RLCSA, tags               0.59    54.8    46.8    31.5    22.7    18.7
+    Elias-Fano RLCSA, tags             0.38    88.5    82.0    65.3    53.3    46.0
+    RLBWT, tags sampled with s_r = 4   0.20                   232.7   141.2   103.8
+  undigested: strict accuracy                93.74%  93.77%  93.77%  93.48%        
+    default configuration              1.87    65.6    56.9    45.9    37.7        
+  LaTeX:
+    digests: strict accuracy &  & 92.47\% & 92.47\% & 92.48\% & 92.36\% & 92.05\% \\
+    explicit RLCSA, tags & 0.59 & 54.8 & 46.8 & 31.5 & 22.7 & 18.7 \\
+    Elias-Fano RLCSA, tags & 0.38 & 88.5 & 82.0 & 65.3 & 53.3 & 46.0 \\
+    RLBWT, tags sampled with s_r = 4 & 0.20 &  &  & 232.7 & 141.2 & 103.8 \\
+    undigested: strict accuracy &  & 93.74\% & 93.77\% & 93.77\% & 93.48\% &  \\
+    default configuration & 1.87 & 65.6 & 56.9 & 45.9 & 37.7 &  \\
+
+== B_lambda and Lemma "runs": rho <= (r + sigma + 2d)(lambda + 1) + B_lambda + 1
+  rho = 359,351,512 tag runs; r = 68,324,430; sigma = 6; d = 9,118 segments
+  lambda     B_lambda           bound  rho / bound  holds
+  ------  -----------  --------------  -----------  -----
+  0       359,351,506     427,694,179        0.840    yes
+  10      352,215,328   1,103,984,721        0.326    yes
+  30      243,877,805   2,362,500,638        0.152    yes
+  100     107,860,112   7,010,469,985        0.051    yes
+  1000        372,456  68,411,387,129        0.005    yes
+
+== Grammar-compressed tags (file sizes in MB; build time and peak memory)
+  359,351,512 tag runs over 1,173,771,557 rows; bigrepair's grammar: .R 456.72 MB, .C 9.23 MB; answers byte-identical: -c yes, -l yes
+  tag array                file (MB)     build     peak
+  ---------------  -----------------  --------  -------
+  plain (+ RMQ)    836.42 (+ 313.89)                   
+  built-in RePair             449.73  1139.4 s  9.33 GB
+  bigrepair                   509.55   275.4 s  6.74 GB
+
+== Uniform-abundance simulation (proportional credit, default configuration, genus)
+  region                                                                           reads  strict acc.  acc. (ties correct)
+  ------  ------------------------------------------------------------------------------  -----------  -------------------
+  V1_V2    200,000 pairs, 3,283 of 9,088 genera, 60..61 each; 30 dropped (too few reads)       93.00%               93.10%
+  V3_V4    200,000 pairs, 4,135 of 9,085 genera, 48..49 each; 33 dropped (too few reads)       88.13%               88.14%
+  V4_V4    200,000 pairs, 5,418 of 9,043 genera, 36..37 each; 75 dropped (too few reads)       86.44%               86.53%
+  V4_V5   200,000 pairs, 8,758 of 8,858 genera, 22..23 each; 260 dropped (too few reads)       84.79%               84.88%
+  mean                                                                                         88.09%               88.16%
+
+== every input was found

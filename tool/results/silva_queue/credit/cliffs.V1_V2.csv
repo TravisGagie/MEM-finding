@@ -1,6 +1,6 @@
-katka,cliffs,genus,0.9312,correct=186230,unclassified=0,wrong=13770,reads=200000,ambiguous_truth=0,theirs=0.9312,strict=0.9225
-katka,cliffs,family,0.9799,correct=195980,unclassified=0,wrong=4020,reads=200000,ambiguous_truth=0,theirs=0.9799,strict=0.9766
-katka,cliffs,order,0.9857,correct=197148,unclassified=0,wrong=2852,reads=200000,ambiguous_truth=0,theirs=0.9857,strict=0.983
-katka,cliffs,class,0.9893,correct=197863,unclassified=0,wrong=2137,reads=200000,ambiguous_truth=0,theirs=0.9893,strict=0.9868
-katka,cliffs,phylum,0.9911,correct=198212,unclassified=0,wrong=1788,reads=200000,ambiguous_truth=0,theirs=0.9911,strict=0.9893
-katka,cliffs,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0
+katka,cliffs,genus,0.9312,correct=186230,unclassified=0,wrong=13770,reads=200000,ambiguous_truth=0,theirs=0.9312,strict=0.9225,strict_correct=184506
+katka,cliffs,family,0.9799,correct=195980,unclassified=0,wrong=4020,reads=200000,ambiguous_truth=0,theirs=0.9799,strict=0.9766,strict_correct=195318
+katka,cliffs,order,0.9857,correct=197148,unclassified=0,wrong=2852,reads=200000,ambiguous_truth=0,theirs=0.9857,strict=0.983,strict_correct=196609
+katka,cliffs,class,0.9893,correct=197863,unclassified=0,wrong=2137,reads=200000,ambiguous_truth=0,theirs=0.9893,strict=0.9868,strict_correct=197366
+katka,cliffs,phylum,0.9911,correct=198212,unclassified=0,wrong=1788,reads=200000,ambiguous_truth=0,theirs=0.9911,strict=0.9893,strict_correct=197856
+katka,cliffs,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=200000

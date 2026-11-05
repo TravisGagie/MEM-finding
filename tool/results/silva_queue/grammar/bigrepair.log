@@ -1,0 +1,27 @@
+Command line: /home/travis/bigrepair/bigrepair -i -r -m 0 /home/travis/tool/silva/queue/grammar/tags.int32 
+Sending logging messages to file: /home/travis/tool/silva/queue/grammar/tags.int32.log
+==== Parsing.
+Command: /home/travis/bigrepair/ctph/newscanNT.x /home/travis/tool/silva/queue/grammar/tags.int32 -w 10 -p 100 -b4 -c
+Parsing time: 44.5888
+==== Preprocessing the dictionary.
+Command: /home/travis/bigrepair/iprocdic /home/travis/tool/silva/queue/grammar/tags.int32.dicz
+Preprocess time: 7.3380
+==== Repair dictionary.
+Command: /home/travis/bigrepair/repair/irepair /home/travis/tool/silva/queue/grammar/tags.int32.dicz.int
+repair(dict) time: 150.0304
+==== Repair parse.
+Command: /home/travis/bigrepair/repair/irepair /home/travis/tool/silva/queue/grammar/tags.int32.parse
+repair(parse) time: 1.2134
+==== Postprocessing the dictionary.
+Command: /home/travis/bigrepair/ipostproc /home/travis/tool/silva/queue/grammar/tags.int32
+Postprocess time: 2.3796
+Elapsed time: 205.5550
+ >> ctph time: 44.59
+ >> total time: 205.55
+ >> input size: 1437406048
+ >> ctph_parse size: 14323920  (1.00%)
+ >> ctph_dict size: 1036703464  (72.12%)
+ >> repair size: 465951484   (9229864+456721620)
+ >> compressed size: 207314972   (14.42%)
+==== Done
+wall 205.9 s, peak 4.08 GB, exit 0

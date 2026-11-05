@@ -1,0 +1,16 @@
+/home/travis/rz/MEM-finding/katka/silva/work/reads/aquatic/V1_V2/V1_V2_seqtax.txt: 10000000 read pairs over 98 of 9118 genera (0 not in the reference)
+  fitted alpha 0.056 (least squares, log k_g on log N_g, over the genera with reads); Spearman -0.037
+  these genera hold 59103 of the database's 402378 sequences (14.7%); N_g 5..15700 (median 111.5)
+  their ranks by N_g among all 9118 genera (1 = largest; ties share their best rank; genera without reads included): median 620.5, range 1..3881; 12 of them in the top 1%, 63 in the top 10%
+/home/travis/rz/MEM-finding/katka/silva/work/reads/aquatic/V3_V4/V3_V4_seqtax.txt: 10000000 read pairs over 100 of 9118 genera (0 not in the reference)
+  fitted alpha 0.056 (least squares, log k_g on log N_g, over the genera with reads); Spearman -0.045
+  these genera hold 59321 of the database's 402378 sequences (14.7%); N_g 5..15700 (median 111.5)
+  their ranks by N_g among all 9118 genera (1 = largest; ties share their best rank; genera without reads included): median 620.5, range 1..3881; 12 of them in the top 1%, 64 in the top 10%
+/home/travis/rz/MEM-finding/katka/silva/work/reads/aquatic/V4_V4/V4_V4_seqtax.txt: 10000000 read pairs over 100 of 9118 genera (0 not in the reference)
+  fitted alpha 0.056 (least squares, log k_g on log N_g, over the genera with reads); Spearman -0.045
+  these genera hold 59321 of the database's 402378 sequences (14.7%); N_g 5..15700 (median 111.5)
+  their ranks by N_g among all 9118 genera (1 = largest; ties share their best rank; genera without reads included): median 620.5, range 1..3881; 12 of them in the top 1%, 64 in the top 10%
+/home/travis/rz/MEM-finding/katka/silva/work/reads/aquatic/V4_V5/V4_V5_seqtax.txt: 10000000 read pairs over 100 of 9118 genera (0 not in the reference)
+  fitted alpha 0.056 (least squares, log k_g on log N_g, over the genera with reads); Spearman -0.045
+  these genera hold 59321 of the database's 402378 sequences (14.7%); N_g 5..15700 (median 111.5)
+  their ranks by N_g among all 9118 genera (1 = largest; ties share their best rank; genera without reads included): median 620.5, range 1..3881; 12 of them in the top 1%, 64 in the top 10%

@@ -1,6 +1,6 @@
-katka,freq,genus,0.9537,correct=190735,unclassified=0,wrong=9265,reads=200000,ambiguous_truth=0,theirs=0.9537,strict=0.9529
-katka,freq,family,0.9813,correct=196261,unclassified=0,wrong=3739,reads=200000,ambiguous_truth=0,theirs=0.9813,strict=0.9812
-katka,freq,order,0.9859,correct=197176,unclassified=0,wrong=2824,reads=200000,ambiguous_truth=0,theirs=0.9859,strict=0.9859
-katka,freq,class,0.9888,correct=197756,unclassified=0,wrong=2244,reads=200000,ambiguous_truth=0,theirs=0.9888,strict=0.9888
-katka,freq,phylum,0.9915,correct=198307,unclassified=0,wrong=1693,reads=200000,ambiguous_truth=0,theirs=0.9915,strict=0.9915
-katka,freq,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0
+katka,freq,genus,0.9537,correct=190735,unclassified=0,wrong=9265,reads=200000,ambiguous_truth=0,theirs=0.9537,strict=0.9529,strict_correct=190581
+katka,freq,family,0.9813,correct=196261,unclassified=0,wrong=3739,reads=200000,ambiguous_truth=0,theirs=0.9813,strict=0.9812,strict_correct=196246
+katka,freq,order,0.9859,correct=197176,unclassified=0,wrong=2824,reads=200000,ambiguous_truth=0,theirs=0.9859,strict=0.9859,strict_correct=197175
+katka,freq,class,0.9888,correct=197756,unclassified=0,wrong=2244,reads=200000,ambiguous_truth=0,theirs=0.9888,strict=0.9888,strict_correct=197756
+katka,freq,phylum,0.9915,correct=198307,unclassified=0,wrong=1693,reads=200000,ambiguous_truth=0,theirs=0.9915,strict=0.9915,strict_correct=198306
+katka,freq,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0,strict_correct=200000

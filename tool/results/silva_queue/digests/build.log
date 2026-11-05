@@ -1,0 +1,26 @@
+digest k=4 w=11: 256 distinct minimizers; the 6 rarest share byte 254 (0.000% of occurrences)
+genomes=9118 |S|=262256394 digested: 586876660 bases -> 131128197 symbols per strand
+wall 37.1 s, peak 0.12 GB, exit 0
+Sending logging messages to file: /home/travis/tool/silva/dg.S.log
+==== Parsing. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/newscanNT.x /home/travis/tool/silva/dg.S -w 10 -p 100
+Elapsed time: 14.2300
+==== Computing BWT of parsing. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/bwtparse /home/travis/tool/silva/dg.S
+Elapsed time: 0.4400
+==== Computing final BWT. Command: /home/travis/rz/MEM-finding/katka/deps/Big-BWT/pfbwtNT.x -w 10 /home/travis/tool/silva/dg.S
+Elapsed time: 113.1111
+Total construction time: 127.7811
+==== Deleting temporary files.
+==== Done
+wall 127.9 s, peak 2.11 GB, exit 0
+RLBWT: n=262256395 r=35931330, 105.993 MB (3.5 s)
+explicit RLCSA: 300.363 MB (peak memory so far 0.64 GB)
+Elias-Fano RLCSA: 88.788 MB (peak memory so far 0.94 GB)
+tag runs: 80966293 runs (70.8 s)
+tag array: n=262256395, 80966293 tag runs, 262.303 MB (74.3 s; peak memory so far 1.43 GB)
+index built in 80.8 s (peak memory 1.43 GB)
+wall 80.9 s, peak 1.43 GB, exit 0
+RLBWT: n=262256395 r=35931330, 105.993 MB (3.9 s)
+s=4: 19451395 of 80966293 runs sampled
+tag array: n=262256395, 80966293 tag runs, 169.833 MB (80.3 s; peak memory so far 2.26 GB)
+index built in 84.3 s (peak memory 2.26 GB)
+wall 84.3 s, peak 2.26 GB, exit 0
