@@ -353,7 +353,7 @@ Aquatic reads, seconds as plotted:
 | Cliffy, no digestion | 3975 | 3996 | 4078 | 4068 | 4029 |
 | Cliffy, DNA minimizers | 3493 | 3726 | 3850 | 3835 | 3726 |
 | Cliffy, minimizers | 1524 | 1640 | 1595 | 1620 | 1595 |
-| Kraken 2 | 372 | 370 | 386 | 386 | 379 |
+| Kraken 2 | 372 | 370 | 386 | 386 | 378 |
 
 These agree with the paper's text (minimizers "on average 4.5× slower" than Kraken 2, the other modes "closer to 10×–11× slower").
 
@@ -371,7 +371,7 @@ These agree with the paper's text (minimizers "on average 4.5× slower" than Kra
 - **Machine:** an Intel Xeon Gold 6248R, 24 cores, 3 GHz, with 1500 GB of RAM, timed with GNU time.
 
 **Threads.**
-- **Kraken 2:** `--threads 1` (`workflow/rules/exp_3.smk` lines 271 and 289; preprint Appendix A.5 commands).
+- **Kraken 2:** `--threads 1` (`workflow/rules/exp_3.smk` lines 271 and 289; preprint Appendix A.3).
 - **Cliffy:** no thread count anywhere. `exp_3.smk` runs `pfp_doc64 run` with `--ref`, `--pattern`, `--output`, `--taxcomp`, `--ftab` and `--num-col`. Its option table (`src/pfp_doc.cpp` lines 535–546, at 3763529) has no thread option, and there are no `std::thread`, `pthread` or OpenMP calls in `src/` or `include/`. So the query is single-threaded, at least in this version of the code.
 - **Bracken's time:** `exp_3.smk` also writes Kraken 2's time plus Bracken's to `output.total.time`, so Kraken 2's plotted time may include Bracken. That isn't settled either.
 
