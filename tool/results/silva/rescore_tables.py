@@ -65,10 +65,11 @@ table("the dial", ["alpha = 1", "alpha = 0", "alpha = -1"], D)
 table("the uniform simulation and the real aquatic reads", ["uniform", "aquatic"], [U, A])
 # bayesauto's likelihood
 print("== bayesauto: the log-likelihood's peak over the grid (in units of 10^6, at the peak and its neighbours)")
-for al in ("1", "0", "-1"):
+SETS = [("alpha = %s" % al, "dial/a%s/credit" % al) for al in ("1", "0", "-1")] + [("uniform", "uniform/credit2"), ("aquatic", "credit")]
+for al, d in SETS:
     for r in REGIONS:
-        s = open(os.path.join(Q, "dial/a%s/credit/bayesauto.%s.csv.log" % (al, r))).read()
+        s = open(os.path.join(Q, d, "bayesauto.%s.csv.log" % r)).read()
         m = re.search(r"log-likelihood by epsilon: (.*)", s); pts = [x.split(": ") for x in m.group(1).split(", ")]
         e = [float(x[0]) for x in pts]; ll = [float(x[1]) for x in pts]; k = max(range(len(ll)), key=lambda i: ll[i])
         near = "  ".join("%g: %.3f" % (e[i], ll[i] / 1e6) for i in range(max(0, k - 1), min(len(e), k + 2)))
-        print("  alpha = %-3s %s  peak at eps = %-5g %s   (%s)" % (al, r, e[k], "AT THE EDGE" if k in (0, len(e) - 1) else "", near))
+        print("  %-11s %s  peak at eps = %-5g %s   (%s)" % (al, r, e[k], "AT THE EDGE" if k in (0, len(e) - 1) else "", near))

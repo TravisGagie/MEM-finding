@@ -1,0 +1,10 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+bayesauto: log-likelihood by epsilon: 1e-08: -30799726.7, 3e-08: -30007853.4, 1e-07: -29139934.1, 3e-07: -28347856.1, 1e-06: -27479668.9, 3e-06: -26687304.2, 1e-05: -25818762.9, 3e-05: -25026037.0, 0.0001: -24157064.6, 0.0003: -23363991.5, 0.001: -22495023.0, 0.003: -21703301.6, 0.01: -20840992.0, 0.03: -20070677.4, 0.1: -19290316.1, 0.2: -18932483.9, 0.3: -18802425.1, 0.5: -18844417.6, 0.6: -18984928.8, 0.7: -19223479.1, 0.8: -19617170.4, 0.9: -20356864.7, 0.95: -21113190.1, 0.99: -22682365.5
+bayesauto: epsilon = 0.3
+katka,bayesauto,genus,0.9503,correct=190056,unclassified=0,wrong=9944,reads=200000,ambiguous_truth=0,theirs=0.9503,strict=0.9503,strict_correct=190056

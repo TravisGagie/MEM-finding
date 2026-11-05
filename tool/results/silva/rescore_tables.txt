@@ -47,11 +47,12 @@ Reads from genera with ambiguous names, of 200,000 pairs, by region (V1_V2 V3_V4
   even                                                     87.36     86.49     90.28     90.28
   normalised                                               91.75     91.20     92.76     92.76
   proportional                                             88.09     87.28     93.77     93.77
-  naive Bayes, flat, eps = 1e-6                                -         -     94.70     94.70
+  naive Bayes, flat, eps = 1e-6                            94.33     93.94     94.70     94.70
   naive Bayes, flat, eps = 1e-9                                -         -     94.36     94.36
   naive Bayes, flat, eps = 1e-12                               -         -     94.19     94.19
   naive Bayes, flat, eps = 1e-300 (check)                      -         -     94.08     94.08
   naive Bayes, flat, the limit eps -> 0                        -         -     94.08     94.08
+  naive Bayes, mixture, eps at the likelihood's peak       94.32     93.93     94.12     94.12
 
 == bayesauto: the log-likelihood's peak over the grid (in units of 10^6, at the peak and its neighbours)
   alpha = 1   V1_V2  peak at eps = 0.5      (0.3: -22.935  0.5: -22.892  0.6: -23.007)
@@ -66,3 +67,11 @@ Reads from genera with ambiguous names, of 200,000 pairs, by region (V1_V2 V3_V4
   alpha = -1  V3_V4  peak at eps = 0.6      (0.5: -20.787  0.6: -20.782  0.7: -20.875)
   alpha = -1  V4_V4  peak at eps = 0.5      (0.3: -17.829  0.5: -17.644  0.6: -17.680)
   alpha = -1  V4_V5  peak at eps = 0.6      (0.5: -21.295  0.6: -21.255  0.7: -21.309)
+  uniform     V1_V2  peak at eps = 0.5      (0.3: -19.666  0.5: -19.515  0.6: -19.571)
+  uniform     V3_V4  peak at eps = 0.5      (0.3: -22.268  0.5: -21.988  0.6: -21.992)
+  uniform     V4_V4  peak at eps = 0.5      (0.3: -19.673  0.5: -19.481  0.6: -19.519)
+  uniform     V4_V5  peak at eps = 0.6      (0.5: -21.907  0.6: -21.884  0.7: -21.957)
+  aquatic     V1_V2  peak at eps = 0.3      (0.2: -18.932  0.3: -18.802  0.5: -18.844)
+  aquatic     V3_V4  peak at eps = 0.5      (0.3: -22.061  0.5: -21.958  0.6: -22.043)
+  aquatic     V4_V4  peak at eps = 0.5      (0.3: -20.143  0.5: -20.124  0.6: -20.243)
+  aquatic     V4_V5  peak at eps = 0.5      (0.3: -22.947  0.5: -22.804  0.6: -22.874)

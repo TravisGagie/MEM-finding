@@ -105,8 +105,7 @@ change the definition. All 144 rows of item 2's scores are identical to before, 
 | … grammar tags, bigrepair | 1.23 | 56.0 | 57.1 | 137,200 | 93.77% | 93.79% |
 | minimizer digests, L = 30 | 0.59 | 31.5 | 33.1 | 217,600 | 92.48% | 92.51% |
 
-The default's 1.87 GB includes the tag array's RMQ (0.31 GB), which counting does not use; the paper's 1.44 GB did not
-have it as a separate file.
+The default's 1.87 GB includes the tag array's RMQ (0.31 GB), which counting does not use. See "Index size" below for the paper's 1.44 GB.
 
 **Run-to-run noise.** The timing step (00:59) gave 52.3 µs for the default, while the same configuration in the digests
 step (02:29, `undigested.L30`) gave 45.9 µs. The two runs give identical outputs, so a 14% difference between idle-machine
@@ -220,6 +219,42 @@ The whole dial, both ways, is in `rescore_tables.txt`.
 SILVA's sequences (59,103 of 402,378 in V1_V2, 59,321 elsewhere). Their median rank by N_g is 620.5, range 1 to 3881,
 with 12 in the top 1% and 63–64 in the top 10%. N_g runs from 5 to 15,700, median 111.5.
 
-**Timing, 5 repeats** (`timing_repeats.txt`): mean per-read time 45.57 µs (median; range 45.46–45.87), 167,224
-reads/s with 12 threads (164,575–167,504). This replaces the queue's single 52.3 µs and 145,500 reads/s. The cause of that
-slower run was not established; the 45.9 µs seen in another run agrees with these repeats.
+**Timing, 5 repeats** (`timing_repeats.txt`), all 1.6 million reads:
+
+| | median | range |
+|---|---:|---:|
+| 1 thread, mean per read (µs) | 45.57 | 45.46–45.87 |
+| 1 thread, total / reads (µs) | 46.88 | 46.71–47.15 |
+| 1 thread, reads/s | 21,332 | 21,210–21,410 |
+| 12 threads, reads/s | 167,224 | 164,575–167,504 |
+
+The digest's three figures for "the same configuration" are not three samples of one quantity:
+- **43.0 µs** (`grammar/summary.txt:8`) is V1_V2 mate 1 alone, a single file. That file's median over the repeats is 42.48 µs; the files run from 42.48 to 51.94.
+- **45.9 µs** (digests step) is over all the reads, and agrees with the repeats.
+- **52.3 µs** (timing step) is the outlier: every one of its 8 files was slower than its range in the repeats. Its cause was not established. It should be replaced.
+
+**Uniform and aquatic, naive Bayes** (flat prior):
+
+| scheme | uniform | excl. | aquatic |
+|---|---:|---:|---:|
+| normalised | 91.75 | 91.20 | 92.76 |
+| proportional | 88.09 | 87.28 | 93.77 |
+| ε = 10⁻⁶ | 94.33 | 93.94 | 94.70 |
+| `bayesauto` | 94.32 | 93.93 | 94.12 |
+
+`bayesauto`'s ε: uniform 0.5, 0.5, 0.5, 0.6; aquatic 0.3, 0.5, 0.5, 0.5 (V1_V2, V3_V4, V4_V4, V4_V5). None is at the grid's edge.
+
+**Index size** (bytes, `~/tool/silva/bac.*`, and `silva.tex` line 249):
+
+| part | 1.87 GB | 1.56 GB | paper's 1.44 GB |
+|---|---:|---:|---:|
+| RLCSA (`.csa`) | 565.2 MB | 565.2 MB | 0.57 GB |
+| tag array (`.tag`) | 836.4 MB | 836.4 MB | 0.86 GB (19.1 bits per run) |
+| RLBWT (`.rlbwt`) | 155.3 MB | 155.3 MB | not counted |
+| RMQ (`.tag.rmq`) | 313.9 MB | not counted | not counted |
+| lookup table | not counted | not counted | 18 MB |
+
+- **From 1.56 to 1.44:** take off the RLBWT (155.3 MB), add the lookup table (18 MB), and the tag array is 20.6 MB larger in the paper's count. The RMQ is not the cause, contrary to the note above and the digest: 1.44 never counted it, and removing it leaves 1.56.
+- **The RLBWT:** `find` always loads it (`main.cpp` line 872), but with `--csa` the search steps use the RLCSA (`search.hpp` line 27), and the tags use it only when sampled. So it appears unused in the default configuration. This comes from reading the code, not from a run without it.
+- **The lookup table:** the new tool builds it at load time (`main.cpp` line 962), so it's in memory but in no file. `sizes.txt` misses it. Peak memory is 1.58 GB.
+- **The tag array:** both have 359,351,512 runs and 14-bit tags (628.9 MB). The paper's 0.86 is `PLAN.md`'s 0.228 + 0.629 GB. The old file on the desktop, `bac.s1.tag` (2026-10-05), is 970,965,362 bytes, which with the RLCSA gives the 1.54 GB in `compare/katka-travis-gagie-desktop/summary.txt`. That file doesn't match 0.86 GB, and this wasn't explained.

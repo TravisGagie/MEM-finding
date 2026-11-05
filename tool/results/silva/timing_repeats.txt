@@ -11,3 +11,14 @@ repeat  mean per-read (us)  total / reads (us)  reads/s, 12 threads
 
 median  45.57               46.88               167,224
 range   45.46..45.87        46.71..47.15        164,575..167,504
+
+Both figures, 5 repeats, over all 1,600,000 reads:
+                              median      range
+1 thread, mean per read (us)  45.57       45.46..45.87
+1 thread, total/reads (us)    46.88       46.71..47.15
+1 thread, reads/s             21,332      21,210..21,410
+12 threads, total/reads (us)  5.98        5.97..6.08
+12 threads, reads/s           167,224     164,575..167,504
+
+Mean per-read time by read file, 1 thread (median of 5, us), which explains the digest's 43.0:
+V1_V2 42.48 / 44.80   V3_V4 46.69 / 46.36   V4_V4 42.86 / 46.29   V4_V5 42.96 / 51.94   (mate 1 / mate 2)
