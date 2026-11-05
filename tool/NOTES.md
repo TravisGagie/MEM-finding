@@ -852,6 +852,22 @@ cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv   
 - **Optional:** `L = 100` instead of 1000 is the paper's other threshold.
 - **Capped blocks as well:** add `CAPS="16 64"`, which builds the most frequent successor with blocks of at most 16 and 64 phrases. Each cap costs one more two-level build per n.
 
+**Results on chr19 (desktop, 2026-11-05; `results/block_scaling/chr19_table.txt`, `chr19_blocks.tsv`).** 16, 32 and 64 individuals, L = 1000, 122.4 million pattern characters, k = 51, s = 12. Every output was byte-identical across the two rules, with and without block steps. Plain search was not rerun here (`CHECK_PLAIN` unset); `results/chr19/` has that check for the same indexes.
+
+| n | rule | phrases/block | continuations | phrases per block step | parse/char | block/char | parse + block | time (s) | no block steps (s) |
+|---|---|---|---|---|---|---|---|---|---|
+| 33 | smallest | 9.52 | 89.5% | 6.93 | 0.0208 | 0.0148 | 0.0356 | 5.64 | 8.64 |
+| 33 | frequent | 30.59 | 96.7% | 21.54 | 0.0435 | 0.0037 | 0.0472 | 5.92 | 8.41 |
+| 65 | smallest | 8.32 | 88.0% | 6.95 | 0.0128 | 0.0174 | 0.0302 | 5.52 | 8.98 |
+| 65 | frequent | 30.10 | 96.7% | 24.29 | 0.0364 | 0.0040 | 0.0404 | 5.63 | 8.81 |
+| 129 | smallest | 7.15 | 86.0% | 6.37 | 0.0090 | 0.0208 | 0.0298 | 5.71 | 9.50 |
+| 129 | frequent | 29.67 | 96.6% | 25.51 | 0.0333 | 0.0042 | 0.0375 | 5.71 | 9.60 |
+
+- **As on the synthetic pangenomes, the expectation holds for block length but search doesn't get faster.** Under the smallest successor, phrases per block fall from 9.52 to 7.15 as the individuals quadruple. Under the most frequent they stay at about 30, and as the patterns see them they rise from 21.5 to 25.5.
+- **The fall on chr19 is mild.** As the patterns see it, the smallest successor's block length barely moves (6.93, 6.95, 6.37).
+- **The most frequent successor takes more steps at every n,** in parse plus block steps, and its extra parse steps are again at the ends of searches (entry and end, in the table's second part). Times are the same within noise, and block steps save about 40% of the time under both rules.
+- **The c129 run:** `c129.S` and `c129.bwt` had been deleted for disk space, so they were rebuilt on the external drive and linked (`~/ext/chr19_c129`; prep and Big-BWT took 33 minutes, the `.tbl` and `.info` match). `c129.rlbwt`, which `index` rewrites from the BWT, kept the same SHA-256, so the rebuilt BWT gives the same RLBWT as the original. The `.lvl` builds at 129 took about 30 minutes each against the estimated 12, reading from that drive. DATA was `~/shortcuts/chr19_scaling/hprc_chr19`, so no link was needed.
+
 ### Cliffy (2026-11-04)
 
 Cliffy, github.com/oma219/cliffy at `3763529`, built here with `katka/silva/build_cliffy.sh`'s steps (`cliffy_rz.patch`, `gxx-compat`) under GCC 13 and CMake 3.28. Indexed: 20 synthetic genomes as 20 documents, with `--taxcomp --num-col 7 --two-pass`, with and without `--revcomp`.

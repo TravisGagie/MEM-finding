@@ -166,7 +166,7 @@ Strict genus accuracy, mean of the four regions:
 | naive Bayes, database prior, ε = 10⁻⁶ | 92.77 | 93.20 | 93.00 |
 | naive Bayes, mixture, ε fitted | 91.42 | 94.22 | 95.11 |
 
-- **Check:** α = 0 repeats the uniform simulation above with another seed and code path: normalised 91.85 against
+- **Check:** α = 0 is the same design as the uniform simulation above, simulated again by `simulate_dial.py`: normalised 91.85 against
   91.75, proportional 88.19 against 88.09, range 84.50 against 84.41, one 85.94 against 85.82.
 - **ε = 10⁻⁶ was not chosen held out.** The held-out choice, the best ε at α = 0, is 10⁻⁴, and it gives 84.49 at
   α = 1. The other values are in `dial_tables.txt`.
