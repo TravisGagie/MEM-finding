@@ -11,7 +11,8 @@ Accuracy is as in scripts/silva_tables.py's tables: strict genus accuracy (a tie
 wrong), the mean of the regions' accuracies; here each region's accuracy is computed from its exact count
 (strict_correct / reads).  Schemes: range (lca), one, sample (cliffs), even (list), normalised (norm), proportional
 (freq), the prior mixture prior<beta>, the linear mixture mix<beta> (proportional and even), EM em<iterations>, and
-the Bayes reference (bayes: the product of the matches' likelihoods with the sample's own prior).
+naive Bayes over the MEMs: with the sample's own prior (bayes, the reference), a flat prior (bayesflat, with
+bayesflat<epsilon> for the sweep of the missing-match likelihood) and the database prior (bayesdb).
 A missing or unusable input is printed as MISSING: <file> or BAD: <file> (<why>), never left blank; the script then
 lists them and exits 1.
 """
@@ -19,8 +20,10 @@ import argparse, os, sys
 
 NAMES = {"lca": "range (Cliffy's LCA query)", "one": "one label per MEM", "cliffs": "sample (simulated cliffs)",
          "list": "even", "norm": "normalised (c_g / N_g)", "freq": "proportional",
-         "bayes": "Bayes reference (product, the sample's prior)"}
-FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em", "bayes"]
+         "bayes": "naive Bayes, the sample's prior (reference; epsilon = 1e-06)", "bayesflat": "naive Bayes, flat prior, epsilon = 1e-06",
+         "bayesdb": "naive Bayes, database prior, epsilon = 1e-06"}
+FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em", "bayes", "bayesflat", "bayesdb"]
+FAMILIES = ("prior", "mix", "em", "bayesflat")       # files with several lines (one per beta, iteration count or epsilon)
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("q", nargs="?", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "silva_queue"))
@@ -54,12 +57,24 @@ def load(al, mode, r):
     return out or miss(f, "no genus lines")
 
 
+def family(l):
+    """the file a label comes from"""
+    if l in FILES: return l
+    for m in sorted(FAMILIES, key=len, reverse=True):
+        if l.startswith(m):
+            try: float(l[len(m):]); return m
+            except ValueError: pass
+    return None
+
+
 def order(labels):
     def key(l):
-        for i, m in enumerate(FILES):
-            if l == m: return (i, 0)
-            if l.startswith(m) and l[len(m):].replace(".", "", 1).isdigit(): return (i, float(l[len(m):]))
-        return (99, l)
+        m = family(l)
+        if m is None: return (99, 0, l)
+        v = l[len(m):]
+        # epsilon sweeps from the largest epsilon down; the default (no suffix, 1e-6) in its place
+        val = float(v) if v else (1e-6 if m == "bayesflat" else 0)
+        return (FILES.index(m), -val if m == "bayesflat" else val, l)
     return sorted(labels, key=key)
 
 
@@ -68,6 +83,7 @@ def name(l):
     if l.startswith("prior"): return "prior mixture, beta = " + l[5:]
     if l.startswith("mix"): return "proportional/even mix, beta = " + l[3:]
     if l.startswith("em"): return "EM, %s iterations" % l[2:]
+    if l.startswith("bayesflat"): return "naive Bayes, flat prior, epsilon = %s" % (l[9:] or "1e-06")
     return l
 
 
@@ -83,14 +99,14 @@ for al in alphas:
             else: d.update(x)
         acc[al][r] = (d, msgs)
 labels = order({l for al in alphas for r in regions for l in acc[al][r][0]} | set(FILES[:6]))
-for m in ("prior", "mix", "em"):              # a family whose file is missing everywhere still gets a row
-    if not any(l.startswith(m) and l not in NAMES for l in labels): labels.append(m)
+for m in FAMILIES:                            # a family whose file is missing everywhere still gets a row
+    if not any(family(l) == m and l != m for l in labels) and m not in labels: labels.append(m)
 
 
 def cell(al, r, l):
     d, msgs = acc[al][r]
     if l in d: return "%.2f%%" % (100 * d[l])
-    fam = next((m for m in FILES if l == m or (l.startswith(m) and m in ("prior", "mix", "em"))), l)
+    fam = family(l) or l
     return msgs.get(fam) or miss(os.path.join(Q, "dial", "a" + al, "credit", "%s.%s.csv" % (fam, r)), "no line " + l)
 
 

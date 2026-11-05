@@ -132,6 +132,7 @@ def feat():
 reads = [(rnd.randrange(G), [feat() for _ in range(rnd.randrange(1, 4))], [feat() for _ in range(rnd.randrange(1, 4))])
          for _ in range(400)]
 d = write_set("generic", reads, nseq)
+BAYES_READS, BAYES_NSEQ = reads, nseq
 S = {m: score(d, m) for m in ("freq", "norm", "list")}
 S.update(score(d, "prior")); S.update(score(d, "mix")); S.update(score(d, "em", ["--em-iters", "0,5,20"]))
 for m in ("freq", "norm", "list"):
@@ -173,5 +174,40 @@ d = write_set("hand3", reads, nseq)
 check("hand: proportional credit picks B for {A:1, B:5} + {A:1}", counts(score(d, "freq")["freq"]["genus"])[2] == 0)
 check("hand: the Bayes reference picks A (alpha = 1, 0, -1)",
       all(counts(score(d, "bayes", ["--alpha", al])["bayes"]["genus"])[2] == 1 for al in ("1", "0", "-1")))
+# naive Bayes with practical priors: flat = the sample prior with alpha = 0, db = with alpha = 1, line for line, on
+# the generic reads; and against an independent implementation, for each epsilon
+import math
+EPS = ["1e-2", "1e-3", "1e-4", "1e-6", "1e-9"]
+d = os.path.join(W, "generic")
+gen_reads, gen_nseq = BAYES_READS, BAYES_NSEQ
+flat = score(d, "bayes", ["--prior", "flat", "--epsilon", ",".join(EPS)])
+dbp = score(d, "bayes", ["--prior", "db"])
+s0 = score(d, "bayes", ["--prior", "sample", "--alpha", "0"])["bayes"]
+s1 = score(d, "bayes", ["--prior", "sample", "--alpha", "1"])["bayes"]
+check("bayes: the flat prior = the sample prior with alpha = 0 (epsilon 1e-6)", flat["bayesflat"] == s0)
+check("bayes: the database prior = the sample prior with alpha = 1", dbp["bayesdb"] == s1)
+check("bayes: one line per epsilon", sorted(flat) == sorted(["bayesflat0.01", "bayesflat0.001", "bayesflat0.0001", "bayesflat", "bayesflat1e-09"]))
+def bayes_ref(reads, nseq, alpha, eps):
+    tp = uncl = strict = 0
+    for r in reads:
+        feats = [f for m in (1, 2) for f in r[m]]
+        cand = {g for _, f in feats for g in f}
+        if not cand: uncl += 1; continue
+        sc = {g: alpha * math.log(nseq[g]) + sum(math.log(f[g] / (2 * nseq[g])) if g in f else math.log(eps) for _, f in feats) for g in cand}
+        top = max(sc.values())
+        if sc.get(r[0]) == top:
+            tp += 1; strict += sum(1 for v in sc.values() if v == top) == 1
+    return tp, uncl, strict
+for e, lab in zip(EPS, ["bayesflat0.01", "bayesflat0.001", "bayesflat0.0001", "bayesflat", "bayesflat1e-09"]):
+    check("reference: bayes, flat prior, epsilon = %s" % e, counts(flat[lab]["genus"]) == bayes_ref(gen_reads, gen_nseq, 0, float(e)))
+check("reference: bayes, database prior", counts(dbp["bayesdb"]["genus"]) == bayes_ref(gen_reads, gen_nseq, 1, 1e-6))
+# epsilon decides: truth A (N_A = 1) has p = 1 on two matches and lacks a third; B (N_B = 10) has p = 1/20 on all three:
+# A scores log epsilon, B 3 log(1/20) = log 1.25e-4, so A wins for epsilon = 1e-2 and 1e-3 only (flat prior)
+nseq = [1, 10] + [1] * (G - 2)
+reads = [(0, [(60, {0: 2, 1: 1}), (60, {0: 2, 1: 1})], [(60, {1: 1})])]
+d = write_set("hand4", reads, nseq)
+F4 = score(d, "bayes", ["--prior", "flat", "--epsilon", ",".join(EPS)])
+check("hand: the flat-prior Bayes picks A for epsilon = 1e-2 and 1e-3 only",
+      [counts(F4[l]["genus"])[2] for l in ["bayesflat0.01", "bayesflat0.001", "bayesflat0.0001", "bayesflat", "bayesflat1e-09"]] == [1, 1, 0, 0, 0])
 print("%d failures" % fails)
 sys.exit(1 if fails else 0)

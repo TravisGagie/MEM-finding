@@ -476,7 +476,7 @@ On SILVA reads simulated as in Cliffy's paper, proportional credit is the best s
 - Each β or iteration count is its own output line, labelled `prior0.25`, `mix0.5`, `em20`, and so on.
 - `--levels` limits the levels scored (default all six).
 - Every line now ends with `strict_correct=`, the exact count behind `strict=`. Otherwise the existing schemes are unchanged: their outputs on the toy were identical, line for line, to those of the previous version.
-- **Tests: `tests/test_score_schemes.py EXP TAX D2T T2L`** (30 checks, 6 s):
+- **Tests: `tests/test_score_schemes.py EXP TAX D2T T2L`** (42 checks, 10 s; the naive-Bayes checks are listed under "Naive Bayes with practical priors" below):
   - the endpoints, at every level, on 400 random reads full of exact ties;
   - every scheme against an independent implementation of its formula (exact rationals; floats for EM) on 400 random reads without ties;
   - hand-worked cases:
@@ -486,7 +486,10 @@ On SILVA reads simulated as in Cliffy's paper, proportional credit is the best s
 **The runner step and the table.** `silva_queue.sh dial` does three things for α in `ALPHAS` (default "1 0 -1"):
 1. It simulates the reads, every α with `simulate_dial.py`.
 2. It runs `katka find --preset silva` on each mate, untimed, with `THREADS` threads.
-3. It scores every scheme at genus level: lca, one, cliffs, list, norm, freq, prior (6 β), mix (6 β), em (5 and 20 iterations), and the Bayes reference with the sample's own prior (`--mode bayes --alpha α`).
+3. It scores every scheme at genus level: lca, one, cliffs, list, norm, freq, prior (6 β), mix (6 β), em (5 and 20 iterations), and naive Bayes over the MEMs with three priors:
+   - `bayes`, the sample's own prior (`--prior sample --alpha α`): the reference, since a real classifier can't know α;
+   - `bayesflat`, a flat prior, for ε = 10⁻², 10⁻³, 10⁻⁴, 10⁻⁶ and 10⁻⁹ (labels `bayesflat0.01` … `bayesflat1e-09`, with `bayesflat` for 10⁻⁶);
+   - `bayesdb`, the database prior N_g / N.
 
 Outputs go to `Q/dial/a<α>/{credit,out}`, with the truth files beside them; `collect` copies everything but the reads and the listings. `scripts/dial_tables.py Q [--latex]` then prints:
 - one summary table: each scheme's strict genus accuracy, the mean over the regions, for each α;
@@ -520,6 +523,35 @@ Accuracy is defined as in `silva_tables.py` (strict, the mean of the regions' ac
 - **A toy caveat.** MicrobeMixer mutates each extracted region once, at extraction, with 2% of its bases replaced (1.5% changed). On this toy, genera of a group differ in only 0.6% of their bases. So a genus with a single sequence can come out looking like a neighbour, and its accuracy depends on the random draw.
   - With seed 1, normalised credit at α = 0 got 93.1% on V1_V2, because 151 of genus 4's 200 reads went wrong; with seeds 2, 3 and 4 it got 99.5%, 99.1% and 98.1%.
   - That variance is the toy's; real genera differ by several percent in 16S.
+
+**Naive Bayes with practical priors, and its cost (2026-11-05).**
+- **On the toy** (`tests/dial_toy.sh`; strict genus accuracy, mean of the four regions):
+
+  | scheme | α = 1 | α = 0 | α = −1 |
+  |---|---|---|---|
+  | proportional | 98.32% | 87.26% | 79.24% |
+  | normalised | 99.22% | 95.97% | 91.85% |
+  | naive Bayes, the sample's prior (reference) | 99.58% | 98.34% | 97.46% |
+  | naive Bayes, flat prior, ε = 10⁻² | 95.79% | 98.61% | 99.75% |
+  | naive Bayes, flat prior, ε = 10⁻³ | 99.05% | 99.36% | 99.35% |
+  | naive Bayes, flat prior, ε = 10⁻⁴ | 99.23% | 98.45% | 97.48% |
+  | naive Bayes, flat prior, ε = 10⁻⁶ | 99.31% | 98.34% | 97.28% |
+  | naive Bayes, flat prior, ε = 10⁻⁹ | 99.30% | 98.34% | 97.28% |
+  | naive Bayes, database prior | 99.58% | 98.33% | 97.20% |
+
+  - The flat prior equals the reference at α = 0, and the database prior equals it at α = 1, as they must.
+  - Below 10⁻⁴, ε hardly matters. A large ε acts as a prior toward small genera: a small genus has p_g = c_g / (2 N_g) near 1 on the MEMs it has, and pays little for those it lacks. That helps at α = −1 and hurts at α = 1.
+  - On the toy, ε = 10⁻³ is the most even over α. SILVA will decide.
+- **Tests** (`tests/test_score_schemes.py`):
+  - the flat and database priors against the sample prior with α = 0 and α = 1, line for line;
+  - each ε, and the database prior, against an independent implementation;
+  - a hand case where ε decides: truth A (N_A = 1) has p = 1 on two MEMs and lacks a third, and B (N_B = 10) has p = 1/20 on all three, so A wins only for ε > 1.25 · 10⁻⁴;
+  - the read where summing picks B and the product picks A.
+- **What it needs.** Only what the counting listings (`find -c`) already give, plus N_g. The listings are never truncated: each MEM comes with every genus containing it and its count c_g, and a genus missing from a MEM's list has c_g = 0. No new search output is needed.
+- **Cost per read.** Both schemes are linear in the listing's (genus, count) entries. Naive Bayes takes one logarithm per entry where proportional credit takes one division, plus one exponential per candidate genus.
+  - Measured in Python on the toy's listings (6.0 MEMs and 11.5 entries per read pair): parsing a read pair's listings takes 4.7 µs, proportional credit 3.1 µs more, naive Bayes 4.2 µs more.
+  - That is about 1.35 times proportional credit's own work, or 1.14 times with parsing.
+  - Both are small next to the search itself (53 µs per read for the default SILVA configuration).
 
 **The experiment, for the methods section** (exactly as the code does it; `scripts/simulate_dial.py`, `scripts/score_silva.py`, `experiments/silva_queue.sh dial`, `scripts/dial_tables.py`).
 
@@ -569,10 +601,16 @@ The code computes each in a form that gives these endpoints bit for bit. The exi
 - **Weight per genus:** T_g is computed per genus, including genera labelled "uncultured".
 - **Genera without credit:** a genus that gets no weight in some iteration has π_g = 0 from then on.
 
-*Bayes reference.* For each genus g of ∪_M D(M), the score is S_g = α log N_g + Σ_M λ_g(M) over the MEMs of both mates.
-- λ_g(M) = log(c_g(M) / (2 N_g)) if c_g(M) > 0, the 2 because c_g counts both strands. Otherwise λ_g(M) = log ε, with ε = 10⁻⁶.
-- The prior is matched: α is the sample's own.
+*Naive Bayes over the MEMs.* This treats a read's MEMs as independent observations, as the RDP classifier treats a read's 8-mers (Wang et al., 2007).
+- For each genus g of ∪_M D(M), the score is S_g = log π_g + Σ_M λ_g(M) over the MEMs of both mates.
+- λ_g(M) = log(c_g(M) / (2 N_g)) if c_g(M) > 0, the 2 because c_g counts both strands; otherwise λ_g(M) = log ε.
 - The read is assigned the genus of largest S_g. The scores are turned into posteriors exp(S_g − max S), so ties and the accuracy rule are as for the other schemes.
+- The code computes S_g in one pass over the listing: S_g = log π_g + Σ_{M ∋ g} log p_g(M) + (m − m_g) log ε, where m is the read's number of MEMs and m_g the number containing g.
+- Three priors:
+  - **reference (`bayes`):** π_g ∝ N_g^α, the sample's own, ε = 10⁻⁶;
+  - **flat (`bayesflat`):** π_g = 1/G, for ε ∈ {10⁻², 10⁻³, 10⁻⁴, 10⁻⁶, 10⁻⁹};
+  - **database (`bayesdb`):** π_g = N_g / N, ε = 10⁻⁶.
+- The flat prior is the reference at α = 0 and the database prior is the reference at α = 1, bit for bit.
 
 *Accuracy.* Strict genus accuracy of a scheme on a region is A/R, where A is the number of read pairs whose true genus alone has the largest W_g. In detail:
 - a tie for the largest weight counts as wrong;
@@ -606,7 +644,7 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
   - prior and mix, 6 β each, about 30 s each.
   - EM, 20 passes of about 3 s, so about 70 s.
   - So about 4 minutes per region and α, or about 45 minutes in all.
-- **In all:** about 12 MicrobeMixer-sized simulations, plus under an hour (the Bayes reference adds one scoring per region and α).
+- **In all:** about 12 MicrobeMixer-sized simulations, plus under an hour (the three naive-Bayes files add three scorings per region and α, the flat one with five values of ε).
 
 ### Cliffy (2026-11-04)
 

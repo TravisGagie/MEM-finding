@@ -164,15 +164,18 @@ step_dial() {     # credit schemes when the sample doesn't follow the database: 
       for m in 1 2; do
         [ -s "$A/out/${r}_$m.out" ] || { stamp "dial: alpha = $al, $r mate $m"; $CAP $K find --preset silva -j $THREADS "$IDX" "$W/$r/${r}_mate_$m.fq" "$A/out/${r}_$m.out" 2> "$A/out/${r}_$m.log"; }
       done
-      for mode in lca one cliffs list norm freq prior mix em bayes; do
-        [ -s "$A/credit/$mode.$r.csv" ] && continue
-        stamp "dial: alpha = $al, $r, $mode"
-        local extra="--levels genus"; [ $mode = norm ] || [ $mode = prior ] || [ $mode = em ] || [ $mode = bayes ] && extra="$extra --nseq $Q/nseq.txt"
-        [ $mode = bayes ] && extra="$extra --alpha $al"   # the Bayes reference, with the sample's own prior
+      # NAME:MODE:OPTIONS (OPTIONS with + for spaces): one csv per NAME
+      for spec in lca:lca: one:one: cliffs:cliffs: list:list: norm:norm: freq:freq: prior:prior: mix:mix: em:em: \
+                  bayes:bayes:--prior+sample+--alpha+$al bayesflat:bayes:--prior+flat+--epsilon+1e-2,1e-3,1e-4,1e-6,1e-9 \
+                  bayesdb:bayes:--prior+db; do
+        local name=${spec%%:*} rest=${spec#*:}; local mode=${rest%%:*} opts=${rest#*:}; opts=${opts//+/ }
+        [ -s "$A/credit/$name.$r.csv" ] && continue
+        stamp "dial: alpha = $al, $r, $name"
+        local extra="--levels genus $opts"; case $mode in norm|prior|em|bayes) extra="$extra --nseq $Q/nseq.txt" ;; esac
         python3 "$HERE/scripts/score_silva.py" --mode $mode --mate1-listings "$A/out/${r}_1.out" --mate2-listings "$A/out/${r}_2.out" \
             --doc-id-to-traversal "$D2T" --silva-tax-ranks "$TAX" --readset-truthset "$W/$r/${r}_seqtax.txt" --trav-to-length "$T2L" \
-            --exp-src "$EXP" --output "$A/credit/$mode.$r.csv" --threads $THREADS $extra > "$A/credit/$mode.$r.csv.log" 2>&1 \
-          || { echo "scoring $mode $r (alpha = $al) failed (see $A/credit/$mode.$r.csv.log)"; exit 1; }
+            --exp-src "$EXP" --output "$A/credit/$name.$r.csv" --threads $THREADS $extra > "$A/credit/$name.$r.csv.log" 2>&1 \
+          || { echo "scoring $name $r (alpha = $al) failed (see $A/credit/$name.$r.csv.log)"; exit 1; }
       done
     done
   done

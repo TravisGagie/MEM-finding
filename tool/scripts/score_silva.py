@@ -21,9 +21,11 @@
 #   --mode em:    credit proportional to (c_g / N_g) * pi_g, where pi starts as the database prior N_g / N and is
 #                 re-estimated as each genus's share of the total credit over all reads and both mates, for each
 #                 number of iterations in --em-iters (0 iterations is proportional credit, bit for bit)
-#   --mode bayes: the Bayes reference with the sample's own prior: genus g's score is alpha log N_g + the sum over the
-#                 read's matches (both mates) of log(c_g / (2 N_g)), or log epsilon (--epsilon, 1e-6) where g lacks the
-#                 match; the read goes to the top score (scores turned into posteriors, which sum per clade)
+#   --mode bayes: naive Bayes over the read's MEMs: genus g's score is log prior_g + the sum over the read's matches
+#                 (both mates) of log(c_g / (2 N_g)), or log epsilon (--epsilon, 1e-6; several values give one line
+#                 each) where g lacks the match; the read goes to the top score (scores turned into posteriors, which
+#                 sum per clade).  --prior sample: prior_g ~ N_g^alpha with --alpha, the sample's own (label bayes,
+#                 the reference); flat: 1/G (bayesflat); db: N_g / N (bayesdb)
 # Output: katka,<mode>,<level>,<accuracy>,correct=..,unclassified=..,wrong=..,reads=..,ambiguous_truth=..,theirs=..,strict=..,strict_correct=..
 # (accuracy counts unclassified reads as wrong; theirs = accuracy under their rule for unclassified reads;
 #  strict = accuracy when a tie for the maximum weight counts as wrong; all three count ties as in their code otherwise).
@@ -43,8 +45,10 @@ p.add_argument("--output", required=True); p.add_argument("--exp-src", required=
 p.add_argument("--threads", type=int, default=os.cpu_count())
 p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes"], default="lca")
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
-p.add_argument("--alpha", type=float, default=None, help="--mode bayes: the prior is proportional to N_g^alpha (the sample's)")
-p.add_argument("--epsilon", type=float, default=1e-6, help="--mode bayes: the likelihood of a match for a genus without it")
+p.add_argument("--prior", choices=["sample", "flat", "db"], default="sample",
+               help="--mode bayes: the prior: sample (N_g^alpha, the sample's own, with --alpha: the reference), flat (1/G) or db (N_g / N)")
+p.add_argument("--alpha", type=float, default=None, help="--mode bayes --prior sample: the prior is proportional to N_g^alpha")
+p.add_argument("--epsilon", default="1e-6", help="--mode bayes: the likelihood of a match for a genus without it (comma-separated values)")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
@@ -71,10 +75,10 @@ if a.mode in ("norm", "prior", "em", "bayes") and NSEQ is None:
 NTOT, NGEN = (sum(NSEQ), len(NSEQ)) if NSEQ else (0, 0)
 PI0 = [n / NTOT for n in NSEQ] if NSEQ else None      # the database prior, EM's start
 if a.mode == "bayes":
-    if a.alpha is None: sys.exit("--mode bayes needs --alpha")
     import math
-    LOGPRIOR = [a.alpha * math.log(n) for n in NSEQ]   # log N_g^alpha (its normalisation cancels)
-    LOGEPS = math.log(a.epsilon)
+    if a.prior == "sample" and a.alpha is None: sys.exit("--mode bayes --prior sample needs --alpha")
+    PA = {"sample": a.alpha, "flat": 0.0, "db": 1.0}[a.prior]   # the prior is N_g^PA: flat = N_g^0, db = N_g^1 (/ N)
+    LOGPRIOR = [PA * math.log(n) for n in NSEQ]                # (its normalisation cancels)
 
 G = {}
 def work(rng):
@@ -93,15 +97,15 @@ def work(rng):
             # p_g(m) = c_g(m) / (2 N_g) (the fraction of g's sequences, both strands, containing m) and epsilon for a
             # genus without the match; over the genera of the read's matches; then the posterior (positive weights,
             # so ties and the accuracy rule are as for the other schemes)
+            # in one pass over the listings, as proportional credit: S_g = log prior_g + sum over the matches with g of
+            # log p_g + (the number of matches without g) * log epsilon
             feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
-            cand = {doc for f in feats for doc in f[1]}
-            sc = {}
-            for doc in cand:
-                v = LOGPRIOR[doc]
-                for L, d, _, cnt in feats:
-                    c = dict(zip(d, cnt)).get(doc)
-                    v += math.log(c / (2 * NSEQ[doc])) if c else LOGEPS
-                sc[doc] = v
+            ll = {}; hits = {}
+            for L, d, _, cnt in feats:
+                for doc, c in zip(d, cnt):
+                    ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
+            nf = len(feats)
+            sc = {doc: LOGPRIOR[doc] + v + (nf - hits[doc]) * G["logeps"] for doc, v in ll.items()}
             if sc:
                 top = max(sc.values())
                 for doc, v in sc.items():
@@ -208,6 +212,11 @@ elif a.mode == "em":
         T = [sum(x[i] for x in parts) for i in range(NGEN)]; tt = sum(T)
         pi = [x / tt for x in T]
         print("EM iteration %d: %d genera with credit" % (k + 1, sum(1 for x in pi if x > 0)), file=sys.stderr, flush=True)
+elif a.mode == "bayes":
+    # labels: bayes (the sample's prior), bayesflat, bayesdb; with the value of epsilon appended unless it is 1e-6
+    tag = {"sample": "", "flat": "flat", "db": "db"}[a.prior]
+    variants = [("bayes%s%s" % (tag, "" if float(e) == 1e-6 else "%g" % float(e)), {"logeps": math.log(float(e))})
+                for e in a.epsilon.split(",")]
 else:
     variants = [(a.mode, {})]
 with open(a.output, "w") as out:
