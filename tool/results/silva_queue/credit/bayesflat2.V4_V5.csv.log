@@ -1,0 +1,12 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+katka,bayesflat,genus,0.9435,correct=188699,unclassified=0,wrong=11301,reads=200000,ambiguous_truth=0,theirs=0.9435,strict=0.9435,strict_correct=188698
+katka,bayesflat1e-09,genus,0.9382,correct=187631,unclassified=0,wrong=12369,reads=200000,ambiguous_truth=0,theirs=0.9382,strict=0.9382,strict_correct=187630
+katka,bayesflat1e-12,genus,0.9363,correct=187254,unclassified=0,wrong=12746,reads=200000,ambiguous_truth=0,theirs=0.9363,strict=0.9363,strict_correct=187253
+katka,bayesflat1e-300,genus,0.9349,correct=186989,unclassified=0,wrong=13011,reads=200000,ambiguous_truth=0,theirs=0.9349,strict=0.9349,strict_correct=186988
+katka,bayesflat0,genus,0.9349,correct=186989,unclassified=0,wrong=13011,reads=200000,ambiguous_truth=0,theirs=0.9349,strict=0.9349,strict_correct=186988

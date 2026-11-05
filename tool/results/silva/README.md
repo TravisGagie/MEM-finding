@@ -164,15 +164,62 @@ Strict genus accuracy, mean of the four regions:
 | naive Bayes, flat prior, ε = 10⁻⁴ (best at α = 0) | 84.49 | 95.61 | 96.18 |
 | naive Bayes, flat prior, ε = 10⁻⁶ | 92.66 | 94.23 | 94.78 |
 | naive Bayes, database prior, ε = 10⁻⁶ | 92.77 | 93.20 | 93.00 |
-| naive Bayes, mixture, ε fitted | 91.42 | 94.22 | 95.11 |
+| naive Bayes, mixture, ε at the likelihood's peak (0.5 or 0.6) | 91.42 | 94.26 | 95.19 |
 
 - **Check:** α = 0 is the same design as the uniform simulation above, simulated again by `simulate_dial.py`: normalised 91.85 against
   91.75, proportional 88.19 against 88.09, range 84.50 against 84.41, one 85.94 against 85.82.
 - **ε = 10⁻⁶ was not chosen held out.** The held-out choice, the best ε at α = 0, is 10⁻⁴, and it gives 84.49 at
   α = 1. The other values are in `dial_tables.txt`.
-- **The fitted ε is not a fit.** In all 12 runs it is 0.5, the top of the grid, with the log-likelihood still rising
-  there (α = 0, V3_V4: −22.32M at 0.3, −22.04M at 0.5). The toy fitted 0.03 to 0.2. So `bayesauto` here is
-  the mixture scheme at ε = 0.5, and the grid's limit, not the reads, set that value.
+- **The mixture's ε:** the first run's grid stopped at 0.5, the peak's edge. On the grid to 0.99 the likelihood peaks
+  inside it, at 0.5 or 0.6 (see below).
 - **Run note:** `simulate_dial.py` fails under this machine's Python 3.14 (see `NOTES.md`), so the run set the
   multiprocessing start method to `fork` from outside the script (`PYTHONPATH` with a `sitecustomize.py`). The script
   was not changed.
+
+## Rescoring on the existing listings (2026-11-05)
+
+No new simulations or searches, except that the uniform listings were rescored to get exact strict counts, which
+reproduced the earlier uniform column. Full tables: `rescore_tables.txt`, from `rescore_tables.py`; scoring CSVs in
+`../silva_queue/`. Naive Bayes here has a flat prior.
+
+**Smaller ε and the limit** (`score_silva.py --epsilon 0`: fewest missing MEMs, ties by the sum of log c_g / (2 N_g)).
+Strict genus accuracy, mean of the four regions, all reads and excluding reads from genera with ambiguous names:
+
+| ε | α = 1 | excl. | α = 0 | excl. | α = −1 | excl. | aquatic |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 10⁻⁶ | 92.66 | 91.94 | 94.23 | 93.84 | 94.78 | 94.65 | 94.70 |
+| 10⁻⁹ | 91.11 | 90.23 | 92.44 | 91.92 | 93.10 | 92.90 | 94.36 |
+| 10⁻¹² | 90.35 | 89.40 | 91.59 | 91.00 | 92.28 | 92.06 | 94.19 |
+| limit | 89.68 | 88.66 | 90.80 | 90.16 | 91.48 | 91.23 | 94.08 |
+
+- **Checks:** ε = 10⁻⁹ repeats the dial's earlier row exactly, and ε = 10⁻³⁰⁰ gives the limit's accuracy to two decimals.
+- **Scored clades only:** the scorer now picks among scored clades, because an "uncultured" top could underflow the
+  other genera's posteriors to 0 at very small ε. This doesn't change the larger ε values above.
+- **Real aquatic reads:** proportional 93.77 and normalised 92.76, so naive Bayes beats both at every ε here, the
+  limit included. ε = 10⁻⁶ wasn't chosen held out.
+
+**Excluding reads from genera with ambiguous names** (the scorer counts those reads as correct). Reads per region,
+of 200,000: α = 1, 17,609–18,267; α = 0, 9,000–16,215; α = −1, 2,452–9,712; uniform, 8,921–16,198; aquatic, 0.
+So the aquatic table is unchanged, and the simulated tables fall by 0.1 to 1.5 points for most schemes:
+
+| scheme | uniform | excl. | aquatic (both) |
+|---|---:|---:|---:|
+| range | 84.41 | 83.32 | 86.95 |
+| one label per MEM | 85.83 | 84.88 | 92.17 |
+| sample (simulated cliffs) | 87.42 | 86.55 | 90.46 |
+| even | 87.36 | 86.49 | 90.28 |
+| normalised | 91.75 | 91.20 | 92.76 |
+| proportional | 88.09 | 87.28 | 93.77 |
+
+The whole dial, both ways, is in `rescore_tables.txt`.
+
+**`bayesauto`'s likelihood peak**, on the grid to 0.99: ε = 0.5 in 9 of the 12 runs and 0.6 in 3 (α = 0, V4_V5;
+α = −1, V3_V4 and V4_V5). None is at the grid's edge. The grid is coarse there (0.3, 0.5, 0.6, 0.7). Accuracy: 91.42, 94.26, 95.19.
+
+**The aquatic genera** (`alpha_fit.txt`): 98 genera in V1_V2 and 100 in the other regions, of 9,118. They hold 14.7% of
+SILVA's sequences (59,103 of 402,378 in V1_V2, 59,321 elsewhere). Their median rank by N_g is 620.5, range 1 to 3881,
+with 12 in the top 1% and 63–64 in the top 10%. N_g runs from 5 to 15,700, median 111.5.
+
+**Timing, 5 repeats** (`timing_repeats.txt`): mean per-read time 45.57 µs (median; range 45.46–45.87), 167,224
+reads/s with 12 threads (164,575–167,504). This replaces the queue's single 52.3 µs and 145,500 reads/s, which ran with
+other load on the machine; the 45.9 µs seen in another run agrees with these repeats.

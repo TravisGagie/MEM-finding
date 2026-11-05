@@ -1,0 +1,17 @@
+[2026-11-05 08:03:45] default V1_V2 mate 1, 1 thread
+[2026-11-05 08:03:54] default V1_V2 mate 1, 12 threads
+[2026-11-05 08:03:57] default V1_V2 mate 2, 1 thread
+[2026-11-05 08:04:07] default V1_V2 mate 2, 12 threads
+[2026-11-05 08:04:09] default V3_V4 mate 1, 1 thread
+[2026-11-05 08:04:20] default V3_V4 mate 1, 12 threads
+[2026-11-05 08:04:22] default V3_V4 mate 2, 1 thread
+[2026-11-05 08:04:32] default V3_V4 mate 2, 12 threads
+[2026-11-05 08:04:35] default V4_V4 mate 1, 1 thread
+[2026-11-05 08:04:45] default V4_V4 mate 1, 12 threads
+[2026-11-05 08:04:47] default V4_V4 mate 2, 1 thread
+[2026-11-05 08:04:57] default V4_V4 mate 2, 12 threads
+[2026-11-05 08:05:00] default V4_V5 mate 1, 1 thread
+[2026-11-05 08:05:10] default V4_V5 mate 1, 12 threads
+[2026-11-05 08:05:12] default V4_V5 mate 2, 1 thread
+[2026-11-05 08:05:23] default V4_V5 mate 2, 12 threads
+[2026-11-05 08:05:26] done: timing; now: python3 /home/travis/rz/MEM-finding/tool/scripts/silva_tables.py /home/travis/tool/silva/queue/timing5/r2

@@ -1,0 +1,68 @@
+Strict genus accuracy (%), mean of the four regions: all reads, and excluding reads from genera with ambiguous names.
+
+Reads from genera with ambiguous names, of 200,000 pairs, by region (V1_V2 V3_V4 V4_V4 V4_V5):
+  dial, alpha = 1     18267   18169   18005   17609
+  dial, alpha = 0     16215   15454   12736    9000
+  dial, alpha = -1     9712    7774    4705    2452
+  uniform             16198   15529   12672    8921
+  aquatic                 0       0       0       0
+
+== the dial
+  scheme                                                         alpha = 1           alpha = 0          alpha = -1
+                                                             all     excl.       all     excl.       all     excl.
+  range (Cliffy's LCA query)                               85.58     84.16     84.50     83.41     83.90     83.43
+  one label per MEM                                        91.63     90.80     85.94     84.98     81.87     81.37
+  sample (simulated cliffs)                                88.04     86.86     87.51     86.64     87.05     86.68
+  even                                                     88.20     87.03     87.48     86.61     87.01     86.63
+  normalised                                               91.76     90.95     91.85     91.30     91.84     91.63
+  proportional                                             92.68     91.95     88.19     87.38     85.01     84.58
+  prior mixture, beta = 0.1                                92.70     91.98     89.35     88.62     87.91     87.56
+  prior mixture, beta = 0.25                               92.69     91.97     90.01     89.33     89.36     89.07
+  prior mixture, beta = 0.5                                92.67     91.94     90.66     90.02     90.42     90.16
+  prior mixture, beta = 0.75                               92.59     91.85     91.17     90.57     91.08     90.84
+  proportional/even mix, beta = 0.1                        92.53     91.79     88.31     87.51     85.32     84.90
+  proportional/even mix, beta = 0.25                       92.25     91.48     88.46     87.67     85.75     85.34
+  proportional/even mix, beta = 0.5                        91.57     90.74     88.59     87.81     86.38     85.99
+  proportional/even mix, beta = 0.75                       90.50     89.56     88.57     87.78     86.97     86.59
+  EM, 5 iterations                                         92.32     91.56     90.16     89.49     90.02     89.77
+  EM, 20 iterations                                        92.31     91.55     90.20     89.54     90.22     89.97
+  naive Bayes, the sample's prior, eps = 1e-6              92.77     92.06     94.23     93.84     95.89     95.78
+  naive Bayes, database prior, eps = 1e-6                  92.77     92.06     93.20     92.73     93.00     92.81
+  naive Bayes, flat, eps = 1e-2                            41.58     35.79     86.28     85.26     95.99     95.88
+  naive Bayes, flat, eps = 1e-3                            65.28     61.84     94.54     94.15     96.57     96.49
+  naive Bayes, flat, eps = 1e-4                            84.49     82.96     95.61     95.31     96.18     96.08
+  naive Bayes, flat, eps = 1e-6                            92.66     91.94     94.23     93.84     94.78     94.65
+  naive Bayes, flat, eps = 1e-9                            91.11     90.23     92.44     91.92     93.10     92.90
+  naive Bayes, flat, eps = 1e-12                           90.35     89.40     91.59     91.00     92.28     92.06
+  naive Bayes, flat, eps = 1e-300 (check)                  89.68     88.66     90.80     90.16     91.48     91.23
+  naive Bayes, flat, the limit eps -> 0                    89.68     88.66     90.80     90.16     91.48     91.23
+  naive Bayes, mixture, eps at the likelihood's peak       91.42     90.57     94.26     93.87     95.19     95.06
+
+== the uniform simulation and the real aquatic reads
+  scheme                                                           uniform             aquatic
+                                                             all     excl.       all     excl.
+  range (Cliffy's LCA query)                               84.41     83.32     86.95     86.95
+  one label per MEM                                        85.83     84.88     92.17     92.17
+  sample (simulated cliffs)                                87.42     86.55     90.46     90.46
+  even                                                     87.36     86.49     90.28     90.28
+  normalised                                               91.75     91.20     92.76     92.76
+  proportional                                             88.09     87.28     93.77     93.77
+  naive Bayes, flat, eps = 1e-6                                -         -     94.70     94.70
+  naive Bayes, flat, eps = 1e-9                                -         -     94.36     94.36
+  naive Bayes, flat, eps = 1e-12                               -         -     94.19     94.19
+  naive Bayes, flat, eps = 1e-300 (check)                      -         -     94.08     94.08
+  naive Bayes, flat, the limit eps -> 0                        -         -     94.08     94.08
+
+== bayesauto: the log-likelihood's peak over the grid (in units of 10^6, at the peak and its neighbours)
+  alpha = 1   V1_V2  peak at eps = 0.5      (0.3: -22.935  0.5: -22.892  0.6: -23.007)
+  alpha = 1   V3_V4  peak at eps = 0.5      (0.3: -25.536  0.5: -25.377  0.6: -25.446)
+  alpha = 1   V4_V4  peak at eps = 0.5      (0.3: -24.210  0.5: -24.107  0.6: -24.198)
+  alpha = 1   V4_V5  peak at eps = 0.5      (0.3: -26.628  0.5: -26.404  0.6: -26.446)
+  alpha = 0   V1_V2  peak at eps = 0.5      (0.3: -19.774  0.5: -19.620  0.6: -19.675)
+  alpha = 0   V3_V4  peak at eps = 0.5      (0.3: -22.317  0.5: -22.035  0.6: -22.039)
+  alpha = 0   V4_V4  peak at eps = 0.5      (0.3: -19.721  0.5: -19.527  0.6: -19.563)
+  alpha = 0   V4_V5  peak at eps = 0.6      (0.5: -21.803  0.6: -21.781  0.7: -21.855)
+  alpha = -1  V1_V2  peak at eps = 0.5      (0.3: -18.973  0.5: -18.785  0.6: -18.825)
+  alpha = -1  V3_V4  peak at eps = 0.6      (0.5: -20.787  0.6: -20.782  0.7: -20.875)
+  alpha = -1  V4_V4  peak at eps = 0.5      (0.3: -17.829  0.5: -17.644  0.6: -17.680)
+  alpha = -1  V4_V5  peak at eps = 0.6      (0.5: -21.295  0.6: -21.255  0.7: -21.309)

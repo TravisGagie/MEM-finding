@@ -25,7 +25,8 @@
 #                 (both mates) of log(c_g / (2 N_g)), or log epsilon (--epsilon, 1e-6; several values give one line
 #                 each) where g lacks the match; the read goes to the top score (scores turned into posteriors, which
 #                 sum per clade).  --prior sample: prior_g ~ N_g^alpha with --alpha, the sample's own (label bayes,
-#                 the reference); flat: 1/G (bayesflat); db: N_g / N (bayesdb)
+#                 the reference); flat: 1/G (bayesflat); db: N_g / N (bayesdb).  --epsilon 0 is the limit: the genera
+#                 missing the fewest of the read's matches, and among them the top log prior_g + sum log p_g
 # Output: katka,<mode>,<level>,<accuracy>,correct=..,unclassified=..,wrong=..,reads=..,ambiguous_truth=..,theirs=..,strict=..,strict_correct=..
 # (accuracy counts unclassified reads as wrong; theirs = accuracy under their rule for unclassified reads;
 #  strict = accuracy when a tie for the maximum weight counts as wrong; all three count ties as in their code otherwise).
@@ -112,7 +113,13 @@ def work(rng):
                 for doc, c in zip(d, cnt):
                     ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
             nf = len(feats)
-            sc = {doc: LOGPRIOR[doc] + v + (nf - hits[doc]) * G["logeps"] for doc, v in ll.items()}
+            # only the scored clades: an unscored top ("uncultured") could underflow the others' posteriors to 0
+            ll = {doc: v for doc, v in ll.items() if d2c.get(doc) in keys}
+            if G["logeps"] is None:                  # epsilon -> 0: only the genera with the most matches can win
+                most = max((hits[doc] for doc in ll), default=0)
+                sc = {doc: LOGPRIOR[doc] + v for doc, v in ll.items() if hits[doc] == most}
+            else:
+                sc = {doc: LOGPRIOR[doc] + v + (nf - hits[doc]) * G["logeps"] for doc, v in ll.items()}
             if sc:
                 top = max(sc.values())
                 for doc, v in sc.items():
@@ -264,7 +271,7 @@ elif a.mode == "bayesauto":
 elif a.mode == "bayes":
     # labels: bayes (the sample's prior), bayesflat, bayesdb; with the value of epsilon appended unless it is 1e-6
     tag = {"sample": "", "flat": "flat", "db": "db"}[a.prior]
-    variants = [("bayes%s%s" % (tag, "" if float(e) == 1e-6 else "%g" % float(e)), {"logeps": math.log(float(e))})
+    variants = [("bayes%s%s" % (tag, "" if float(e) == 1e-6 else "%g" % float(e)), {"logeps": math.log(float(e)) if float(e) > 0 else None})
                 for e in a.epsilon.split(",")]
 else:
     variants = [(a.mode, {})]
@@ -286,6 +293,7 @@ with open(a.output, "w") as out:
         print(line, flush=True); out.write(line + "\n")
 if a.calls and a.mode == "bayes":
     le = variants[0][1]["logeps"]
+    if le is None: sys.exit("--calls needs a positive --epsilon")
     with open(a.calls, "w") as o:
         for r in rs.read_list:
             feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]

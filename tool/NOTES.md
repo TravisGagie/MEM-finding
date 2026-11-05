@@ -659,7 +659,7 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 | naive Bayes, flat, ε = 10⁻⁶ | 92.66 | 94.23 | 94.78 |
 | naive Bayes, flat, ε = 10⁻⁴ (held-out choice) | 84.49 | 95.61 | 96.18 |
 | naive Bayes, sample's prior (reference) | 92.77 | 94.23 | 95.89 |
-| naive Bayes, mixture, ε fitted | 91.42 | 94.22 | 95.11 |
+| naive Bayes, mixture, ε at the likelihood's peak | 91.42 | 94.26 | 95.19 |
 
 - **Three things for the cloud session:**
   - **`bayesauto`'s fit fails on SILVA.** ε = 0.5, the top of the grid, in all 12 runs, with the log-likelihood still rising there; the toy fitted 0.03 to 0.2. The accuracy above is for ε = 0.5, so don't describe it as fitted.
@@ -683,6 +683,15 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 
     The simulations and searches are done, so `dial` skips them and only rescores `bayesauto`: about 24 grid points × 12 read sets of likelihood passes, in the order of an hour with 12 threads. The ε fitted per region and α, and whether it is at the edge, are in `dial_tables.py`'s output.
 - **The α fit doesn't place the real reads on the dial.** Its slope is 0.056 with Spearman about −0.04 (`results/silva/alpha_fit.txt`): abundance is unrelated to N_g. That is not the dial's α = 0, where every genus gets the same reads: the real sets are skewed, and proportional gets 93.77 on them against 88.19 at α = 0.
+
+**The rescoring (desktop, 2026-11-05; for the SILVA digest).** `results/silva/README.md` ("Rescoring on the existing listings"), `rescore_tables.txt`, `timing_repeats.txt`.
+- **`score_silva.py --mode bayes --epsilon 0`** is new: the ε → 0 limit, the genera missing the fewest MEMs, ties by the product of c_g / N_g. It now also chooses among scored clades only, since an unscored "uncultured" top could underflow the rest at tiny ε. ε = 10⁻⁹ reproduced the dial's row, and ε = 10⁻³⁰⁰ matched the limit to two decimals.
+- **Flat naive Bayes falls steadily as ε shrinks below 10⁻⁶:** at α = 1 / 0 / −1, 92.66 / 94.23 / 94.78 at 10⁻⁶ and 89.68 / 90.80 / 91.48 at the limit. On the real aquatic reads it is 94.70, 94.36, 94.19 and 94.08 at 10⁻⁶, 10⁻⁹, 10⁻¹² and the limit, against proportional 93.77 and normalised 92.76.
+- **`bayesauto`:** the likelihood peaks at ε = 0.5 in 9 runs and 0.6 in 3, inside the grid, as the cloud session predicted. Accuracy 91.42, 94.26, 95.19.
+- **Excluding reads from genera with ambiguous names:** the aquatic table doesn't change, as it has none. The simulated sets have up to 9% such reads; both versions are in `rescore_tables.txt`.
+- **Timing, 5 repeats:** 45.57 µs (45.46–45.87), 167,224 reads/s (164,575–167,504). These should replace 52.3 µs and 145,500 reads/s in the digest.
+- **`simulate_dial.py`:** the desktop added no guard. The fork context in the script already fixes it: `tests/dial_toy.sh` passed here without the outside workaround.
+- **For the cloud session:** `tests/test_score_schemes.py` gives 25 "reference" failures on the desktop with the toy's files and with the real reference, on fb7c06c's scorer as well as with the change above, while `dial_toy.sh` passes. So the change didn't cause them, but it hasn't been tested by that suite either. The failures start at "reference: freq".
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
 - **The simulation,** for α = 1, 0 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.

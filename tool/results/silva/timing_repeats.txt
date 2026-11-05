@@ -1,0 +1,13 @@
+The SILVA default configuration, 5 repeats of `silva_queue.sh timing` (2026-11-05, 08:02-08:10; find --preset silva,
+one thread pinned to CPU 9, then 12 threads; 8 read files of 200,000 reads). The logs are in
+../silva_queue/timing5/. All five repeats' outputs were byte-identical to the queue's.
+
+repeat  mean per-read (us)  total / reads (us)  reads/s, 12 threads
+1       45.57               47.11               167,487
+2       45.46               46.76               167,224
+3       45.87               47.15               164,677
+4       45.60               46.88               164,575
+5       45.50               46.71               167,504
+
+median  45.57               46.88               167,224
+range   45.46..45.87        46.71..47.15        164,575..167,504

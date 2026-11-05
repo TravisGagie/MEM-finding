@@ -1,0 +1,1 @@
+default	1870808832	/home/travis/tool/silva/bac.rlbwt /home/travis/tool/silva/bac.csa /home/travis/tool/silva/bac.tag /home/travis/tool/silva/bac.tag.rmq
