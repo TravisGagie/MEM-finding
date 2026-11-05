@@ -6,7 +6,9 @@
 - MicrobeMixer and ART: `results/silva/README.md`, last section. The mismatch is ART's profile, MiSeq v3 in Cliffy's Figure 2 caption against `-ss MSv1` in the code. MSv3 doesn't explain the gap to Cliffy's published LCA accuracy: range with Cliffy's scoring is 87.33 (MSv1) and 86.86 (MSv3), mean of 3 repeats each, against 87.5 to 90.2 published.
 - **Better estimates than the single-repeat numbers:** the existing reads are the best of three MSv1 repeats, so range 86.68, proportional 93.59, normalised 92.66 and naive Bayes 94.57 (strict; 3 repeats) replace 86.95, 93.77, 92.76 and 94.70 where a mean is wanted. The paper's reproduced values remain as measured on those reads.
 - **New:** EM, 20 iterations, gets 96.32 on the aquatic reads, the best of any scheme there.
-- **Sparse dial** (`results/silva/README.md`, last section): the aquatic abundances on random genera. EM gets 96.32 / 96.80 / 95.40 (aquatic / uniform draws / smallest genera), proportional 93.59 / 88.98 / 83.78, normalised 92.66 / 92.10 / 91.22, naive Bayes 94.57 / 94.69 / 94.54, range 86.68 / 84.72 / 84.40. So EM's lead is sparsity, and proportional's advantage is that the aquatic genera are large.
+- **Naive Bayes with an EM prior** (`--mode bayesem`; `results/silva/README.md`, last section): 95.94 on the aquatic reads against plain EM's 96.32, 92.57 / 93.94 / 94.91 on the dense dial against 92.31 / 90.20 / 90.22, 96.22 / 96.51 on the sparse dial against 96.80 / 95.40. It's the most robust scheme; plain EM is best on the aquatic reads.
+- **Cliffy's Figure 2**: `results/silva/README.md`, "Cliffy's published times". Time per read depends on whether a plotted time covers both mates, which isn't public; the draft's 199–204 µs assumes it does.
+- **Sparse dial** (`results/silva/README.md`, "The sparse dial"): the aquatic abundances on random genera. EM gets 96.32 / 96.80 / 95.40 (aquatic / uniform draws / smallest genera), proportional 93.59 / 88.98 / 83.78, normalised 92.66 / 92.10 / 91.22, naive Bayes 94.57 / 94.69 / 94.54, range 86.68 / 84.72 / 84.40. So EM's lead is sparsity, and proportional's advantage is that the aquatic genera are large.
 - **Cliffy's Figure 3** read exactly from the PDF, per region and digestion: `results/silva/README.md`, "Cliffy's published accuracies", with `cliffy_fig3_values.txt`. Undigested LCA is 87.42, 90.16, 88.31, 89.76 and listing 94.06, 94.72, 93.18, 94.17 (V1–V2, V3–V4, V4, V4–V5), so the draft's 87.5 should be 87.4 and its 93.3–94.8 should be 93.2–94.7.
 
 Written 2026-11-01 for Travis, by the session that built `tool/` from `BRIEF_tool.md`.
@@ -620,6 +622,8 @@ The code computes each in a form that gives these endpoints bit for bit. The exi
   - **flat (`bayesflat`):** π_g = 1/G, for ε ∈ {10⁻², 10⁻³, 10⁻⁴, 10⁻⁶, 10⁻⁹};
   - **database (`bayesdb`):** π_g = N_g / N, ε = 10⁻⁶.
 - The flat prior is the reference at α = 0 and the database prior is the reference at α = 1, bit for bit.
+
+*The ε → 0 limit and the EM prior.* `--epsilon 0` is the limit: the genera missing the fewest MEMs, then the largest product of c_g / N_g. `--mode bayesem` starts from a flat prior and re-estimates it from the reads' posteriors, with the naive-Bayes likelihood at the first `--epsilon`, or the mixture likelihood below at `--mixture-eps`; a read's posterior is over the genera of its MEMs, and the prior over all genera. `bayes` and `bayesem` call only among scored genera, leaving out "uncultured".
 
 *ε fitted to the reads (`bayesauto`).* The ε of the schemes above is not a probability, so it can't be fitted by likelihood: a larger ε raises every read's score. `bayesauto` uses the proper mixture model instead.
 - **Model:** each MEM M of a read comes from the read's genus g with probability 1 − ε, and is noise otherwise. Its likelihood is (1 − ε) c_g(M) / (2 N_g) + ε C(M) / (2N), where C(M) / (2N) is the fraction of all database sequences (both strands) containing it.

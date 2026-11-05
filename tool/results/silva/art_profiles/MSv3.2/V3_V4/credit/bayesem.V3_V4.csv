@@ -1,0 +1,2 @@
+katka,bayesem5,genus,0.969,correct=193793,unclassified=0,wrong=6207,reads=200000,ambiguous_truth=0,theirs=0.969,strict=0.969,strict_correct=193793
+katka,bayesem20,genus,0.969,correct=193797,unclassified=0,wrong=6203,reads=200000,ambiguous_truth=0,theirs=0.969,strict=0.969,strict_correct=193797

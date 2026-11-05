@@ -277,5 +277,51 @@ if "uncultured" in _names:
     check("hand: --exclude-out lists the unscored documents", [int(x) for x in open(d + "/excl.txt")] == [i for i, n in enumerate(_names) if n == "uncultured"])
 else:
     print("no uncultured genus in this reference: its three checks were skipped")
+# naive Bayes with an EM prior, against an independent implementation, on the generic reads: full vectors over the genera
+# instead of the scorer's sparse lists, and with the mixture likelihood as well
+def bem_ref(reads, nseq, iters, eps=None, mix=None):
+    Gn, N = len(nseq), sum(nseq)
+    def like(r):
+        feats = [f for m in (1, 2) for _, f in r[m]]
+        cand = sorted({g for f in feats for g in f}); out = {}
+        for g in cand:
+            v = 0.0
+            for f in feats:
+                if mix is None: v += math.log(f[g] / (2 * nseq[g])) if g in f else math.log(eps)
+                else:
+                    q = mix * sum(f.values()) / (2 * N)
+                    v += math.log((1 - mix) * f.get(g, 0) / (2 * nseq[g]) + q) - math.log(q)
+            out[g] = v
+        return out
+    Ls = [like(r) for r in reads]; pi = [1 / Gn] * Gn
+    for _ in range(iters):
+        T = [0.0] * Gn
+        for L in Ls:
+            w = {g: math.exp(v) * pi[g] for g, v in L.items()}; t = sum(w.values())
+            if t > 0:
+                for g, x in w.items(): T[g] += x / t
+        pi = [x / sum(T) for x in T]
+    tp = uncl = strict = 0
+    for r, L in zip(reads, Ls):
+        sc = {g: v + math.log(pi[g]) for g, v in L.items() if pi[g] > 0}
+        if not sc: uncl += 1; continue
+        top = max(sc.values())
+        if abs(sc.get(r[0], -1e300) - top) < 1e-9:
+            tp += 1; strict += sum(1 for v in sc.values() if abs(v - top) < 1e-9) == 1
+    return tp, uncl, strict
+d = os.path.join(W, "generic")
+B = score(d, "bayesem", ["--em-iters", "0,5,20"]); os.replace(d + "/bayesem.csv", d + "/bayesem_plain.csv")
+check("bayesem: 0 iterations = bayesflat", B["bayesem0"]["genus"][3:] == flat["bayesflat"]["genus"][3:])
+for k in (5, 20): check("reference: bayesem, %d iterations" % k, counts(B["bayesem%d" % k]["genus"]) == bem_ref(BAYES_READS, BAYES_NSEQ, k, eps=1e-6))
+M = score(d, "bayesem", ["--em-iters", "0,5,20", "--mixture-eps", str(chosen)])
+check("bayesem: mixture, 0 iterations = bayesauto", counts(M["bayesemmix0"]["genus"]) == counts(got[3:]))
+for k in (5, 20): check("reference: bayesem, mixture, %d iterations" % k, counts(M["bayesemmix%d" % k]["genus"]) == bem_ref(BAYES_READS, BAYES_NSEQ, k, mix=chosen))
+# the learned prior decides: 9 reads match A alone; a tenth, from A, matches A and B equally.  A flat prior ties them; EM learns A
+nseq = [1, 1] + [1] * (G - 2)
+reads = [(0, [(60, {0: 1})], [(60, {0: 1})]) for _ in range(9)] + [(0, [(60, {0: 1, 1: 1})], [(60, {0: 1, 1: 1})])]
+d = write_set("hand7", reads, nseq)
+E7 = score(d, "bayesem", ["--em-iters", "0,20"])
+check("hand: the flat prior ties the tenth read (9 of 10 strictly correct)", counts(E7["bayesem0"]["genus"])[2] == 9)
+check("hand: EM's prior settles it (10 of 10)", counts(E7["bayesem20"]["genus"])[2] == 10)
 print("%d failures" % fails)
 sys.exit(1 if fails else 0)

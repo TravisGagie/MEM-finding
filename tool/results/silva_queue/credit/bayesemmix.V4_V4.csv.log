@@ -1,0 +1,29 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+bayesem iteration 1: 3863 genera with a prior above 0
+bayesem iteration 2: 3863 genera with a prior above 0
+bayesem iteration 3: 3863 genera with a prior above 0
+bayesem iteration 4: 3863 genera with a prior above 0
+bayesem iteration 5: 3863 genera with a prior above 0
+bayesem iteration 6: 3863 genera with a prior above 0
+bayesem iteration 7: 3863 genera with a prior above 0
+bayesem iteration 8: 3863 genera with a prior above 0
+bayesem iteration 9: 3863 genera with a prior above 0
+bayesem iteration 10: 3862 genera with a prior above 0
+bayesem iteration 11: 3851 genera with a prior above 0
+bayesem iteration 12: 3850 genera with a prior above 0
+bayesem iteration 13: 3845 genera with a prior above 0
+bayesem iteration 14: 3837 genera with a prior above 0
+bayesem iteration 15: 3826 genera with a prior above 0
+bayesem iteration 16: 3819 genera with a prior above 0
+bayesem iteration 17: 3804 genera with a prior above 0
+bayesem iteration 18: 3793 genera with a prior above 0
+bayesem iteration 19: 3777 genera with a prior above 0
+bayesem iteration 20: 3756 genera with a prior above 0
+katka,bayesemmix5,genus,0.9432,correct=188640,unclassified=1,wrong=11359,reads=200000,ambiguous_truth=0,theirs=0.9432,strict=0.9432,strict_correct=188640
+katka,bayesemmix20,genus,0.9433,correct=188651,unclassified=1,wrong=11348,reads=200000,ambiguous_truth=0,theirs=0.9433,strict=0.9433,strict_correct=188651

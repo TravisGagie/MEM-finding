@@ -27,6 +27,11 @@
 #                 sum per clade).  --prior sample: prior_g ~ N_g^alpha with --alpha, the sample's own (label bayes,
 #                 the reference); flat: 1/G (bayesflat); db: N_g / N (bayesdb).  --epsilon 0 is the limit: the genera
 #                 missing the fewest of the read's matches, and among them the top log prior_g + sum log p_g
+#   --mode bayesem: naive Bayes with a prior learned by EM.  It starts flat; each iteration computes every read's posterior
+#                 over the genera of its matches, from the bayes likelihood (--epsilon, first value) or, with --mixture-eps
+#                 E, bayesauto's mixture likelihood at E, and sets each genus's prior to its share of the posteriors,
+#                 over all genera, "uncultured" included; the calls, as in bayes, are among the scored genera.  One line per
+#                 number of iterations in --em-iters: bayesem<iterations>, or bayesemmix<iterations>; 0 is bayesflat, or bayesauto
 # Output: katka,<mode>,<level>,<accuracy>,correct=..,unclassified=..,wrong=..,reads=..,ambiguous_truth=..,theirs=..,strict=..,strict_correct=..
 # (accuracy counts unclassified reads as wrong; theirs = accuracy under their rule for unclassified reads;
 #  strict = accuracy when a tie for the maximum weight counts as wrong; all three count ties as in their code otherwise).
@@ -44,7 +49,7 @@ p.add_argument("--doc-id-to-traversal", required=True); p.add_argument("--silva-
 p.add_argument("--readset-truthset", required=True); p.add_argument("--trav-to-length", required=True)
 p.add_argument("--output", required=True); p.add_argument("--exp-src", required=True)
 p.add_argument("--threads", type=int, default=os.cpu_count())
-p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes", "bayesauto"], default="lca")
+p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes", "bayesauto", "bayesem"], default="lca")
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
 p.add_argument("--prior", choices=["sample", "flat", "db"], default="sample",
                help="--mode bayes: the prior: sample (N_g^alpha, the sample's own, with --alpha: the reference), flat (1/G) or db (N_g / N)")
@@ -54,6 +59,7 @@ p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e
                help="--mode bayesauto: the values of epsilon searched")
 p.add_argument("--calls", default=None, help="--mode bayes: also write each read's top documents (0-based, comma-separated; - if none), "
                "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
+p.add_argument("--mixture-eps", type=float, default=None, help="--mode bayesem: use bayesauto's mixture likelihood with this epsilon")
 p.add_argument("--exclude-out", default=None, help="write the 0-based documents outside the scored genera, one per line, for "
                "find --classify bayes --exclude-docs (needs --nseq)")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
@@ -77,7 +83,7 @@ def parse(listing):
         out.append((int(e) - int(s) + 1, d, t[i + 1][0] == "<", c))   # <l,r>: an LCA answer in a hybrid listing
     return out
 NSEQ = [int(l) for l in open(a.nseq)] if a.nseq else None
-if a.mode in ("norm", "prior", "em", "bayes", "bayesauto") and NSEQ is None:
+if a.mode in ("norm", "prior", "em", "bayes", "bayesauto", "bayesem") and NSEQ is None:
     sys.exit("--mode %s needs --nseq" % a.mode)
 NTOT, NGEN = (sum(NSEQ), len(NSEQ)) if NSEQ else (0, 0)
 PI0 = [n / NTOT for n in NSEQ] if NSEQ else None      # the database prior, EM's start
@@ -118,7 +124,7 @@ def work(rng):
     listmode = G["mode"] in ("list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em")
     beta = G.get("beta"); pi = G.get("pi")
     rnd = random.Random(a.seed * 1000003 + lo)
-    for r in rs.read_list[lo:hi]:
+    for idx, r in enumerate(rs.read_list[lo:hi], lo):
         correct = r.correct_taxa.get_certain_level(level)
         n = labels.get(correct, 0)
         if n != 1: tp += 1; amb += 1; strict += 1; continue      # truth missing/ambiguous at this level: correct, as in their code
@@ -131,6 +137,15 @@ def work(rng):
             # in one pass over the listings, as proportional credit: S_g = log prior_g + sum over the matches with g of
             # log p_g + (the number of matches without g) * log epsilon
             sc = bayes_scores(r, G["logeps"], keys, d2c)
+            if sc:
+                top = max(sc.values())
+                for doc, v in sc.items():
+                    t = d2c.get(doc)
+                    if t and t in keys: acc[t] = acc.get(t, 0) + math.exp(v - top)
+        if G["mode"] == "bayesem":
+            # the read's log-likelihoods (computed once) plus the log of the prior learned so far, among the scored genera
+            lp = G["logpi"]
+            sc = {doc: v + lp[doc] for doc, v in zip(*BEM[idx]) if lp[doc] is not None and d2c.get(doc) in keys}
             if sc:
                 top = max(sc.values())
                 for doc, v in sc.items():
@@ -151,7 +166,7 @@ def work(rng):
                 for doc, v in sc.items():
                     t = d2c.get(doc)
                     if t and t in keys: acc[t] = acc.get(t, 0) + math.exp(v - top)
-        for listing in (r.mate1_listings, r.mate2_listings) if G["mode"] not in ("bayes", "bayesauto") else ():
+        for listing in (r.mate1_listings, r.mate2_listings) if G["mode"] not in ("bayes", "bayesauto", "bayesem") else ():
             feats = parse(listing)
             if G["mode"] == "longest" and feats:      # only the longest MEMs of each mate vote (e.g. katka-classify -L 1 -X)
                 top = max(f[0] for f in feats); feats = [f for f in feats if f[0] == top]
@@ -234,6 +249,34 @@ def em_pass(rng):
                 for doc, x in zip(d, f): T[doc] += L * x / tot
     return T
 
+def bem_likelihoods(r):
+    """the read's genera and their log-likelihoods, up to a constant shared by its genera"""
+    feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+    ll = {}; hits = {}; e = a.mixture_eps
+    for L, d, _, cnt in feats:
+        if e is None:
+            for doc, c in zip(d, cnt):
+                ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
+        else:
+            q = e * sum(cnt) / (2 * NTOT)
+            for doc, c in zip(d, cnt):
+                ll[doc] = ll.get(doc, 0.0) + math.log((1 - e) * c / (2 * NSEQ[doc]) + q) - math.log(q)
+    if e is None:
+        le = math.log(float(a.epsilon.split(",")[0]))
+        return list(ll), [v + (len(feats) - hits[doc]) * le for doc, v in ll.items()]
+    return list(ll), list(ll.values())
+
+def bem_pass(rng):
+    """the sum over reads lo..hi of each genus's posterior, under the prior G["logpi"] (None: a prior of 0)"""
+    lo, hi = rng; lp = G["logpi"]; T = [0.0] * NGEN
+    for docs, vals in BEM[lo:hi]:
+        sc = [(doc, v + lp[doc]) for doc, v in zip(docs, vals) if lp[doc] is not None]
+        if not sc: continue
+        top = max(v for _, v in sc)
+        w = [(doc, math.exp(v - top)) for doc, v in sc]; tot = sum(x for _, x in w)
+        for doc, x in w: T[doc] += x / tot
+    return T
+
 def auto_pass(rng):
     """the log-likelihood of reads lo..hi under the mixture model, for each epsilon of the grid"""
     lo, hi = rng; out = [0.0] * len(GRID); lg = math.log(NGEN)
@@ -270,6 +313,21 @@ elif a.mode == "em":
         T = [sum(x[i] for x in parts) for i in range(NGEN)]; tt = sum(T)
         pi = [x / tt for x in T]
         print("EM iteration %d: %d genera with credit" % (k + 1, sum(1 for x in pi if x > 0)), file=sys.stderr, flush=True)
+elif a.mode == "bayesem":
+    BEM = [bem_likelihoods(r) for r in rs.read_list]
+    iters = sorted({int(k) for k in a.em_iters.split(",")})
+    logpi = [-math.log(NGEN)] * NGEN; variants = []
+    tag = "bayesem" if a.mixture_eps is None else "bayesemmix"
+    for k in range(iters[-1] + 1):
+        if k in iters: variants.append(("%s%d" % (tag, k), {"logpi": logpi}))
+        if k == iters[-1]: break
+        G["logpi"] = logpi
+        with Pool(a.threads) as pool:
+            parts = pool.map(bem_pass, chunks)
+        T = [sum(x[i] for x in parts) for i in range(NGEN)]; tt = sum(T)
+        ltt = math.log(tt)
+        logpi = [math.log(x) - ltt if x > 0 else None for x in T]       # (x / tt can underflow to 0)
+        print("bayesem iteration %d: %d genera with a prior above 0" % (k + 1, sum(1 for x in T if x > 0)), file=sys.stderr, flush=True)
 elif a.mode == "bayesauto":
     with Pool(a.threads) as pool:
         parts = pool.map(auto_pass, chunks)
@@ -304,6 +362,14 @@ if a.exclude_out:
     with open(a.exclude_out, "w") as o:
         for doc in range(NGEN):
             if d2c.get(doc) not in keys: o.write("%d\n" % doc)
+if a.calls and a.mode == "bayesem":          # the last variant's calls
+    lp = variants[-1][1]["logpi"]
+    _, keys, d2c = level_tables("genus")
+    with open(a.calls, "w") as o:
+        for idx, r in enumerate(rs.read_list):
+            sc = {doc: v + lp[doc] for doc, v in zip(*BEM[idx]) if lp[doc] is not None and d2c.get(doc) in keys}
+            top = max(sc.values()) if sc else None
+            o.write("%s\t%s\n" % (r.name, ",".join(map(str, sorted(doc for doc, v in sc.items() if v == top))) or "-"))
 if a.calls and a.mode == "bayes":
     le = variants[0][1]["logeps"]
     _, keys, d2c = level_tables("genus")

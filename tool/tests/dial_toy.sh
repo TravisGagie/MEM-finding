@@ -58,4 +58,57 @@ for al in 1 0 -1; do for e in 1e-6 1e-3; do
   cmp -s "$W/calls.tsv" "$W/scorer_calls.tsv" || { echo "FAIL: find --classify bayes differs from the scorer (alpha = $al, epsilon = $e)"; exit 1; }
   echo "find --classify bayes = the scorer's calls: alpha = $al, epsilon = $e, $(wc -l < "$W/calls.tsv") read pairs, $(wc -l < "$W/excluded.txt") excluded documents"
 done; done
+# naive Bayes with an EM prior against an independent implementation, on the toy's real listings, call for call: the
+# scorer's calls must be among the independent top genera (within rounding), at each alpha
+for al in 1 0 -1; do for me in "" "--mixture-eps 0.1"; do
+  A=$W/q/dial/a$al; r=V4_V4
+  python3 "$HERE/scripts/score_silva.py" --mode bayesem --em-iters 20 $me --levels genus --mate1-listings "$A/out/${r}_1.out" \
+      --mate2-listings "$A/out/${r}_2.out" --doc-id-to-traversal "$S/work/ref/rna/doc_to_traversal.txt" --silva-tax-ranks "$S/exp1_data/tax_slv_ssu_138.1.txt" \
+      --readset-truthset "$A/$r.seqtax.txt" --trav-to-length "$S/work/ref/trav_to_length.txt" --exp-src "$EXP" --nseq "$W/q/nseq.txt" \
+      --output "$W/s.csv" --calls "$W/bem_calls.tsv" --exclude-out "$W/excluded.txt" --threads ${THREADS:-4} > /dev/null 2>&1 || { echo "FAIL: bayesem"; exit 1; }
+  python3 - "$A/out/${r}_1.out" "$A/out/${r}_2.out" "$W/q/nseq.txt" "$W/excluded.txt" "$W/bem_calls.tsv" "${me##* }" <<'PY' || exit 1
+import math, re, sys
+m1, m2, nseqf, exf, callsf, mix = sys.argv[1:7]
+mix = float(mix) if mix else None; eps = 1e-6
+nseq = [int(x) for x in open(nseqf)]; G = len(nseq); N = sum(nseq); ex = {int(x) for x in open(exf)}
+def rd(f):
+    out = []
+    for l in open(f):
+        if l[0] == ">": out.append([l[1:].strip(), []])
+        else:
+            for mem in re.findall(r"\{([^}]*)\}", l):
+                out[-1][1].append({int(x.split(":")[0]): int(x.split(":")[1]) for x in mem.split(",") if x})
+    return out
+A1, A2 = rd(m1), rd(m2); reads = []
+for (n, f1), (_, f2) in zip(A1, A2):
+    F = f1 + f2; S = {}
+    for g in {g for f in F for g in f}:
+        v = 0.0
+        for f in F:
+            if mix is None: v += math.log(f[g] / (2 * nseq[g])) if g in f else math.log(eps)
+            else:
+                q = mix * sum(f.values()) / (2 * N)
+                v += math.log((1 - mix) * f.get(g, 0) / (2 * nseq[g]) + q) - math.log(q)
+        S[g] = v
+    reads.append((n, S))
+pi = [1 / G] * G
+for _ in range(20):
+    T = [0.0] * G
+    for _, S in reads:
+        if not S: continue
+        top = max(S[g] + math.log(pi[g]) for g in S if pi[g] > 0)
+        w = {g: math.exp(S[g] + math.log(pi[g]) - top) for g in S if pi[g] > 0}; t = sum(w.values())
+        for g, x in w.items(): T[g] += x / t
+    tt = sum(T); pi = [x / tt for x in T]
+bad = n = 0
+for (name, S), l in zip(reads, open(callsf)):
+    got = l.split()[1]; got = [] if got == "-" else [int(x) for x in got.split(",")]
+    sc = {g: S[g] + math.log(pi[g]) for g in S if pi[g] > 0 and g not in ex}; n += 1
+    top = max(sc.values()) if sc else 0
+    near = {g for g, v in sc.items() if v > top - 1e-7}
+    if not set(got) <= near or (near and not got): bad += 1
+print("bayesem = an independent implementation, call for call: %d reads, %d disagree (%s)" % (n, bad, "mixture" if mix else "epsilon = 1e-6"))
+sys.exit(1 if bad else 0)
+PY
+done; done
 echo "dial toy: ok ($W)"

@@ -409,3 +409,32 @@ The aquatic column is the 3 MSv1 repeats, so its range is simulation noise alone
 - **Range falls by 2 to 2.3 points** from the aquatic genera to random ones.
 - **`bayesauto`:** ε is 0.5 or 0.6 in all 24 runs, none at the edge.
 - **Regions vary a lot between draws,** especially V4 and V4–V5 (range in V4, small: 74.89 to 87.45), because a few genera get most of the reads and each draw's top genera differ.
+
+## Naive Bayes with an EM-estimated prior (2026-11-05)
+
+`score_silva.py --mode bayesem`. The prior starts flat. Each iteration computes every read's posterior from the likelihood and sets each genus's prior to its share of the posteriors. No new simulation; listings were regenerated with `find` from the sampled reads where they had been deleted, and all 44 reproduced their stored proportional scores exactly.
+
+- **Likelihood:** naive Bayes with ε = 10⁻⁶, and also (`--mixture-eps`) `bayesauto`'s mixture likelihood at each read set's fitted ε. Its ε belongs to that likelihood; 0.5 in the plain formula would make a missing MEM more likely than a present one.
+- **Details:** a read's posterior is over the genera of its MEMs, as in `bayes`. The prior is over all genera, "uncultured" included; calls are among the scored genera.
+- **Checks:** 0 iterations gives `bayesflat` and `bayesauto`; `test_score_schemes.py` compares 5 and 20 iterations with an independent implementation (full vectors over the genera), and a hand case shows the prior deciding a tie. `dial_toy.sh` compares calls with another independent implementation on the toy's real listings: 2,400 pairs at each α, for both likelihoods, 0 disagreements.
+
+Strict genus accuracy, mean of the four regions, 20 iterations, mean of the repeats or draws (full table, with 5 iterations: `bayesem_tables.txt`):
+
+| read set | proportional | normalised | EM | NB, ε = 10⁻⁶ | `bayesauto` | NB + EM prior | mixture + EM prior |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| aquatic, MSv1 | 93.59 | 92.66 | **96.32** | 94.57 | 93.95 | 95.94 | 95.59 |
+| aquatic, MSv3 | 93.28 | 92.06 | **96.03** | 93.98 | 93.22 | 95.57 | 95.18 |
+| dense dial, α = 1 | **92.68** | 91.76 | 92.31 | 92.66 | 91.42 | 92.57 | 91.55 |
+| dense dial, α = 0 | 88.19 | 91.85 | 90.20 | 94.23 | **94.26** | 93.94 | 93.93 |
+| dense dial, α = −1 | 85.01 | 91.84 | 90.22 | 94.78 | 95.19 | 94.91 | **95.27** |
+| sparse, uniform | 88.98 | 92.10 | **96.80** | 94.69 | 94.45 | 96.22 | 96.17 |
+| sparse, smallest | 83.78 | 91.22 | 95.40 | 94.54 | 94.94 | 96.51 | **96.71** |
+
+Excluding reads from genera with ambiguous names, on the dense dial (the other sets have none): NB + EM prior 91.84, 93.53, 94.77 at α = 1, 0, −1, and mixture + EM prior 90.71, 93.52, 95.14.
+
+- **The EM prior helps on sparse samples and does little on dense ones.** Against naive Bayes with a flat prior it gains 1.4 to 2.0 points on the aquatic and sparse sets, and changes the dense dial by −0.3 to +0.1.
+- **It's the most robust scheme here.** Its lowest entry, 92.57, is the highest of any scheme's lowest (flat naive Bayes 92.66 is close; plain EM 90.20; normalised 91.22).
+- **Plain EM stays best on the aquatic reads** by 0.4 points, and on the uniform draws by 0.6, but loses about 4 points on the dense dial at α = 0 and −1. On the smallest genera it is 1.1 points behind.
+- **Convergence:** 5 iterations are within 0.05 points of 20.
+- **The prior learned doesn't go to zero outside the sample:** on V1–V2 about 3,700 genera keep a prior above 0, against about 100 in the sample. Whether a sparser estimate would help wasn't tested.
+- This prior is learned from the reads being classified, like plain EM's, so it needs the whole read set before calling any read, unlike `find --classify bayes`.
