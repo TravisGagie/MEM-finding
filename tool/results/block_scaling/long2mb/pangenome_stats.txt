@@ -1,0 +1,12 @@
+pangenome_sim.py /tmp/claude-0/-home-user-mem-finding/1dfa1f87-f0a6-5cbd-8d00-84601f74ccfd/scratchpad/pg2 --haplotypes 1024 --queries 20 --length 2000000
+parameters: haplotypes 1024 (+1 reference, +20 held out), length 2000000, seed 1, Ne 20000, growth to 1e+06 over 400 generations, mu 1.25e-08, rho 1e-08, indels 0.1 (up to 10 bases)
+variants: 13704 sites (12339 SNPs, 1365 indels; 5 dropped as overlapping); 13594 segregating in the collection
+site frequency spectrum in the collection, counts 1..5: [5900, 1173, 508, 319, 271]; nucleotide diversity 5.15e-04 per base
+private variants (among the first 16 + 1) per haplotype, mean over haplotypes 1..16: 6.6
+private variants (among the first 64 + 1) per haplotype, mean over haplotypes 49..64: 5.7
+private variants (among the first 256 + 1) per haplotype, mean over haplotypes 241..256: 7.2
+private variants (among the first 1024 + 1) per haplotype, mean over haplotypes 1009..1024: 5.9
+variants first seen in haplotypes 1..16: 166.4 per haplotype
+variants first seen in haplotypes 49..64: 23.1 per haplotype
+variants first seen in haplotypes 241..256: 12.6 per haplotype
+variants first seen in haplotypes 1009..1024: 5.9 per haplotype

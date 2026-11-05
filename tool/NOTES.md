@@ -751,6 +751,34 @@ The question: with the smallest successor, every new genome can only add success
   - The counter calls these steps "inside" because another attempt follows, though the match's end causes them. A counter that separates them was not added.
   - Search times are the same within noise (0.11–0.23 s), as before.
 
+**Longer haplotypes (2026-11-05).** The run used:
+- 2 Mb haplotypes from the same population model (`pangenome_sim.py --haplotypes 1024 --queries 20 --length 2000000`; diversity 5.2·10⁻⁴), at N = 64, 256 and 1024;
+- 40 million pattern characters (20 held-out haplotypes);
+- Big-BWT, run single-threaded: its multithreaded parser failed an internal assertion on these texts;
+- `CLEAN=1` (`results/block_scaling/long2mb/`).
+
+Every variant gave the same MEMs.
+
+| N | rule | phrases/block | parse/char | block/char | entry | inside | end | time (s) | without block steps (s) |
+|---|---|---|---|---|---|---|---|---|---|
+| 64 | smallest | 40.4 | 0.0067 | 0.0024 | 0.0038 | 0.00007 | 0.0028 | 1.11 | 1.57 |
+| 64 | frequent | 153.6 | 0.0281 | 0.0006 | 0.0162 | 0.00009 | 0.0118 | 1.17 | 1.37 |
+| 64 | frequent, B = 64 | 52.0 | 0.0181 | 0.0017 | 0.0036 | 0.0117 | 0.0028 | 1.09 | 1.37 |
+| 256 | smallest | 26.8 | 0.0024 | 0.0036 | 0.0013 | 0.00005 | 0.0011 | 0.98 | 1.63 |
+| 256 | frequent | 152.1 | 0.0164 | 0.0006 | 0.0090 | 0.00005 | 0.0073 | 1.08 | 1.61 |
+| 256 | frequent, B = 64 | 51.9 | 0.0102 | 0.0018 | 0.0017 | 0.0071 | 0.0014 | 0.92 | 1.61 |
+| 1024 | smallest | 16.2 | 0.0011 | 0.0056 | 0.0006 | 0.00003 | 0.0005 | 0.99 | 1.66 |
+| 1024 | frequent | 151.4 | 0.0107 | 0.0006 | 0.0058 | 0.00008 | 0.0048 | 0.98 | 1.81 |
+| 1024 | frequent, B = 64 | 51.8 | 0.0065 | 0.0017 | 0.0011 | 0.0045 | 0.0009 | 1.09 | 1.81 |
+
+- **The same pattern as with 300 kb haplotypes.** Blocks shrink under the smallest successor (40 → 16 phrases) and stay flat under the most frequent (154 → 151). The most frequent successor's extra parse steps are at match ends, and the cap trades them for re-crossing.
+- **Block steps now matter in time:** turning them off costs 0.4 to 0.8 s of about 1 s.
+- **The rules still don't differ in time.**
+  - At N = 1024, turning block steps off adds about 3.35 million steps and 0.67 s, so a parse step costs about 0.2 µs.
+  - The most frequent successor's extra parse and block steps over the smallest successor's come to about 184,000, or 0.04 s, which is within the noise of one run.
+  - Steps of every kind account for well under half of each search's time. The rest is presumably parsing the patterns into phrases (closed syncmers, hashing, dictionary lookups over 40 million characters), which was not timed separately.
+  - So on these data, the choice of continuation rule moves search time by a few percent at most, and the smallest successor takes the fewest steps.
+
 **For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
 
 ```
