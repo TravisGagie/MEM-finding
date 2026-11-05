@@ -1,0 +1,29 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+EM iteration 1: 3879 genera with credit
+EM iteration 2: 3879 genera with credit
+EM iteration 3: 3879 genera with credit
+EM iteration 4: 3879 genera with credit
+EM iteration 5: 3879 genera with credit
+EM iteration 6: 3879 genera with credit
+EM iteration 7: 3879 genera with credit
+EM iteration 8: 3879 genera with credit
+EM iteration 9: 3879 genera with credit
+EM iteration 10: 3879 genera with credit
+EM iteration 11: 3879 genera with credit
+EM iteration 12: 3879 genera with credit
+EM iteration 13: 3879 genera with credit
+EM iteration 14: 3879 genera with credit
+EM iteration 15: 3879 genera with credit
+EM iteration 16: 3879 genera with credit
+EM iteration 17: 3879 genera with credit
+EM iteration 18: 3879 genera with credit
+EM iteration 19: 3879 genera with credit
+EM iteration 20: 3879 genera with credit
+katka,em5,genus,0.944,correct=188809,unclassified=0,wrong=11191,reads=200000,ambiguous_truth=16215,theirs=0.944,strict=0.944,strict_correct=188801
+katka,em20,genus,0.9442,correct=188848,unclassified=0,wrong=11152,reads=200000,ambiguous_truth=16215,theirs=0.9442,strict=0.9442,strict_correct=188841

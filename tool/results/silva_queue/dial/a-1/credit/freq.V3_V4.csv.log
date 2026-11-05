@@ -1,0 +1,8 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+katka,freq,genus,0.8372,correct=167443,unclassified=0,wrong=32557,reads=200000,ambiguous_truth=7774,theirs=0.8372,strict=0.8371,strict_correct=167416

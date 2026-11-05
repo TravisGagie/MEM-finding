@@ -1,0 +1,273 @@
+Credit schemes on reads with k_g ~ N_g^alpha, from /home/travis/tool/silva/queue (regions V1_V2, V3_V4, V4_V4, V4_V5)
+
+alpha = 1: V1_V2 200000 pairs over 3292 genera (1..8686); V3_V4 200000 pairs over 4051 genera (1..8318); V4_V4 200000 pairs over 4956 genera (1..8161); V4_V5 200000 pairs over 8433 genera (1..7810)
+alpha = 0: V1_V2 200000 pairs over 3292 genera (60..61); V3_V4 200000 pairs over 4156 genera (48..49); V4_V4 200000 pairs over 5455 genera (36..37); V4_V5 200000 pairs over 8846 genera (22..23)
+alpha = -1: V1_V2 200000 pairs over 3248 genera (1..592); V3_V4 200000 pairs over 4058 genera (1..306); V4_V4 200000 pairs over 5165 genera (1..139); V4_V5 200000 pairs over 8311 genera (1..53)
+
+== Strict genus accuracy, mean over the regions
+  credit scheme                                                 alpha = 1  alpha = 0  alpha = -1
+  ------------------------------------------------------------  ---------  ---------  ----------
+  range (Cliffy's LCA query)                                       85.58%     84.50%      83.90%
+  one label per MEM                                                91.63%     85.94%      81.87%
+  sample (simulated cliffs)                                        88.04%     87.51%      87.05%
+  even                                                             88.20%     87.48%      87.01%
+  normalised (c_g / N_g)                                           91.76%     91.85%      91.83%
+  proportional                                                     92.68%     88.19%      85.01%
+  prior mixture, beta = 0                                          92.68%     88.19%      85.01%
+  prior mixture, beta = 0.1                                        92.70%     89.35%      87.91%
+  prior mixture, beta = 0.25                                       92.69%     90.01%      89.36%
+  prior mixture, beta = 0.5                                        92.67%     90.66%      90.42%
+  prior mixture, beta = 0.75                                       92.59%     91.17%      91.08%
+  prior mixture, beta = 1                                          91.76%     91.85%      91.83%
+  proportional/even mix, beta = 0                                  92.68%     88.19%      85.01%
+  proportional/even mix, beta = 0.1                                92.53%     88.31%      85.32%
+  proportional/even mix, beta = 0.25                               92.25%     88.46%      85.75%
+  proportional/even mix, beta = 0.5                                91.57%     88.59%      86.38%
+  proportional/even mix, beta = 0.75                               90.50%     88.57%      86.97%
+  proportional/even mix, beta = 1                                  88.20%     87.48%      87.01%
+  EM, 5 iterations                                                 92.32%     90.16%      90.02%
+  EM, 20 iterations                                                92.31%     90.20%      90.22%
+  naive Bayes, the sample's prior (reference; epsilon = 1e-06)     92.77%     94.23%      95.89%
+  naive Bayes, flat prior, epsilon = 0.01                          41.58%     86.28%      95.99%
+  naive Bayes, flat prior, epsilon = 0.001                         65.28%     94.54%      96.57%
+  naive Bayes, flat prior, epsilon = 0.0001                        84.49%     95.61%      96.18%
+  naive Bayes, flat prior, epsilon = 1e-06                         92.66%     94.23%      94.78%
+  naive Bayes, flat prior, epsilon = 1e-09                         91.11%     92.44%      93.10%
+  naive Bayes, database prior, epsilon = 1e-06                     92.77%     93.20%      93.00%
+  naive Bayes, mixture with epsilon fitted to the reads            91.42%     94.22%      95.11%
+  LaTeX:
+    range (Cliffy's LCA query) & 85.58\% & 84.50\% & 83.90\% \\
+    one label per MEM & 91.63\% & 85.94\% & 81.87\% \\
+    sample (simulated cliffs) & 88.04\% & 87.51\% & 87.05\% \\
+    even & 88.20\% & 87.48\% & 87.01\% \\
+    normalised (c_g / N_g) & 91.76\% & 91.85\% & 91.83\% \\
+    proportional & 92.68\% & 88.19\% & 85.01\% \\
+    prior mixture, beta = 0 & 92.68\% & 88.19\% & 85.01\% \\
+    prior mixture, beta = 0.1 & 92.70\% & 89.35\% & 87.91\% \\
+    prior mixture, beta = 0.25 & 92.69\% & 90.01\% & 89.36\% \\
+    prior mixture, beta = 0.5 & 92.67\% & 90.66\% & 90.42\% \\
+    prior mixture, beta = 0.75 & 92.59\% & 91.17\% & 91.08\% \\
+    prior mixture, beta = 1 & 91.76\% & 91.85\% & 91.83\% \\
+    proportional/even mix, beta = 0 & 92.68\% & 88.19\% & 85.01\% \\
+    proportional/even mix, beta = 0.1 & 92.53\% & 88.31\% & 85.32\% \\
+    proportional/even mix, beta = 0.25 & 92.25\% & 88.46\% & 85.75\% \\
+    proportional/even mix, beta = 0.5 & 91.57\% & 88.59\% & 86.38\% \\
+    proportional/even mix, beta = 0.75 & 90.50\% & 88.57\% & 86.97\% \\
+    proportional/even mix, beta = 1 & 88.20\% & 87.48\% & 87.01\% \\
+    EM, 5 iterations & 92.32\% & 90.16\% & 90.02\% \\
+    EM, 20 iterations & 92.31\% & 90.20\% & 90.22\% \\
+    naive Bayes, the sample's prior (reference; epsilon = 1e-06) & 92.77\% & 94.23\% & 95.89\% \\
+    naive Bayes, flat prior, epsilon = 0.01 & 41.58\% & 86.28\% & 95.99\% \\
+    naive Bayes, flat prior, epsilon = 0.001 & 65.28\% & 94.54\% & 96.57\% \\
+    naive Bayes, flat prior, epsilon = 0.0001 & 84.49\% & 95.61\% & 96.18\% \\
+    naive Bayes, flat prior, epsilon = 1e-06 & 92.66\% & 94.23\% & 94.78\% \\
+    naive Bayes, flat prior, epsilon = 1e-09 & 91.11\% & 92.44\% & 93.10\% \\
+    naive Bayes, database prior, epsilon = 1e-06 & 92.77\% & 93.20\% & 93.00\% \\
+    naive Bayes, mixture with epsilon fitted to the reads & 91.42\% & 94.22\% & 95.11\% \\
+
+== Naive Bayes, flat prior: epsilon chosen on alpha = 0 (0.0001), and the best epsilon for each alpha
+              chosen epsilon  best epsilon  its accuracy
+  ----------  --------------  ------------  ------------
+  alpha = 1           84.49%         1e-06        92.66%
+  alpha = 0           95.61%        0.0001        95.61%
+  alpha = -1          96.18%         0.001        96.57%
+  LaTeX:
+    alpha = 1 & 84.49\% & 1e-06 & 92.66\% \\
+    alpha = 0 & 95.61\% & 0.0001 & 95.61\% \\
+    alpha = -1 & 96.18\% & 0.001 & 96.57\% \\
+
+== Naive Bayes (mixture): the epsilon fitted to each read set
+              V1_V2  V3_V4  V4_V4  V4_V5
+  ----------  -----  -----  -----  -----
+  alpha = 1     0.5    0.5    0.5    0.5
+  alpha = 0     0.5    0.5    0.5    0.5
+  alpha = -1    0.5    0.5    0.5    0.5
+  LaTeX:
+    alpha = 1 & 0.5 & 0.5 & 0.5 & 0.5 \\
+    alpha = 0 & 0.5 & 0.5 & 0.5 & 0.5 \\
+    alpha = -1 & 0.5 & 0.5 & 0.5 & 0.5 \\
+
+== alpha = 1, each region
+  credit scheme                                                   mean   V1_V2   V3_V4   V4_V4   V4_V5
+  ------------------------------------------------------------  ------  ------  ------  ------  ------
+  range (Cliffy's LCA query)                                    85.58%  86.90%  86.89%  83.53%  85.00%
+  one label per MEM                                             91.63%  93.22%  92.24%  90.51%  90.55%
+  sample (simulated cliffs)                                     88.04%  89.66%  89.22%  86.05%  87.25%
+  even                                                          88.20%  89.81%  89.45%  86.09%  87.46%
+  normalised (c_g / N_g)                                        91.76%  93.27%  92.75%  90.10%  90.93%
+  proportional                                                  92.68%  94.11%  93.37%  91.47%  91.77%
+  prior mixture, beta = 0                                       92.68%  94.11%  93.37%  91.47%  91.77%
+  prior mixture, beta = 0.1                                     92.70%  94.15%  93.38%  91.47%  91.80%
+  prior mixture, beta = 0.25                                    92.69%  94.14%  93.41%  91.44%  91.79%
+  prior mixture, beta = 0.5                                     92.67%  94.11%  93.40%  91.38%  91.77%
+  prior mixture, beta = 0.75                                    92.59%  94.07%  93.34%  91.23%  91.69%
+  prior mixture, beta = 1                                       91.76%  93.27%  92.75%  90.10%  90.93%
+  proportional/even mix, beta = 0                               92.68%  94.11%  93.37%  91.47%  91.77%
+  proportional/even mix, beta = 0.1                             92.53%  94.03%  93.22%  91.28%  91.58%
+  proportional/even mix, beta = 0.25                            92.25%  93.86%  92.94%  90.92%  91.28%
+  proportional/even mix, beta = 0.5                             91.57%  93.37%  92.28%  90.12%  90.53%
+  proportional/even mix, beta = 0.75                            90.50%  92.42%  91.28%  88.89%  89.43%
+  proportional/even mix, beta = 1                               88.20%  89.81%  89.45%  86.09%  87.46%
+  EM, 5 iterations                                              92.32%  93.94%  92.91%  91.09%  91.33%
+  EM, 20 iterations                                             92.31%  93.94%  92.91%  91.08%  91.33%
+  naive Bayes, the sample's prior (reference; epsilon = 1e-06)  92.77%  93.69%  93.95%  91.45%  91.99%
+  naive Bayes, flat prior, epsilon = 0.01                       41.58%  38.70%  41.10%  43.94%  42.56%
+  naive Bayes, flat prior, epsilon = 0.001                      65.28%  65.38%  65.78%  64.68%  65.29%
+  naive Bayes, flat prior, epsilon = 0.0001                     84.49%  86.28%  85.59%  82.14%  83.94%
+  naive Bayes, flat prior, epsilon = 1e-06                      92.66%  93.60%  93.98%  91.08%  92.00%
+  naive Bayes, flat prior, epsilon = 1e-09                      91.11%  92.31%  92.51%  89.63%  89.98%
+  naive Bayes, database prior, epsilon = 1e-06                  92.77%  93.69%  93.95%  91.45%  91.99%
+  naive Bayes, mixture with epsilon fitted to the reads         91.42%  92.47%  93.12%  89.59%  90.49%
+  LaTeX:
+    range (Cliffy's LCA query) & 85.58\% & 86.90\% & 86.89\% & 83.53\% & 85.00\% \\
+    one label per MEM & 91.63\% & 93.22\% & 92.24\% & 90.51\% & 90.55\% \\
+    sample (simulated cliffs) & 88.04\% & 89.66\% & 89.22\% & 86.05\% & 87.25\% \\
+    even & 88.20\% & 89.81\% & 89.45\% & 86.09\% & 87.46\% \\
+    normalised (c_g / N_g) & 91.76\% & 93.27\% & 92.75\% & 90.10\% & 90.93\% \\
+    proportional & 92.68\% & 94.11\% & 93.37\% & 91.47\% & 91.77\% \\
+    prior mixture, beta = 0 & 92.68\% & 94.11\% & 93.37\% & 91.47\% & 91.77\% \\
+    prior mixture, beta = 0.1 & 92.70\% & 94.15\% & 93.38\% & 91.47\% & 91.80\% \\
+    prior mixture, beta = 0.25 & 92.69\% & 94.14\% & 93.41\% & 91.44\% & 91.79\% \\
+    prior mixture, beta = 0.5 & 92.67\% & 94.11\% & 93.40\% & 91.38\% & 91.77\% \\
+    prior mixture, beta = 0.75 & 92.59\% & 94.07\% & 93.34\% & 91.23\% & 91.69\% \\
+    prior mixture, beta = 1 & 91.76\% & 93.27\% & 92.75\% & 90.10\% & 90.93\% \\
+    proportional/even mix, beta = 0 & 92.68\% & 94.11\% & 93.37\% & 91.47\% & 91.77\% \\
+    proportional/even mix, beta = 0.1 & 92.53\% & 94.03\% & 93.22\% & 91.28\% & 91.58\% \\
+    proportional/even mix, beta = 0.25 & 92.25\% & 93.86\% & 92.94\% & 90.92\% & 91.28\% \\
+    proportional/even mix, beta = 0.5 & 91.57\% & 93.37\% & 92.28\% & 90.12\% & 90.53\% \\
+    proportional/even mix, beta = 0.75 & 90.50\% & 92.42\% & 91.28\% & 88.89\% & 89.43\% \\
+    proportional/even mix, beta = 1 & 88.20\% & 89.81\% & 89.45\% & 86.09\% & 87.46\% \\
+    EM, 5 iterations & 92.32\% & 93.94\% & 92.91\% & 91.09\% & 91.33\% \\
+    EM, 20 iterations & 92.31\% & 93.94\% & 92.91\% & 91.08\% & 91.33\% \\
+    naive Bayes, the sample's prior (reference; epsilon = 1e-06) & 92.77\% & 93.69\% & 93.95\% & 91.45\% & 91.99\% \\
+    naive Bayes, flat prior, epsilon = 0.01 & 41.58\% & 38.70\% & 41.10\% & 43.94\% & 42.56\% \\
+    naive Bayes, flat prior, epsilon = 0.001 & 65.28\% & 65.38\% & 65.78\% & 64.68\% & 65.29\% \\
+    naive Bayes, flat prior, epsilon = 0.0001 & 84.49\% & 86.28\% & 85.59\% & 82.14\% & 83.94\% \\
+    naive Bayes, flat prior, epsilon = 1e-06 & 92.66\% & 93.60\% & 93.98\% & 91.08\% & 92.00\% \\
+    naive Bayes, flat prior, epsilon = 1e-09 & 91.11\% & 92.31\% & 92.51\% & 89.63\% & 89.98\% \\
+    naive Bayes, database prior, epsilon = 1e-06 & 92.77\% & 93.69\% & 93.95\% & 91.45\% & 91.99\% \\
+    naive Bayes, mixture with epsilon fitted to the reads & 91.42\% & 92.47\% & 93.12\% & 89.59\% & 90.49\% \\
+
+== alpha = 0, each region
+  credit scheme                                                   mean   V1_V2   V3_V4   V4_V4   V4_V5
+  ------------------------------------------------------------  ------  ------  ------  ------  ------
+  range (Cliffy's LCA query)                                    84.50%  88.06%  84.81%  82.83%  82.28%
+  one label per MEM                                             85.94%  91.37%  86.50%  84.25%  81.62%
+  sample (simulated cliffs)                                     87.51%  91.11%  87.67%  85.76%  85.50%
+  even                                                          87.48%  90.98%  87.82%  85.55%  85.57%
+  normalised (c_g / N_g)                                        91.85%  95.42%  92.51%  90.35%  89.13%
+  proportional                                                  88.19%  92.54%  88.31%  86.67%  85.24%
+  prior mixture, beta = 0                                       88.19%  92.54%  88.31%  86.67%  85.24%
+  prior mixture, beta = 0.1                                     89.35%  93.21%  89.29%  88.01%  86.89%
+  prior mixture, beta = 0.25                                    90.01%  93.76%  90.00%  88.71%  87.58%
+  prior mixture, beta = 0.5                                     90.66%  94.28%  90.87%  89.30%  88.20%
+  prior mixture, beta = 0.75                                    91.17%  94.72%  91.54%  89.76%  88.65%
+  prior mixture, beta = 1                                       91.85%  95.42%  92.51%  90.35%  89.13%
+  proportional/even mix, beta = 0                               88.19%  92.54%  88.31%  86.67%  85.24%
+  proportional/even mix, beta = 0.1                             88.31%  92.62%  88.40%  86.79%  85.42%
+  proportional/even mix, beta = 0.25                            88.46%  92.69%  88.50%  86.97%  85.67%
+  proportional/even mix, beta = 0.5                             88.59%  92.76%  88.55%  87.07%  85.98%
+  proportional/even mix, beta = 0.75                            88.57%  92.62%  88.54%  86.97%  86.13%
+  proportional/even mix, beta = 1                               87.48%  90.98%  87.82%  85.55%  85.57%
+  EM, 5 iterations                                              90.16%  94.40%  90.68%  88.79%  86.77%
+  EM, 20 iterations                                             90.20%  94.42%  90.73%  88.84%  86.81%
+  naive Bayes, the sample's prior (reference; epsilon = 1e-06)  94.23%  95.93%  95.36%  92.71%  92.94%
+  naive Bayes, flat prior, epsilon = 0.01                       86.28%  82.35%  86.77%  86.65%  89.35%
+  naive Bayes, flat prior, epsilon = 0.001                      94.54%  94.99%  95.71%  93.27%  94.17%
+  naive Bayes, flat prior, epsilon = 0.0001                     95.61%  96.78%  96.94%  94.09%  94.60%
+  naive Bayes, flat prior, epsilon = 1e-06                      94.23%  95.93%  95.36%  92.71%  92.94%
+  naive Bayes, flat prior, epsilon = 1e-09                      92.44%  94.56%  93.27%  90.90%  91.03%
+  naive Bayes, database prior, epsilon = 1e-06                  93.20%  95.28%  94.19%  91.79%  91.53%
+  naive Bayes, mixture with epsilon fitted to the reads         94.22%  95.89%  95.28%  92.62%  93.09%
+  LaTeX:
+    range (Cliffy's LCA query) & 84.50\% & 88.06\% & 84.81\% & 82.83\% & 82.28\% \\
+    one label per MEM & 85.94\% & 91.37\% & 86.50\% & 84.25\% & 81.62\% \\
+    sample (simulated cliffs) & 87.51\% & 91.11\% & 87.67\% & 85.76\% & 85.50\% \\
+    even & 87.48\% & 90.98\% & 87.82\% & 85.55\% & 85.57\% \\
+    normalised (c_g / N_g) & 91.85\% & 95.42\% & 92.51\% & 90.35\% & 89.13\% \\
+    proportional & 88.19\% & 92.54\% & 88.31\% & 86.67\% & 85.24\% \\
+    prior mixture, beta = 0 & 88.19\% & 92.54\% & 88.31\% & 86.67\% & 85.24\% \\
+    prior mixture, beta = 0.1 & 89.35\% & 93.21\% & 89.29\% & 88.01\% & 86.89\% \\
+    prior mixture, beta = 0.25 & 90.01\% & 93.76\% & 90.00\% & 88.71\% & 87.58\% \\
+    prior mixture, beta = 0.5 & 90.66\% & 94.28\% & 90.87\% & 89.30\% & 88.20\% \\
+    prior mixture, beta = 0.75 & 91.17\% & 94.72\% & 91.54\% & 89.76\% & 88.65\% \\
+    prior mixture, beta = 1 & 91.85\% & 95.42\% & 92.51\% & 90.35\% & 89.13\% \\
+    proportional/even mix, beta = 0 & 88.19\% & 92.54\% & 88.31\% & 86.67\% & 85.24\% \\
+    proportional/even mix, beta = 0.1 & 88.31\% & 92.62\% & 88.40\% & 86.79\% & 85.42\% \\
+    proportional/even mix, beta = 0.25 & 88.46\% & 92.69\% & 88.50\% & 86.97\% & 85.67\% \\
+    proportional/even mix, beta = 0.5 & 88.59\% & 92.76\% & 88.55\% & 87.07\% & 85.98\% \\
+    proportional/even mix, beta = 0.75 & 88.57\% & 92.62\% & 88.54\% & 86.97\% & 86.13\% \\
+    proportional/even mix, beta = 1 & 87.48\% & 90.98\% & 87.82\% & 85.55\% & 85.57\% \\
+    EM, 5 iterations & 90.16\% & 94.40\% & 90.68\% & 88.79\% & 86.77\% \\
+    EM, 20 iterations & 90.20\% & 94.42\% & 90.73\% & 88.84\% & 86.81\% \\
+    naive Bayes, the sample's prior (reference; epsilon = 1e-06) & 94.23\% & 95.93\% & 95.36\% & 92.71\% & 92.94\% \\
+    naive Bayes, flat prior, epsilon = 0.01 & 86.28\% & 82.35\% & 86.77\% & 86.65\% & 89.35\% \\
+    naive Bayes, flat prior, epsilon = 0.001 & 94.54\% & 94.99\% & 95.71\% & 93.27\% & 94.17\% \\
+    naive Bayes, flat prior, epsilon = 0.0001 & 95.61\% & 96.78\% & 96.94\% & 94.09\% & 94.60\% \\
+    naive Bayes, flat prior, epsilon = 1e-06 & 94.23\% & 95.93\% & 95.36\% & 92.71\% & 92.94\% \\
+    naive Bayes, flat prior, epsilon = 1e-09 & 92.44\% & 94.56\% & 93.27\% & 90.90\% & 91.03\% \\
+    naive Bayes, database prior, epsilon = 1e-06 & 93.20\% & 95.28\% & 94.19\% & 91.79\% & 91.53\% \\
+    naive Bayes, mixture with epsilon fitted to the reads & 94.22\% & 95.89\% & 95.28\% & 92.62\% & 93.09\% \\
+
+== alpha = -1, each region
+  credit scheme                                                   mean   V1_V2   V3_V4   V4_V4   V4_V5
+  ------------------------------------------------------------  ------  ------  ------  ------  ------
+  range (Cliffy's LCA query)                                    83.90%  89.74%  83.09%  83.02%  79.74%
+  one label per MEM                                             81.87%  90.30%  81.49%  79.58%  76.13%
+  sample (simulated cliffs)                                     87.05%  92.36%  86.08%  86.15%  83.62%
+  even                                                          87.01%  92.16%  86.16%  86.05%  83.65%
+  normalised (c_g / N_g)                                        91.83%  97.06%  92.59%  90.62%  87.07%
+  proportional                                                  85.01%  91.46%  83.71%  83.80%  81.07%
+  prior mixture, beta = 0                                       85.01%  91.46%  83.71%  83.80%  81.07%
+  prior mixture, beta = 0.1                                     87.91%  93.31%  86.67%  87.27%  84.39%
+  prior mixture, beta = 0.25                                    89.36%  94.69%  88.54%  88.70%  85.53%
+  prior mixture, beta = 0.5                                     90.42%  95.66%  90.15%  89.56%  86.30%
+  prior mixture, beta = 0.75                                    91.08%  96.29%  91.19%  90.08%  86.75%
+  prior mixture, beta = 1                                       91.83%  97.06%  92.59%  90.62%  87.07%
+  proportional/even mix, beta = 0                               85.01%  91.46%  83.71%  83.80%  81.07%
+  proportional/even mix, beta = 0.1                             85.32%  91.64%  83.99%  84.20%  81.45%
+  proportional/even mix, beta = 0.25                            85.75%  91.93%  84.33%  84.78%  81.95%
+  proportional/even mix, beta = 0.5                             86.38%  92.28%  84.97%  85.55%  82.72%
+  proportional/even mix, beta = 0.75                            86.97%  92.62%  85.75%  86.11%  83.39%
+  proportional/even mix, beta = 1                               87.01%  92.16%  86.16%  86.05%  83.65%
+  EM, 5 iterations                                              90.02%  96.30%  91.24%  88.72%  83.82%
+  EM, 20 iterations                                             90.22%  96.33%  91.50%  89.04%  84.01%
+  naive Bayes, the sample's prior (reference; epsilon = 1e-06)  95.89%  97.88%  97.23%  94.49%  93.97%
+  naive Bayes, flat prior, epsilon = 0.01                       95.99%  97.27%  97.56%  94.70%  94.43%
+  naive Bayes, flat prior, epsilon = 0.001                      96.57%  98.73%  98.14%  94.94%  94.49%
+  naive Bayes, flat prior, epsilon = 0.0001                     96.18%  98.41%  97.73%  94.45%  94.12%
+  naive Bayes, flat prior, epsilon = 1e-06                      94.78%  97.31%  95.95%  93.27%  92.61%
+  naive Bayes, flat prior, epsilon = 1e-09                      93.10%  95.88%  93.63%  92.13%  90.76%
+  naive Bayes, database prior, epsilon = 1e-06                  93.00%  96.36%  93.73%  91.63%  90.30%
+  naive Bayes, mixture with epsilon fitted to the reads         95.11%  97.50%  96.11%  93.63%  93.21%
+  LaTeX:
+    range (Cliffy's LCA query) & 83.90\% & 89.74\% & 83.09\% & 83.02\% & 79.74\% \\
+    one label per MEM & 81.87\% & 90.30\% & 81.49\% & 79.58\% & 76.13\% \\
+    sample (simulated cliffs) & 87.05\% & 92.36\% & 86.08\% & 86.15\% & 83.62\% \\
+    even & 87.01\% & 92.16\% & 86.16\% & 86.05\% & 83.65\% \\
+    normalised (c_g / N_g) & 91.83\% & 97.06\% & 92.59\% & 90.62\% & 87.07\% \\
+    proportional & 85.01\% & 91.46\% & 83.71\% & 83.80\% & 81.07\% \\
+    prior mixture, beta = 0 & 85.01\% & 91.46\% & 83.71\% & 83.80\% & 81.07\% \\
+    prior mixture, beta = 0.1 & 87.91\% & 93.31\% & 86.67\% & 87.27\% & 84.39\% \\
+    prior mixture, beta = 0.25 & 89.36\% & 94.69\% & 88.54\% & 88.70\% & 85.53\% \\
+    prior mixture, beta = 0.5 & 90.42\% & 95.66\% & 90.15\% & 89.56\% & 86.30\% \\
+    prior mixture, beta = 0.75 & 91.08\% & 96.29\% & 91.19\% & 90.08\% & 86.75\% \\
+    prior mixture, beta = 1 & 91.83\% & 97.06\% & 92.59\% & 90.62\% & 87.07\% \\
+    proportional/even mix, beta = 0 & 85.01\% & 91.46\% & 83.71\% & 83.80\% & 81.07\% \\
+    proportional/even mix, beta = 0.1 & 85.32\% & 91.64\% & 83.99\% & 84.20\% & 81.45\% \\
+    proportional/even mix, beta = 0.25 & 85.75\% & 91.93\% & 84.33\% & 84.78\% & 81.95\% \\
+    proportional/even mix, beta = 0.5 & 86.38\% & 92.28\% & 84.97\% & 85.55\% & 82.72\% \\
+    proportional/even mix, beta = 0.75 & 86.97\% & 92.62\% & 85.75\% & 86.11\% & 83.39\% \\
+    proportional/even mix, beta = 1 & 87.01\% & 92.16\% & 86.16\% & 86.05\% & 83.65\% \\
+    EM, 5 iterations & 90.02\% & 96.30\% & 91.24\% & 88.72\% & 83.82\% \\
+    EM, 20 iterations & 90.22\% & 96.33\% & 91.50\% & 89.04\% & 84.01\% \\
+    naive Bayes, the sample's prior (reference; epsilon = 1e-06) & 95.89\% & 97.88\% & 97.23\% & 94.49\% & 93.97\% \\
+    naive Bayes, flat prior, epsilon = 0.01 & 95.99\% & 97.27\% & 97.56\% & 94.70\% & 94.43\% \\
+    naive Bayes, flat prior, epsilon = 0.001 & 96.57\% & 98.73\% & 98.14\% & 94.94\% & 94.49\% \\
+    naive Bayes, flat prior, epsilon = 0.0001 & 96.18\% & 98.41\% & 97.73\% & 94.45\% & 94.12\% \\
+    naive Bayes, flat prior, epsilon = 1e-06 & 94.78\% & 97.31\% & 95.95\% & 93.27\% & 92.61\% \\
+    naive Bayes, flat prior, epsilon = 1e-09 & 93.10\% & 95.88\% & 93.63\% & 92.13\% & 90.76\% \\
+    naive Bayes, database prior, epsilon = 1e-06 & 93.00\% & 96.36\% & 93.73\% & 91.63\% & 90.30\% \\
+    naive Bayes, mixture with epsilon fitted to the reads & 95.11\% & 97.50\% & 96.11\% & 93.63\% & 93.21\% \\
+
+== every input was found

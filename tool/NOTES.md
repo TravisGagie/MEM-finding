@@ -648,6 +648,25 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 - the fraction of SILVA's sequences in those genera;
 - their ranks by N_g among all the reference's genera, genera without reads included (1 = largest, ties sharing the best rank): median, range, and how many are in the top 1% and 10%. Its output line per region goes into `tool/results/silva/README.md` with the tables.
 
+**The dial's results (desktop, 2026-11-05; for the SILVA digest).** `results/silva/README.md` ("The α dial"), `results/silva/dial_tables.txt` and `.tex`. Strict genus accuracy, mean of the four regions, at α = 1 / 0 / −1:
+
+| scheme | α = 1 | α = 0 | α = −1 |
+|---|---:|---:|---:|
+| range | 85.58 | 84.50 | 83.90 |
+| sample (simulated cliffs) | 88.04 | 87.51 | 87.05 |
+| normalised | 91.76 | 91.85 | 91.83 |
+| proportional | 92.68 | 88.19 | 85.01 |
+| naive Bayes, flat, ε = 10⁻⁶ | 92.66 | 94.23 | 94.78 |
+| naive Bayes, flat, ε = 10⁻⁴ (held-out choice) | 84.49 | 95.61 | 96.18 |
+| naive Bayes, sample's prior (reference) | 92.77 | 94.23 | 95.89 |
+| naive Bayes, mixture, ε fitted | 91.42 | 94.22 | 95.11 |
+
+- **Three things for the cloud session:**
+  - **`bayesauto`'s fit fails on SILVA.** ε = 0.5, the top of the grid, in all 12 runs, with the log-likelihood still rising there; the toy fitted 0.03 to 0.2. The accuracy above is for ε = 0.5, so don't describe it as fitted.
+  - **`scripts/simulate_dial.py` has no `__main__` guard.** Python 3.14's default start method, forkserver, re-imports the script, reruns `art(jobs)` at line 114, and the `Pool` at line 96 raises multiprocessing's bootstrapping `RuntimeError`. The first dial stopped there at α = 1, V1_V2, with nothing simulated. The rerun set the start method to `fork` from outside (`PYTHONPATH` with a `sitecustomize.py`), without changing the script. The script needs a guard or `multiprocessing.get_context("fork")`.
+  - **`silva_queue.sh collect` copies 3.5 GB** (grammar binaries, `out.*`, tags) into `results/silva_queue`, and those can't be committed. The desktop deletes files over 1 MB after each collect. That also removes `dial/a*/<region>.seqtax.txt`, so `dial_tables.py tool/results/silva_queue`, as in the steps above, reports them missing and exits 1. It was run on `~/tool/silva/queue` instead.
+- **The α fit doesn't place the real reads on the dial.** Its slope is 0.056 with Spearman about −0.04 (`results/silva/alpha_fit.txt`): abundance is unrelated to N_g. That is not the dial's α = 0, where every genus gets the same reads: the real sets are skewed, and proportional gets 93.77 on them against 88.19 at α = 0.
+
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
 - **The simulation,** for α = 1, 0 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
 - **The searches:** 24 runs of 200,000 reads with 12 threads, a few seconds each.

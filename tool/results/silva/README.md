@@ -86,7 +86,7 @@ Strict genus accuracy:
 The uniform reads have fewer reads per genus and many more rare genera than the aquatic ones, so the two columns are
 not the same difficulty. All the schemes lose accuracy; the comparison that matters is between schemes within a column.
 
-## The SILVA queue (items 1, 3, 4, 5; 2026-11-05, a22b892 + the queue's commits)
+## The SILVA queue (items 1, 3, 4, 5; 2026-11-05, tool built at 08e8f4b)
 
 `experiments/silva_queue.sh timing blam grammar digests`, on an otherwise idle machine, each timed run in an 11 GB
 cgroup, one thread pinned to CPU 9, then 12 threads. `tables.txt` and `tables.tex` are `silva_tables.py`'s output, from
@@ -96,7 +96,7 @@ Elias-Fano and sampled digests' answers are byte-identical to the default's.
 **Rescoring item 2.** `score_silva.py`'s "exact strict count" (1edd8ee) adds a column, `strict_correct`, and doesn't
 change the definition. All 144 rows of item 2's scores are identical to before, apart from that column. No number changed.
 
-**Time, space and accuracy** (genus, 200,000 pairs per region; 53 µs is the mean per-read time with one thread):
+**Time, space and accuracy** (genus, 200,000 pairs per region; time is the mean per read with one thread):
 
 | classifier | space (GB) | µs per read | total / reads (µs) | reads/s, 12 threads | strict | ties correct |
 |---|---|---|---|---|---|---|
@@ -140,3 +140,39 @@ fitted α of k_g ∝ N_g^α is 0.056, with Spearman's correlation about −0.04:
 SILVA's sequence counts. But the genera themselves are well represented: they hold 14.7% of SILVA's sequences, with a
 median rank by N_g of 620 of 9,118, and 12 in the top 1%. This qualifies the reading of the uniform simulation above:
 the aquatic reads favour well-represented genera through which genera are present, not through how many reads each gets.
+
+## The α dial (2026-11-05, 07b5ffe)
+
+`MM=~/rz/MicrobeMixer tool/experiments/silva_queue.sh dial`: 200,000 simulated pairs per region with k_g ∝ N_g^α,
+for α = 1, 0 and −1, on the tool's default SILVA index. Full tables: `dial_tables.txt`, `dial_tables.tex`, from
+`dial_tables.py ~/tool/silva/queue` (run on the queue directory: it also reads `dial/a*/<region>.seqtax.txt`, 1.1 MB
+each, which were not committed). The CSVs and logs are in `../silva_queue/dial/`.
+
+Strict genus accuracy, mean of the four regions:
+
+| scheme | α = 1 | α = 0 | α = −1 |
+|---|---:|---:|---:|
+| range (Cliffy's LCA query) | 85.58 | 84.50 | 83.90 |
+| one label per MEM | 91.63 | 85.94 | 81.87 |
+| sample (simulated cliffs) | 88.04 | 87.51 | 87.05 |
+| even | 88.20 | 87.48 | 87.01 |
+| normalised | 91.76 | 91.85 | 91.83 |
+| proportional | 92.68 | 88.19 | 85.01 |
+| prior mixture, β = 0.5 | 92.67 | 90.66 | 90.42 |
+| EM, 20 iterations | 92.31 | 90.20 | 90.22 |
+| naive Bayes, the sample's prior (reference), ε = 10⁻⁶ | 92.77 | 94.23 | 95.89 |
+| naive Bayes, flat prior, ε = 10⁻⁴ (best at α = 0) | 84.49 | 95.61 | 96.18 |
+| naive Bayes, flat prior, ε = 10⁻⁶ | 92.66 | 94.23 | 94.78 |
+| naive Bayes, database prior, ε = 10⁻⁶ | 92.77 | 93.20 | 93.00 |
+| naive Bayes, mixture, ε fitted | 91.42 | 94.22 | 95.11 |
+
+- **Check:** α = 0 repeats the uniform simulation above with another seed and code path: normalised 91.85 against
+  91.75, proportional 88.19 against 88.09, range 84.50 against 84.41, one 85.94 against 85.82.
+- **ε = 10⁻⁶ was not chosen held out.** The held-out choice, the best ε at α = 0, is 10⁻⁴, and it gives 84.49 at
+  α = 1. The other values are in `dial_tables.txt`.
+- **The fitted ε is not a fit.** In all 12 runs it is 0.5, the top of the grid, with the log-likelihood still rising
+  there (α = 0, V3_V4: −22.32M at 0.3, −22.04M at 0.5). The toy fitted 0.03 to 0.2. So `bayesauto` here is
+  the mixture scheme at ε = 0.5, and the grid's limit, not the reads, set that value.
+- **Run note:** `simulate_dial.py` fails under this machine's Python 3.14 (see `NOTES.md`), so the run set the
+  multiprocessing start method to `fork` from outside the script (`PYTHONPATH` with a `sitecustomize.py`). The script
+  was not changed.

@@ -1,0 +1,8 @@
+[0;32m[docprof::log][00m finished paths initialization.
+[0;32m[docprof::log][00m finished SILVA initialization.
+[0;32m[docprof::log][00m finished doc_id initialization.
+[0;32m[docprof::log][00m finished reference sequence lengths dictionary.
+[0;32m[docprof::log][00m finished truthset initialization.
+[0;32m[docprof::log][00m finished loading node lists.
+[0;32m[docprof::log][00m finished loading 200000 read pairs
+katka,bayesdb,genus,0.9247,correct=184941,unclassified=0,wrong=15059,reads=200000,ambiguous_truth=2452,theirs=0.9247,strict=0.903,strict_correct=180609
