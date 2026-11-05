@@ -16,7 +16,8 @@
 # --twolevel --stats` on the queries, with and without block steps (--no-jumps), single-threaded, pinned to PIN
 # (default 0) if taskset exists.  CAPS="8 16 ...": also the most frequent successor with blocks of at most B
 # phrases (index --max-block B), variants f8, f16, ...; all outputs must be identical, and, with CHECK_PLAIN=1, equal to plain search's.
-# MEMMAX (11G) caps each step if systemd-run works.
+# MEMMAX (11G) caps each step if systemd-run works.  BIGBWT_ARGS: options for Big-BWT (e.g. "-t 4").  CLEAN=1:
+# delete each collection's text and BWT once its indexes are built and searched (not with EXISTING).
 #
 # Writes WORK/blocks.tsv and prints the table: per n and rule, the parse (phrases, distinct), the blocks (number,
 # phrases per block, the fraction of phrase positions that are continuations, symbols, block BWT runs), the
@@ -47,7 +48,7 @@ for n in $NS; do
     head -n "$n" "$DATA/collection.txt" | awk -v d="$W/fa$n" '{ f = sprintf("%s/s%04d.fa", d, NR); print ">s" NR > f; print > f; close(f) }'
     for f in "$W/fa$n"/s*.fa; do printf 'seq\t%s\n' "$f"; done > "$W/list$n.tsv"
     $CAP $K prep "$W/list$n.tsv" "$P" > "$W/build$n.log" 2>&1; rm -rf "$W/fa$n"
-    if [ -n "${BIGBWT:-}" ]; then $CAP "$BIGBWT" "$P.S" >> "$W/build$n.log" 2>&1; mv "$P.S.bwt" "$P.bwt"; rm -f "$P.S.log"
+    if [ -n "${BIGBWT:-}" ]; then $CAP "$BIGBWT" ${BIGBWT_ARGS:-} "$P.S" >> "$W/build$n.log" 2>&1; mv "$P.S.bwt" "$P.bwt"; rm -f "$P.S.log"
     else $CAP $K bwt "$P" >> "$W/build$n.log" 2>&1; fi
     $CAP $K index --csa --twolevel "$P" > "$W/index$n.log" 2>&1
   fi
@@ -81,6 +82,9 @@ for n in $NS; do
     o=$W/q$n$v.$mode; [ -s "$o.tsv" ] || continue
     cmp -s "$W/q${n}s.blocks.tsv" "$o.tsv" || { echo "c$n: $o.tsv differs from the smallest-successor blocks' MEMs"; exit 1; }
   done; done
+  if [ -n "${CLEAN:-}" ]; then        # the text and the BWT are needed only to build the indexes
+    for v in $VARIANTS; do V=$P; [ $v = s ] || V=$W/c$n$v; rm -f "$V.S" "$V.bwt"; done
+  fi
   if [ -n "${CHECK_PLAIN:-}" ] && [ ! -s "$W/q$n.plain.log" ]; then
     stamp "c$n: plain search"
     $CAP $K find -L $L --format mems --csa -j 4 "$P" "$Q" "$W/q$n.plain.tsv" > "$W/q$n.plain.log" 2>&1
