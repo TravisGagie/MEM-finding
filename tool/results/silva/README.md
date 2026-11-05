@@ -342,6 +342,39 @@ Genus-level accuracy on the aquatic reads:
 
   The difference changes sign by region, so a single offset, such as "our reads are harder", doesn't describe it. Cliffy's query and our range rule also differ, so this is not a test of the reads alone.
 
+## Cliffy's published times: Figure 2 (2026-11-05)
+
+Figure 2 plots the time to classify 10 million reads with approximate document listing, per biome and region, beside Kraken 2. It is vector graphics too: page 9 of the Genome Research PDF and page 12 of the preprint. `cliffy_fig2_values.py` reads it, and `cliffy_fig2_values.txt` has all three biomes. The y axis has 9 ticks, 500 to 4500 s, labelled in the preprint; the two versions agree to within 2 s. The series come from the figure's own legend, because `exp3.r`'s line types don't match it: `exp3.r` lines 11–35 give no digestion "longdash", while the figure has dashed for DNA minimizers, dotted for minimizers and dot-dash for no digestion. `time.csv`, which it plots, isn't public.
+
+Aquatic reads, seconds as plotted:
+
+| method | V1–V2 | V3–V4 | V4 | V4–V5 | mean |
+|---|---:|---:|---:|---:|---:|
+| Cliffy, no digestion | 3975 | 3996 | 4078 | 4068 | 4029 |
+| Cliffy, DNA minimizers | 3493 | 3726 | 3850 | 3835 | 3726 |
+| Cliffy, minimizers | 1524 | 1640 | 1595 | 1620 | 1595 |
+| Kraken 2 | 372 | 370 | 386 | 386 | 379 |
+
+These agree with the paper's text (minimizers "on average 4.5× slower" than Kraken 2, the other modes "closer to 10×–11× slower").
+
+**Time per read depends on what was timed, which the public files don't settle.** Cliffy runs each mate separately under GNU time, and each has two trials (`exp_3.smk` lines 46–77); `time.csv` may hold the sum of the mates or one of them. Kraken 2 takes both mates in one run (`--paired`).
+
+| method | µs per read if the time covers 20 million reads (both mates) | µs per read if it covers 10 million reads |
+|---|---:|---:|
+| Cliffy, no digestion | 199–204 | 398–408 |
+| Cliffy, DNA minimizers | 175–193 | 349–385 |
+| Cliffy, minimizers | 76–82 | 152–164 |
+| Kraken 2 | 19 | 37–39 |
+
+- **The draft's 199–204 and 77–82 µs** are the first column, so they assume both mates are included. Its table says these times are for approximate listing, which matches the caption. (Rounding: 1524 s gives 76, against the draft's 77.)
+- **This could matter for the comparison.** `silva.tex` line 254 gives 637 µs per read for Cliffy's LCA query on the server, about 3 times the first column, and that is a different query on a different machine, so it doesn't decide the question.
+- **Machine:** an Intel Xeon Gold 6248R, 24 cores, 3 GHz, with 1500 GB of RAM, timed with GNU time.
+
+**Threads.**
+- **Kraken 2:** `--threads 1` (`workflow/rules/exp_3.smk` lines 271 and 289; preprint Appendix A.5 commands).
+- **Cliffy:** no thread count anywhere. `exp_3.smk` runs `pfp_doc64 run` with `--ref`, `--pattern`, `--output`, `--taxcomp`, `--ftab` and `--num-col`. Its option table (`src/pfp_doc.cpp` lines 535–546, at 3763529) has no thread option, and there are no `std::thread`, `pthread` or OpenMP calls in `src/` or `include/`. So the query is single-threaded, at least in this version of the code.
+- **Bracken's time:** `exp_3.smk` also writes Kraken 2's time plus Bracken's to `output.total.time`, so Kraken 2's plotted time may include Bracken. That isn't settled either.
+
 ## The sparse dial (2026-11-05)
 
 Is EM's lead on the aquatic reads, and proportional credit's, due to the sample having few genera, or to which genera they are?

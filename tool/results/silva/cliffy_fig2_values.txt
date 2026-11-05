@@ -1,0 +1,15 @@
+# Cliffy's Figure 2, in seconds, read from page 9 of the Genome Research PDF (cliffy_fig2_values.py); page 12 of the preprint agrees to 2 s.
+lines 12 panels at x [155, 253, 350]
+biome      method   digestion        V1-V2   V3-V4      V4   V4-V5
+aquatic    Cliffy   DNA minimizers    3492    3724    3849    3834
+aquatic    Cliffy   minimizers        1523    1638    1594    1618
+aquatic    Kraken2  -                  370     368     384     383
+aquatic    Cliffy   no digestion      3974    3994    4077    4066
+human gut  Cliffy   DNA minimizers    3674    3923    4146    4042
+human gut  Cliffy   minimizers        1647    1737    1739    1793
+human gut  Kraken2  -                  368     374     373     377
+human gut  Cliffy   no digestion      4205    4130    4575    4361
+soil       Cliffy   DNA minimizers    3491    3894    3842    3825
+soil       Cliffy   minimizers        1529    1611    1577    1625
+soil       Kraken2  -                  440     400     373     373
+soil       Cliffy   no digestion      3956    4105    4073    4079
