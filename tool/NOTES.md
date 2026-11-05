@@ -803,6 +803,21 @@ Every variant gave the same MEMs.
   - Blocks with exactly x + 1 phrases are followed by some other phrase y, and only those whose y starts with the syncmer and the tail match. Phrase ids are in lexicographic order, so within each symbol (δ, x, ω) these rows are probably one contiguous sub-range, ordered by y. Finding it needs y for a Δ row: a forward step (Ψ) on the block BWT, which is not stored, or a binary search over each symbol's rows.
 - **So an exact range start needs more than a C-array lookup.** Either store enough to find that sub-range, or use the range only when no block with exactly x + 1 phrases can match: for example, when the tail is empty, or when the dictionary shows that no phrase other than succ starts with the syncmer and the tail. Not implemented: an inexact start would break the rule that every configuration gives exactly plain search's MEMs and intervals.
 
+**Exact one-step match ends for blocks: the design, and what it needs (2026-11-05; not implemented).**
+- **Search start (the right end).**
+  - **One contiguous range:** under the ω order, the symbols of first phrase δ are (δ, b, 0), then every symbol with more than b continuations (both sides, and the capped key), then (δ, b, 1).
+  - **The longer blocks:** these all continue with χ^{b+1}(δ), so they are kept or dropped together by comparing that phrase with the tail. That needs the phrase's text. The `.lvl` dictionary stores only hashes and ids, so it needs the parse oracle's 2-bit dictionary (`.ptxt`) loaded too.
+  - **The exactly-b blocks:**
+    - Within (δ, b, 0), and within (δ, b, 1), Δ's rows are sorted by the next block's suffix, hence by its first phrase y.
+    - The ids of the phrases that start with the syncmer and the tail form one contiguous range, since ids are in lexicographic order. Finding that range is a binary search over phrase texts, so it also needs `.ptxt`.
+    - The matching rows are one sub-range of the symbol's rows, found by a binary search that reads y through Ψ of Δ.
+    - Ψ is a select on Δ's BWT. The block BWT (`EFRank`) supports rank but not select, so this needs a select over its per-symbol runs.
+- **Match end (the left end).**
+  - The rows whose preceding block ends with δ′ and b′ continuations are contiguous in the co-lex order of blocks. Counting them needs a wavelet tree over Δ's BWT relabelled by co-lex rank: a new structure, about 23 M blocks × 21 bits, roughly 60 MB at 16 chr19 individuals.
+  - Turning that count into the exact parse interval also needs the occurrences where the run of continuations goes on past b′, so that the match end falls inside a text block. I have not worked out how to count those without stepping through the parse; this is the open part.
+- **Status:** not started in code. The three pieces it needs are a phrase-text range lookup (`.ptxt`), Ψ on Δ (select on the block BWT), and the co-lex wavelet tree, plus the counting argument for runs that continue past b′. The rule stands: exact intervals or nothing, so no approximate version was tried.
+- **What it could save:** the entry and end steps measured above, 55–58% and 42–45% of the steps at match ends. On the 2 Mb data that is 0.0011 (smallest successor) to 0.0106 (most frequent successor) parse steps per character at N = 1024. At about 0.2 µs per step that is under 0.1 s of a 1 s search, so a few percent on these data. It could be more where matches are shorter and match ends more frequent.
+
 **For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
 
 ```
