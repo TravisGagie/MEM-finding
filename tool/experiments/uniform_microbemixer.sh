@@ -84,9 +84,10 @@ with open(d + '/table.tsv', 'w') as o:
     o.write(head + '\n' + ''.join(row + '\n' for i, row in enumerate(rows, 1) if i not in drop))
 print('%s: dropped %d genera short of reads, %d left' % (os.path.basename(d), len(bad), len(rows) - len(drop)), file=sys.stderr)
 PY
-      rm -f "$d"/genus_* "$d/${r}_mate_1.fq" "$d/${r}_mate_2.fq"
+      # (find, not a glob: thousands of genera make rm's argument list too long)
+      find "$d" -maxdepth 1 -name 'genus_*' -delete; rm -f "$d/${r}_mate_1.fq" "$d/${r}_mate_2.fq"
     done
-    rm -f "$d"/genus_*_reads_1.fq "$d"/genus_*_reads_2.fq "$d"/genus_*_seqs.fna "$d"/genus_*.aln
+    find "$d" -maxdepth 1 \( -name 'genus_*_reads_[12].fq' -o -name 'genus_*_seqs.fna' -o -name 'genus_*.aln' \) -delete
     echo "$r: $(wc -l < "$d/dropped.txt") genera dropped for too few reads (listed in $d/dropped.txt)" | tee -a "$OUT/dropped.txt"
     date > "$d/done"
   fi
