@@ -6,7 +6,9 @@
 Q is the queue's output directory (or the collected copy, tool/results/silva_queue).  It reads
 Q/dial/a<alpha>/credit/<scheme>.<region>.csv (scripts/score_silva.py, genus level) and prints:
   1. the summary: strict genus accuracy of each scheme, the mean over the regions, for each alpha;
-  2. one table per alpha with each region.
+  2. the held-out choice of epsilon for naive Bayes with the flat prior: the epsilon with the best mean at alpha = 0,
+     its accuracy at each alpha, and the best epsilon for each alpha for comparison;
+  3. one table per alpha with each region.
 Accuracy is as in scripts/silva_tables.py's tables: strict genus accuracy (a tie for the top weight counts as
 wrong), the mean of the regions' accuracies; here each region's accuracy is computed from its exact count
 (strict_correct / reads).  Schemes: range (lca), one, sample (cliffs), even (list), normalised (norm), proportional
@@ -144,6 +146,25 @@ for al in alphas:                                 # the reads behind each alpha
 print()
 show("Strict genus accuracy, mean over the regions", ["credit scheme"] + ["alpha = %s" % al for al in alphas],
      [[name(l)] + [mean(al, l) for al in alphas] for l in labels])
+# the held-out choice of epsilon for naive Bayes with the flat prior: chosen on alpha = 0, reported on the others
+eps = [l for l in labels if family(l) == "bayesflat"]
+def mval(al, l):
+    v = [acc[al][r][0].get(l) for r in regions]
+    return None if any(x is None for x in v) else sum(v) / len(v)
+if "0" in alphas and eps:
+    m0 = {l: mval("0", l) for l in eps}
+    if any(v is None for v in m0.values()):
+        print("== epsilon chosen on alpha = 0: %s\n" % mean("0", next(l for l in eps if m0[l] is None)))
+    else:
+        best = max(eps, key=lambda l: (m0[l], -eps.index(l)))      # ties: the larger epsilon (listed first)
+        rows = []
+        for al in alphas:
+            vals = {l: mval(al, l) for l in eps}
+            own = max((l for l in eps if vals[l] is not None), key=lambda l: vals[l], default=None)
+            rows.append(["alpha = %s" % al, mean(al, best), name(own).split("epsilon = ")[-1] if own else "-",
+                         mean(al, own) if own else "-"])
+        show("Naive Bayes, flat prior: epsilon chosen on alpha = 0 (%s), and the best epsilon for each alpha"
+             % name(best).split("epsilon = ")[-1], ["", "chosen epsilon", "best epsilon", "its accuracy"], rows)
 for al in alphas:
     show("alpha = %s, each region" % al, ["credit scheme", "mean"] + regions,
          [[name(l), mean(al, l)] + [cell(al, r, l) for r in regions] for l in labels])
