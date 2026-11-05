@@ -182,7 +182,10 @@ step_dial() {     # credit schemes when the sample doesn't follow the database: 
 }
 step_collect() {  # the small outputs (all that scripts/silva_tables.py reads), to OUT
   local out=${OUT:-$HERE/results/silva_queue}; mkdir -p "$out"
-  (cd "$Q" && find . -type f ! -name '*.out' ! -name '*.out[0-9]*' ! -path './uniform/work/*' ! -path './dial/*/work/*' -print0 | xargs -0 -r cp --parents -t "$out")
+  # only small text files: logs, scores, summaries, tables, truth files (the grammar step's tags.int32, grammars,
+  # tag arrays and search outputs, and every find output, stay in Q)
+  (cd "$Q" && find . -type f -size -5M \( -name '*.csv' -o -name '*.log' -o -name '*.txt' -o -name '*.tsv' \) \
+      ! -path './uniform/work/*' ! -path './dial/*/work/*' ! -path './grammar/out.*' -print0 | xargs -0 -r cp --parents -t "$out")
   stamp "copied $(cd "$out" && find . -type f | wc -l) files ($(du -sh "$out" | cut -f1)) to $out"
 }
 

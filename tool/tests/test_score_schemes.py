@@ -243,7 +243,7 @@ r = subprocess.run([sys.executable, SCORE, "--mode", "bayesauto", "--eps-grid", 
                     "--mate2-listings", d + "/m2", "--doc-id-to-traversal", D2T, "--silva-tax-ranks", TAX, "--readset-truthset",
                     d + "/seqtax.txt", "--trav-to-length", T2L, "--exp-src", EXP, "--output", out, "--nseq", d + "/nseq.txt",
                     "--threads", "2"], capture_output=True, text=True)
-chosen = float(next(l for l in r.stderr.splitlines() if l.startswith("bayesauto: epsilon = ")).split("=")[1])
+chosen = float(next(l for l in r.stderr.splitlines() if l.startswith("bayesauto: epsilon = ")).split("=")[1].split("(")[0])
 lls = [mix_ll(BAYES_READS, BAYES_NSEQ, e) for e in GRID]
 check("bayesauto: the epsilon of largest likelihood (%g)" % chosen, chosen == GRID[max(range(len(GRID)), key=lambda k: lls[k])])
 got = next(l.strip().split(",") for l in open(out) if ",genus," in l)

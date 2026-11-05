@@ -49,7 +49,7 @@ p.add_argument("--prior", choices=["sample", "flat", "db"], default="sample",
                help="--mode bayes: the prior: sample (N_g^alpha, the sample's own, with --alpha: the reference), flat (1/G) or db (N_g / N)")
 p.add_argument("--alpha", type=float, default=None, help="--mode bayes --prior sample: the prior is proportional to N_g^alpha")
 p.add_argument("--epsilon", default="1e-6", help="--mode bayes: the likelihood of a match for a genus without it (comma-separated values)")
-p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2,0.1,0.2,0.3,0.5",
+p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2,0.1,0.2,0.3,0.5,0.6,0.7,0.8,0.9,0.95,0.99",
                help="--mode bayesauto: the values of epsilon searched")
 p.add_argument("--calls", default=None, help="--mode bayes: also write each read's top documents (0-based, comma-separated; - if none), "
                "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
@@ -258,7 +258,8 @@ elif a.mode == "bayesauto":
     LL = [sum(x[k] for x in parts) for k in range(len(GRID))]
     kbest = max(range(len(GRID)), key=lambda k: LL[k])
     print("bayesauto: log-likelihood by epsilon: %s" % ", ".join("%g: %.1f" % (e, v) for e, v in zip(GRID, LL)), file=sys.stderr)
-    print("bayesauto: epsilon = %g" % GRID[kbest], file=sys.stderr, flush=True)
+    print("bayesauto: epsilon = %g%s" % (GRID[kbest], " (the edge of the grid: the likelihood's maximum may lie beyond it)"
+          if kbest in (0, len(GRID) - 1) else ""), file=sys.stderr, flush=True)
     variants = [("bayesauto", {"eps": GRID[kbest]})]
 elif a.mode == "bayes":
     # labels: bayes (the sample's prior), bayesflat, bayesdb; with the value of epsilon appended unless it is 1e-6

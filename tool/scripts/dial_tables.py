@@ -175,7 +175,7 @@ for al in alphas:
         m = None
         if os.path.isfile(f):
             for line in open(f):
-                if line.startswith("bayesauto: epsilon = "): m = line.split("=")[1].strip()
+                if line.startswith("bayesauto: epsilon = "): m = line.split("=")[1].split("(")[0].strip() + (" (edge)" if "edge of the grid" in line else "")
         row.append(m if m else miss(f))
     rows.append(row)
 show("Naive Bayes (mixture): the epsilon fitted to each read set", [""] + regions, rows)
