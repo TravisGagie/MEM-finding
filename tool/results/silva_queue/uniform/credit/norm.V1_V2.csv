@@ -1,0 +1,6 @@
+katka,norm,genus,0.9568,correct=191367,unclassified=0,wrong=8633,reads=200000,ambiguous_truth=16198,theirs=0.9568,strict=0.9568
+katka,norm,family,0.98,correct=195997,unclassified=0,wrong=4003,reads=200000,ambiguous_truth=3596,theirs=0.98,strict=0.98
+katka,norm,order,0.9873,correct=197453,unclassified=0,wrong=2547,reads=200000,ambiguous_truth=426,theirs=0.9873,strict=0.9873
+katka,norm,class,0.9933,correct=198652,unclassified=0,wrong=1348,reads=200000,ambiguous_truth=122,theirs=0.9933,strict=0.9933
+katka,norm,phylum,0.995,correct=199005,unclassified=0,wrong=995,reads=200000,ambiguous_truth=0,theirs=0.995,strict=0.995
+katka,norm,domain,1.0,correct=200000,unclassified=0,wrong=0,reads=200000,ambiguous_truth=0,theirs=1.0,strict=1.0

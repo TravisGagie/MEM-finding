@@ -1,0 +1,30 @@
+Bacteria;Actinobacteriota;Actinobacteria;Pseudonocardiales;Pseudonocardiaceae;Longimycelium;	0 reads, 61 needed
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Bernardetiaceae;Garritya;	0 reads, 61 needed
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Bernardetiaceae;Hugenholtzia;	0 reads, 61 needed
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Cyclobacteriaceae;Persicobacter;	0 reads, 61 needed
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Microscillaceae;Flexibacter;	0 reads, 61 needed
+Bacteria;Firmicutes;Bacilli;Bacillales;Bacillaceae;Natronobacillus;	0 reads, 60 needed
+Bacteria;Firmicutes;Bacilli;Bacillales;Bacillaceae;Saccharococcus;	0 reads, 60 needed
+Bacteria;Firmicutes;Bacilli;Erysipelotrichales;Erysipelatoclostridiaceae;Kandleria;	0 reads, 60 needed
+Bacteria;Firmicutes;Bacilli;Erysipelotrichales;Erysipelotrichaceae;Faecalicoccus;	60 reads, 60 needed
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Aerococcaceae;Abiotrophia;	0 reads, 60 needed
+Bacteria;Firmicutes;Clostridia;Clostridiales;Clostridiaceae;Clostridium sensu stricto 4;	0 reads, 60 needed
+Bacteria;Firmicutes;Clostridia;Lachnospirales;Lachnospiraceae;[Acetivibrio] ethanolgignens group;	60 reads, 60 needed
+Bacteria;Firmicutes;Clostridia;Peptostreptococcales-Tissierellales;Thermotaleaceae;Anaerosolibacter;	60 reads, 60 needed
+Bacteria;Firmicutes;Desulfitobacteriia;Desulfitobacteriales;Heliobacteriaceae;Heliorestis;	60 reads, 60 needed
+Bacteria;Firmicutes;Negativicutes;Veillonellales-Selenomonadales;Sporomusaceae;Dendrosporobacter;	0 reads, 60 needed
+Bacteria;Halanaerobiaeota;Halanaerobiia;Halanaerobiales;Halobacteroidaceae;Halobacteroides;	0 reads, 60 needed
+Bacteria;Proteobacteria;Alphaproteobacteria;Azospirillales;Azospirillaceae;Rhodocista;	0 reads, 60 needed
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhizobiales;Methylopilaceae;Albibacter;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Oxalobacteraceae;Telluria;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Rhodocyclaceae;Rhodocyclus;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Ectothiorhodospirales;Ectothiorhodospiraceae;Ectothiorhodospira;	40 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Avibacterium;	36 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Caviibacterium;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Conservatibacter;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Frederiksenia;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Mesocricetibacter;	0 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Necropsobacter;	60 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;uncultured;	30 reads, 60 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Nitrococcales;Nitrococcaceae;Arhodomonas;	0 reads, 60 needed
+Bacteria;Synergistota;Synergistia;Synergistales;Synergistaceae;Synergistes;	60 reads, 60 needed

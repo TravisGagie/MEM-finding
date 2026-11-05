@@ -1,0 +1,75 @@
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Bernardetiaceae;Garritya;	0 reads, 37 needed
+Bacteria;Chloroflexi;Dehalococcoidia;Dehalococcoidales;Dehalococcoidales Incertae Sedis;Dehalobium;	32 reads, 37 needed
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Microcystaceae;Aphanotece;	0 reads, 37 needed
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Nostocaceae;Calothrix PMC232.04;	26 reads, 37 needed
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Carnobacteriaceae;Nostocoida;	0 reads, 37 needed
+Bacteria;Firmicutes;Bacilli;Thermoactinomycetales;Thermoactinomycetaceae;Polycladomyces;	26 reads, 37 needed
+Bacteria;Firmicutes;Clostridia;Lachnospirales;Lachnospiraceae;Mobilisporobacter;	0 reads, 37 needed
+Bacteria;Firmicutes;Desulfitobacteriia;Desulfitobacteriales;Heliobacteriaceae;Candidatus Heliomonas;	0 reads, 37 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Oxalobacteraceae;Telluria;	36 reads, 36 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Conservatibacter;	36 reads, 36 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Francisellales;Francisellaceae;Fangia;	36 reads, 36 needed
+Bacteria;Thermotogota;Thermotogae;Petrotogales;Petrotogaceae;Oceanotoga;	36 reads, 36 needed
+Bacteria;Thermotogota;Thermotogae;Petrotogales;Petrotogaceae;Petrotoga;	24 reads, 36 needed
+Bacteria;Thermotogota;Thermotogae;Thermotogales;Fervidobacteriaceae;Thermopallium;	0 reads, 36 needed
+Bacteria;Verrucomicrobiota;Kiritimatiellae;Kiritimatiellales;Kiritimatiellaceae;uncultured;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Holozoa;Choanozoa;Choanoflagellata;Choanoflagellida;Craspedida;Incertae Sedis;Paramonosiga;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Laboulbeniomycetes;Laboulbeniales;Laboulbeniaceae;Gloeandromyces;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Diaporthales;Diaporthe;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Ascomycota;Pezizomycotina;Sordariomycetes;Diaporthales;Melanconidaceae;Melanconis;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Henningsomyces;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Hygrophoraceae;Typhula;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Omphalotaceae;uncultured;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Tulostoma;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Auriculariales;Hyaloriaceae;Pseudohydnum;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Boletales;Tapinellaceae;Tapinella;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Cantharellales;Hydnum;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Gloeophyllales;Gloeophyllaceae;Neolentinus;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Hymenochaetales;Coltricia;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Auriporia;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Daedalea;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Emmia;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Fomitopsis;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Ganoderma;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Polyporales;Incertae Sedis;Trichaptum;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Russulales;Lachnocladiaceae;Vararia;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Russulales;Stereaceae;Megalocystidium;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Tremellomycetes;Cystofilobasidiales;Mrakiaceae;Phaffia;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Tremellomycetes;Filobasidiales;Filobasidiaceae;uncultured;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Pucciniomycotina;Microbotryomycetes;Incertae Sedis;Chrysozymaceae;Oberwinklerozyma;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Pucciniomycotina;Pucciniomycetes;Pucciniales;Coleosporiaceae;Chrysomyxa;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Pucciniomycotina;Pucciniomycetes;Pucciniales;Coleosporiaceae;Coleosporium;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Pucciniomycotina;Pucciniomycetes;Pucciniales;Phragmidiaceae;Phragmidium;	32 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Pucciniomycotina;Pucciniomycetes;Pucciniales;Pucciniastraceae;Pucciniastrum;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Ustilaginomycotina;Ustilaginomycetes;Ustilaginales;Anthracoideaceae;Anthracoidea;	36 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Microsporidia;Amblyosporidae;Amblyospora;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Microsporidia;Thelohaniidae;Hyalinocysta;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Zoopagomycota;Kickxellomycotina;Incertae Sedis;Harpellales;Legeriomycetaceae;Genistelloides;	32 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Zoopagomycota;Kickxellomycotina;Incertae Sedis;Harpellales;Legeriomycetaceae;Genistellospora;	0 reads, 36 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Zoopagomycota;Kickxellomycotina;Incertae Sedis;Harpellales;Legeriomycetaceae;Pennella;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Charophyta;Phragmoplastophyta;Streptophyta;Embryophyta;Tracheophyta;Spermatophyta;Magnoliophyta;Liliopsida;Poales;Triticum;	28 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Chlamydomonadales;Characiochloris;	36 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Chlamydomonadales;Dysmorphococcus;	36 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Oedogoniales;Bulbochaete;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Oedogoniales;Oedogonium;	36 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Sphaeropleales;Dimorphococcus;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Sphaeropleales;Monactinus;	36 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Chlorophyceae;Sphaeropleales;Verrucodesmus;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Chloroplastida;Chlorophyta;Ulvophyceae;Ulotrichales;Pseudoneochloris;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Rhodophyceae;Compsopogonales;Chlidophyllon;	0 reads, 36 needed
+Eukaryota;Archaeplastida;Rhodophyceae;Compsopogonales;Compsopogon;	36 reads, 36 needed
+Eukaryota;Archaeplastida;Rhodophyceae;Compsopogonales;Pyrophyllon;	36 reads, 36 needed
+Eukaryota;Incertae Sedis;Apusomonadidae;Chelonemonas;	36 reads, 36 needed
+Eukaryota;SAR;Alveolata;Dinoflagellata;Dinophyceae;Peridiniphycidae;Peridiniales;Galeidinium;	0 reads, 36 needed
+Eukaryota;SAR;Rhizaria;Retaria;Foraminifera;Globothalamea;Rotaliida;Calcarinidae;Calcarina;	36 reads, 36 needed
+Eukaryota;SAR;Rhizaria;Retaria;Foraminifera;Globothalamea;Rotaliida;Nonionidae;Pullenia;	36 reads, 36 needed
+Eukaryota;SAR;Rhizaria;Retaria;Foraminifera;Tubothalamea;Miliolida;Archaias;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Chrysophyceae;Chromulinales;Chrysochaete;	36 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Dictyochophyceae;Pedinellales;Ciliophrys;	36 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Dictyochophyceae;Pedinellales;Helicopedinella;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Phaeophyceae;Dictyotales;Exallosorus;	36 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Phaeophyceae;Dictyotales;Rugulopteryx;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Phaeophyceae;Fucales;Silvetia;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Ochrophyta;Phaeophyceae;Tilopteridales;Tilopteris;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Peronosporomycetes;Eurychasma;	0 reads, 36 needed
+Eukaryota;SAR;Stramenopiles;Placididea;Wobblia;	36 reads, 36 needed

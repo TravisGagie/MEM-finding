@@ -1,0 +1,8 @@
+V1_V2: 200000 read pairs over 3283 of 9088 genera (60 to 61 each): uniform
+  katka,freq,genus,0.931,correct=186200,unclassified=0,wrong=13800,reads=200000,ambiguous_truth=16198,theirs=0.931,strict=0.93
+V3_V4: 200000 read pairs over 4135 of 9085 genera (48 to 49 each): uniform
+  katka,freq,genus,0.8814,correct=176279,unclassified=0,wrong=23721,reads=200000,ambiguous_truth=15529,theirs=0.8814,strict=0.8813
+V4_V4: 200000 read pairs over 5418 of 9043 genera (36 to 37 each): uniform
+  katka,freq,genus,0.8653,correct=173051,unclassified=0,wrong=26949,reads=200000,ambiguous_truth=12672,theirs=0.8653,strict=0.8644
+V4_V5: 200000 read pairs over 8758 of 8858 genera (22 to 23 each): uniform
+  katka,freq,genus,0.8488,correct=169764,unclassified=0,wrong=30236,reads=200000,ambiguous_truth=8921,theirs=0.8488,strict=0.8479

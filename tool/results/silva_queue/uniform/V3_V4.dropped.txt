@@ -1,0 +1,33 @@
+Bacteria;Bacteroidota;Bacteroidia;Chitinophagales;Chitinophagaceae;Filobacterium;	48 reads, 48 needed
+Bacteria;Bacteroidota;Bacteroidia;Chitinophagales;Chitinophagaceae;Hydrobacter;	48 reads, 48 needed
+Bacteria;Bacteroidota;Bacteroidia;Cytophagales;Bernardetiaceae;Garritya;	0 reads, 48 needed
+Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Weeksellaceae;Algoriella;	48 reads, 48 needed
+Bacteria;Chloroflexi;Dehalococcoidia;Dehalococcoidales;Dehalococcoidales Incertae Sedis;Dehalobium;	32 reads, 48 needed
+Bacteria;Cyanobacteria;Cyanobacteriia;Cyanobacteriales;Nostocaceae;Calothrix PMC232.04;	32 reads, 48 needed
+Bacteria;Desulfobacterota;Syntrophobacteria;Syntrophobacterales;Syntrophobacteraceae;Desulfosoma;	0 reads, 48 needed
+Bacteria;Firmicutes;Bacilli;Bacillales;Bacillaceae;Aquisalibacillus;	48 reads, 48 needed
+Bacteria;Firmicutes;Bacilli;Erysipelotrichales;Erysipelatoclostridiaceae;Kandleria;	48 reads, 48 needed
+Bacteria;Firmicutes;Bacilli;Lactobacillales;Carnobacteriaceae;Nostocoida;	0 reads, 48 needed
+Bacteria;Firmicutes;Bacilli;Thermoactinomycetales;Thermoactinomycetaceae;Seinonella;	48 reads, 48 needed
+Bacteria;Firmicutes;Clostridia;Oscillospirales;Hungateiclostridiaceae;Cellulosibacter;	48 reads, 48 needed
+Bacteria;Firmicutes;Clostridia;Peptococcales;Peptococcaceae;Desulfonispora;	48 reads, 48 needed
+Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Methylarcula;	48 reads, 48 needed
+Bacteria;Proteobacteria;Alphaproteobacteria;Rickettsiales;Anaplasmataceae;Candidatus Xenohaliotis;	40 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Neisseriaceae;Bergeriella;	48 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Burkholderiales;Oxalobacteraceae;Telluria;	0 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Chromatiales;Sedimenticolaceae;Candidatus Thiodiazotropha;	48 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Pasteurellaceae;Conservatibacter;	48 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Francisellales;Francisellaceae;Fangia;	48 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Nitrococcales;Nitrococcaceae;Arhodomonas;	48 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Pseudomonadales;Cellvibrionaceae;Marinimicrobium;	0 reads, 48 needed
+Bacteria;Proteobacteria;Gammaproteobacteria;Pseudomonadales;Moraxellaceae;Paraperlucidibaca;	48 reads, 48 needed
+Bacteria;Thermotogota;Thermotogae;Thermotogales;Fervidobacteriaceae;Thermopallium;	0 reads, 48 needed
+Bacteria;Verrucomicrobiota;Kiritimatiellae;Kiritimatiellales;Kiritimatiellaceae;uncultured;	0 reads, 48 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Fistulinaceae;Fistulina;	0 reads, 48 needed
+Eukaryota;Amorphea;Obazoa;Opisthokonta;Nucletmycea;Fungi;Dikarya;Basidiomycota;Agaricomycotina;Agaricomycetes;Agaricales;Hygrophoraceae;Hygroaster;	48 reads, 48 needed
+Eukaryota;Discoba;Jakobida;Andalucia;	48 reads, 48 needed
+Eukaryota;SAR;Alveolata;Ciliophora;Intramacronucleata;Conthreep;Phyllopharyngea;Suctoria;Discophrya;	0 reads, 47 needed
+Eukaryota;SAR;Alveolata;Dinoflagellata;Dinophyceae;Peridiniphycidae;Peridiniales;Galeidinium;	0 reads, 47 needed
+Eukaryota;SAR;Stramenopiles;Bicosoecida;Cafeteria;	0 reads, 47 needed
+Eukaryota;SAR;Stramenopiles;Peronosporomycetes;Eurychasma;	0 reads, 47 needed
+Bacteria;Thermotogota;Thermotogae;Petrotogales;Petrotogaceae;Oceanotoga;	48 reads, 48 needed
