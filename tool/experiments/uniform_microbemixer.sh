@@ -22,7 +22,7 @@
 # ALPHA (default 0): with ALPHA = 1 or -1 (any value but 0), genus g gets exactly k_g read pairs, k_g proportional
 # to N_g^ALPHA, N_g its number of sequences in NSEQ (one line per document of DOC_TO_TRAVERSAL; the runner writes it),
 # by scripts/simulate_dial.py: MicrobeMixer's extraction and ART, counts set exactly.  ALPHA = 0 is the uniform
-# case above, unchanged (MicrobeMixer with shares of 0).
+# case above, unchanged (MicrobeMixer with shares of 0), unless DIAL=1, which uses simulate_dial.py for ALPHA = 0 too.
 #
 # Output: OUT/uniform.tsv (the abundance table; OUT/<region>/table.tsv after drops), OUT/<region>/<region>_mate_{1,2}.fq and _seqtax.txt (the
 # truth, MicrobeMixer's), OUT/<region>/counts.txt (reads per genus, checked to be uniform).
@@ -33,7 +33,8 @@
 set -euo pipefail
 MM=$(cd "$1" && pwd); FASTA=$2; TAX=$3; D2T=$4; mkdir -p "$5"; OUT=$(cd "$5" && pwd)
 NREADS=${6:-200000}; REGIONS=${7:-"V1_V2 V3_V4 V4_V4 V4_V5"}; MODE=${MODE:-freq}; ALPHA=${ALPHA:-0}
-[ "$ALPHA" = 0 ] || [ -s "${NSEQ:-}" ] || { echo "ALPHA=$ALPHA needs NSEQ (sequences per document of DOC_TO_TRAVERSAL, one per line)"; exit 1; }
+DIAL=${DIAL:-0}; [ "$ALPHA" != 0 ] && DIAL=1      # DIAL=1: simulate_dial.py, also for ALPHA = 0
+[ "$DIAL" = 0 ] || [ -s "${NSEQ:-}" ] || { echo "ALPHA=$ALPHA needs NSEQ (sequences per document of DOC_TO_TRAVERSAL, one per line)"; exit 1; }
 HERE=$(cd "$(dirname "$0")/.." && pwd); K=$HERE/bin/katka
 command -v art_illumina > /dev/null || { echo "MicrobeMixer needs art_illumina (ART; e.g. apt install art-nextgen-simulation-tools)"; exit 1; }
 python3 -c "import regex" 2> /dev/null || { echo "MicrobeMixer needs the Python module regex (pip install regex)"; exit 1; }
@@ -55,7 +56,7 @@ SUM=$OUT/summary.txt; : > "$SUM"; : > "$OUT/dropped.txt"
 for r in $REGIONS; do
   d=$OUT/$r; p=${r/V4_V4/V4}; P=$MM/data/${p}_primers.txt
   [ -s "$P" ] || { echo "no primers $P"; exit 1; }
-  if [ "$ALPHA" != 0 ] && [ ! -s "$d/done" ]; then
+  if [ "$DIAL" = 1 ] && [ ! -s "$d/done" ]; then
     # k_g proportional to N_g^ALPHA, exactly: MicrobeMixer's extraction and ART, with the counts set by
     # scripts/simulate_dial.py (see there)
     rm -rf "$d"; mkdir -p "$d"
@@ -107,14 +108,14 @@ PY
     date > "$d/done"
   fi
   # reads per genus: uniform to within one read over the genera that got any
-  python3 - "$d/${r}_seqtax.txt" "$d/counts.txt" "$ALPHA" "$NREADS" <<'PY' | tee -a "$SUM"
+  python3 - "$d/${r}_seqtax.txt" "$d/counts.txt" "$DIAL:$ALPHA" "$NREADS" <<'PY' | tee -a "$SUM"
 import sys
 c = [int(l.rstrip('\n').split('\t')[2]) for l in open(sys.argv[1]) if l.strip()]
 nz = [x for x in c if x > 0]
 open(sys.argv[2], 'w').write('\n'.join(map(str, c)) + '\n')
-if sys.argv[3] != '0':      # N_g^alpha: simulate_dial.py checked the counts; here, that they add up
+if sys.argv[3].startswith('1:'):      # simulate_dial.py checked the counts; here, that they add up
     ok = sum(c) == int(sys.argv[4])
-    print('%s: alpha = %s: %d read pairs over %d of %d genera (%d to %d each): %s' % (sys.argv[1].split('/')[-2], sys.argv[3],
+    print('%s: alpha = %s: %d read pairs over %d of %d genera (%d to %d each): %s' % (sys.argv[1].split('/')[-2], sys.argv[3][2:],
           sum(c), len(nz), len(c), min(nz), max(nz), 'as asked' if ok else 'NOT THE NUMBER ASKED'))
     sys.exit(0 if ok else 1)
 ok = max(nz) - min(nz) <= 1 if nz else False

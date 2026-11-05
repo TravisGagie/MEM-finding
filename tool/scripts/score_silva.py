@@ -20,7 +20,10 @@
 #   --mode mix:   (1 - beta) * proportional + beta * even, per match, for each --beta (beta = 0 and 1 bit for bit)
 #   --mode em:    credit proportional to (c_g / N_g) * pi_g, where pi starts as the database prior N_g / N and is
 #                 re-estimated as each genus's share of the total credit over all reads and both mates, for each
-#                 number of iterations in --em-iters (0 iterations is proportional credit, up to rounding)
+#                 number of iterations in --em-iters (0 iterations is proportional credit, bit for bit)
+#   --mode bayes: the Bayes reference with the sample's own prior: genus g's score is alpha log N_g + the sum over the
+#                 read's matches (both mates) of log(c_g / (2 N_g)), or log epsilon (--epsilon, 1e-6) where g lacks the
+#                 match; the read goes to the top score (scores turned into posteriors, which sum per clade)
 # Output: katka,<mode>,<level>,<accuracy>,correct=..,unclassified=..,wrong=..,reads=..,ambiguous_truth=..,theirs=..,strict=..,strict_correct=..
 # (accuracy counts unclassified reads as wrong; theirs = accuracy under their rule for unclassified reads;
 #  strict = accuracy when a tie for the maximum weight counts as wrong; all three count ties as in their code otherwise).
@@ -38,8 +41,10 @@ p.add_argument("--doc-id-to-traversal", required=True); p.add_argument("--silva-
 p.add_argument("--readset-truthset", required=True); p.add_argument("--trav-to-length", required=True)
 p.add_argument("--output", required=True); p.add_argument("--exp-src", required=True)
 p.add_argument("--threads", type=int, default=os.cpu_count())
-p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em"], default="lca")
+p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes"], default="lca")
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
+p.add_argument("--alpha", type=float, default=None, help="--mode bayes: the prior is proportional to N_g^alpha (the sample's)")
+p.add_argument("--epsilon", type=float, default=1e-6, help="--mode bayes: the likelihood of a match for a genus without it")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
@@ -61,10 +66,15 @@ def parse(listing):
         out.append((int(e) - int(s) + 1, d, t[i + 1][0] == "<", c))   # <l,r>: an LCA answer in a hybrid listing
     return out
 NSEQ = [int(l) for l in open(a.nseq)] if a.nseq else None
-if a.mode in ("norm", "prior", "em") and NSEQ is None:
+if a.mode in ("norm", "prior", "em", "bayes") and NSEQ is None:
     sys.exit("--mode %s needs --nseq" % a.mode)
 NTOT, NGEN = (sum(NSEQ), len(NSEQ)) if NSEQ else (0, 0)
 PI0 = [n / NTOT for n in NSEQ] if NSEQ else None      # the database prior, EM's start
+if a.mode == "bayes":
+    if a.alpha is None: sys.exit("--mode bayes needs --alpha")
+    import math
+    LOGPRIOR = [a.alpha * math.log(n) for n in NSEQ]   # log N_g^alpha (its normalisation cancels)
+    LOGEPS = math.log(a.epsilon)
 
 G = {}
 def work(rng):
@@ -78,7 +88,26 @@ def work(rng):
         n = labels.get(correct, 0)
         if n != 1: tp += 1; amb += 1; strict += 1; continue      # truth missing/ambiguous at this level: correct, as in their code
         acc = {}
-        for listing in (r.mate1_listings, r.mate2_listings):
+        if G["mode"] == "bayes":
+            # the Bayes reference: log prior plus the sum over the read's matches (both mates) of log p_g(m), with
+            # p_g(m) = c_g(m) / (2 N_g) (the fraction of g's sequences, both strands, containing m) and epsilon for a
+            # genus without the match; over the genera of the read's matches; then the posterior (positive weights,
+            # so ties and the accuracy rule are as for the other schemes)
+            feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+            cand = {doc for f in feats for doc in f[1]}
+            sc = {}
+            for doc in cand:
+                v = LOGPRIOR[doc]
+                for L, d, _, cnt in feats:
+                    c = dict(zip(d, cnt)).get(doc)
+                    v += math.log(c / (2 * NSEQ[doc])) if c else LOGEPS
+                sc[doc] = v
+            if sc:
+                top = max(sc.values())
+                for doc, v in sc.items():
+                    t = d2c.get(doc)
+                    if t and t in keys: acc[t] = acc.get(t, 0) + math.exp(v - top)
+        for listing in (r.mate1_listings, r.mate2_listings) if G["mode"] != "bayes" else ():
             feats = parse(listing)
             if G["mode"] == "longest" and feats:      # only the longest MEMs of each mate vote (e.g. katka-classify -L 1 -X)
                 top = max(f[0] for f in feats); feats = [f for f in feats if f[0] == top]

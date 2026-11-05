@@ -460,8 +460,8 @@ On SILVA reads simulated as in Cliffy's paper, proportional credit is the best s
 
 **The read sets with a dial: `ALPHA` in `experiments/uniform_microbemixer.sh`.**
 - Genus g gets exactly k_g read pairs, k_g ∝ N_g^α, for α = 1, 0 and −1, with the same 200,000 pairs per region and the same four regions as the existing experiment.
-- α = 0 is the uniform simulation already prepared, unchanged: MicrobeMixer with shares of 0, plus the drops.
-- Any other α goes through `scripts/simulate_dial.py`. It uses MicrobeMixer's own code to read SILVA, extract each genus's regions (2% mutated) and run ART, with MicrobeMixer's command line. It sets the counts itself, since MicrobeMixer's shares can't give exact counts:
+- In the `dial` step every α, 0 included, goes through `scripts/simulate_dial.py` (`DIAL=1`), so the three columns use the same simulator. The uniform MicrobeMixer run (`ALPHA=0` without `DIAL=1`, the `uniform` step) is unchanged and stays a separate check.
+- `scripts/simulate_dial.py`: It uses MicrobeMixer's own code to read SILVA, extract each genus's regions (2% mutated) and run ART, with MicrobeMixer's command line. It sets the counts itself, since MicrobeMixer's shares can't give exact counts:
   - k_g is the largest-remainder rounding of N · N_g^α / Σ N_h^α, in exact rationals, over the genera with at least one region of 250 or more bases (ART makes no reads from a shorter one). The counts sum to N exactly.
   - ART gets ceil(k_g / long regions) + 1 pairs per amplicon. A genus that falls short is rerun with twice the fold, and if it still falls short it is dropped and the counts are reallocated.
   - Exactly k_g pairs are then sampled per genus.
@@ -484,9 +484,9 @@ On SILVA reads simulated as in Cliffy's paper, proportional credit is the best s
     - a read {C, D}, true genus C, among 10 reads that match only C. Proportional credit ties; EM learns that C is common and picks it.
 
 **The runner step and the table.** `silva_queue.sh dial` does three things for α in `ALPHAS` (default "1 0 -1"):
-1. It simulates the reads (α = 0 reuses the `uniform` step's reads, running that step if needed).
+1. It simulates the reads, every α with `simulate_dial.py`.
 2. It runs `katka find --preset silva` on each mate, untimed, with `THREADS` threads.
-3. It scores every scheme at genus level: lca, one, cliffs, list, norm, freq, prior (6 β), mix (6 β), and em (5 and 20 iterations).
+3. It scores every scheme at genus level: lca, one, cliffs, list, norm, freq, prior (6 β), mix (6 β), em (5 and 20 iterations), and the Bayes reference with the sample's own prior (`--mode bayes --alpha α`).
 
 Outputs go to `Q/dial/a<α>/{credit,out}`, with the truth files beside them; `collect` copies everything but the reads and the listings. `scripts/dial_tables.py Q [--latex]` then prints:
 - one summary table: each scheme's strict genus accuracy, the mean over the regions, for each α;
@@ -512,6 +512,75 @@ Accuracy is defined as in `silva_tables.py` (strict, the mean of the regions' ac
 
   This is a toy; on it, normalised credit wins even at α = 1. The real data decides.
 
+**Why normalised credit beats proportional credit on the toy at α = 1 (2026-11-05).**
+- **Not how sequences are chosen within a genus.** MicrobeMixer, both in the existing read sets and in the uniform run, extracts a region from every sequence of the genus that has exactly one match of each primer. It gives every extracted region the same fold coverage in ART, and draws the genus's reads uniformly from the pooled output. `simulate_dial.py` does the same, with equal fold per region of at least 250 bases. In both, a genus's reads are spread uniformly over its sequences that have a long enough region, not taken from one or a few.
+- **It is summing credit over a read's MEMs.** The Bayes reference (`--mode bayes`) multiplies the matches' likelihoods instead, and uses the sample's own prior. On the toy's reads at α = 1 it gets 99.65%, against 99.21% for normalised and 98.16% for proportional credit. With the wrong prior (α = 0 or −1 on the same reads) it still gets 99.36% and 99.31%, so the prior hardly matters and the summing does.
+  - A read from a small genus A shares some of its MEMs with the large genus B of its group, and B gets most of each shared MEM's credit. Summing rewards B for every MEM it shares and doesn't penalise it for the MEMs it lacks. The product does penalise it, through ε for each missing match.
+  - A test case: matches {A:1, B:5} of length 200 and {A:1} of length 100, with N_A = 1 and N_B = 10. Proportional credit gives B 167 against A's 133; the Bayes reference picks A with any of the three priors.
+- **A toy caveat.** MicrobeMixer mutates each extracted region once, at extraction, with 2% of its bases replaced (1.5% changed). On this toy, genera of a group differ in only 0.6% of their bases. So a genus with a single sequence can come out looking like a neighbour, and its accuracy depends on the random draw.
+  - With seed 1, normalised credit at α = 0 got 93.1% on V1_V2, because 151 of genus 4's 200 reads went wrong; with seeds 2, 3 and 4 it got 99.5%, 99.1% and 98.1%.
+  - That variance is the toy's; real genera differ by several percent in 16S.
+
+**The experiment, for the methods section** (exactly as the code does it; `scripts/simulate_dial.py`, `scripts/score_silva.py`, `experiments/silva_queue.sh dial`, `scripts/dial_tables.py`).
+
+*Reference and notation.* The reference is the tool's SILVA index: one document per genus, built from SILVA 138.1 by `katka/silva/build_katka.sh`, with G documents (genera). N_g is the number of sequences in genus g's document, and N = Σ_g N_g over all G genera. For a MEM M of a read, of length |M|, c_g(M) is its number of occurrences in genus g's sequences and their reverse complements, as `katka find --preset silva` reports it: L = 30, counts, explicit RLCSA, a lookup table of 10-mers. D(M) = {g : c_g(M) > 0}, and C(M) = Σ_{g∈D(M)} c_g(M).
+
+*Reads.* For each region (V1_V2, V3_V4, V4, V4_V5, with MicrobeMixer's primer files) and each α ∈ {1, 0, −1}, R = 200,000 read pairs are simulated:
+1. Every SILVA 138.1 sequence whose lineage reaches the genus rank is assigned to that genus, by MicrobeMixer's code.
+2. For each sequence of each genus of the reference, MicrobeMixer's in-silico PCR runs:
+   - the forward primer and the reverse complement of the reverse primer are each matched with at most 3 substitutions;
+   - a sequence with exactly one match of each gives the region between them, primers excluded, if it is longer than 200 bases;
+   - each base of the region is replaced, with probability 0.02, by a base drawn uniformly from {A, C, G, T}, which may be the same base.
+3. A genus is eligible if it has at least one region of at least 250 bases, the read length (ART makes no reads from a shorter amplicon). The eligible genera are E.
+4. Genus g ∈ E gets k_g read pairs. k_g is N_g^α R / Σ_{h∈E} N_h^α, in exact rationals, rounded down; the remaining pairs go one each to the genera with the largest fractional parts, ties in document order. So Σ_g k_g = R exactly.
+5. For each g with k_g > 0, ART runs on all of g's regions with MicrobeMixer's command, `art_illumina -ss MSv1 -amp -p -na -l 250 -f F` (amplicon mode, paired, MiSeq v1 profile, F read pairs per amplicon).
+   - F = ⌈k_g / ℓ_g⌉ + 1, where ℓ_g is g's number of regions of at least 250 bases.
+   - If ART gives fewer than k_g pairs, it is rerun with F doubled, up to 3 more times. A genus still short is removed from E and step 4 is redone; this did not happen on the toy.
+6. Exactly k_g pairs are drawn uniformly without replacement from g's pairs. Since every long region gets F pairs, this is uniform over g's sequences with a long enough region.
+7. Python's random generator is seeded with 1 (for the mutations and the draws). ART's generator is not seeded, as in MicrobeMixer.
+
+*Credit schemes.* Each MEM M of either mate gives weights w_g(M) to genera. A read's weight for genus g is W_g = Σ_M w_g(M) over the MEMs of both mates, and the read is assigned the genus of largest W_g.
+- Weights for genera labelled "uncultured" are discarded.
+- Where a scheme normalises by a sum that is 0, the MEM gives no weight.
+
+| scheme | w_g(M), for g ∈ D(M) |
+|---|---|
+| proportional | \|M\| c_g / C |
+| even | \|M\| / \|D\| |
+| normalised | \|M\| x_g / Σ_{h∈D} x_h, x_g = c_g / N_g |
+| prior mixture (β) | \|M\| x_g / Σ_{h∈D} x_h, x_g = (c_g / N_g) · ((1 − β) N_g / N + β / G) |
+| linear mixture (β) | \|M\| ((1 − β) c_g / C + β / \|D\|) |
+| EM (t iterations) | \|M\| x_g / Σ_{h∈D} x_h, x_g = (c_g / N_g) · π_g^(t) |
+
+with β ∈ {0, 0.1, 0.25, 0.5, 0.75, 1}. The endpoints are:
+- prior mixture: β = 0 is proportional and β = 1 normalised;
+- linear mixture: β = 0 is proportional and β = 1 even;
+- EM with t = 0 is proportional.
+
+The code computes each in a form that gives these endpoints bit for bit. The existing schemes are as before:
+- **range:** |M| / (g_r − g_ℓ + 1) to every genus from g_ℓ to g_r, the leftmost and rightmost genera of D(M) in document (taxonomic) order.
+- **one label:** all of |M| to one genus drawn with probability c_g / C.
+- **sample:** independent uniform values for the genera of D(M) in document order; |M| / |D′| to each genus of D′, the left-to-right and right-to-left maxima.
+- The random draws of the last two are seeded per block of reads.
+
+*EM.* π^(0)_g = N_g / N, the database prior.
+- **Each iteration:** from π^(t), compute w_g(M) as in the table for every MEM of every read (both mates). Let T_g be the sum of g's weights over all of them, and set π^(t+1)_g = T_g / Σ_h T_h.
+- **Stopping:** after a fixed number of iterations, with no convergence test. Reads are assigned with π^(5) and with π^(20), reported as two schemes.
+- **Weight per genus:** T_g is computed per genus, including genera labelled "uncultured".
+- **Genera without credit:** a genus that gets no weight in some iteration has π_g = 0 from then on.
+
+*Bayes reference.* For each genus g of ∪_M D(M), the score is S_g = α log N_g + Σ_M λ_g(M) over the MEMs of both mates.
+- λ_g(M) = log(c_g(M) / (2 N_g)) if c_g(M) > 0, the 2 because c_g counts both strands. Otherwise λ_g(M) = log ε, with ε = 10⁻⁶.
+- The prior is matched: α is the sample's own.
+- The read is assigned the genus of largest S_g. The scores are turned into posteriors exp(S_g − max S), so ties and the accuracy rule are as for the other schemes.
+
+*Accuracy.* Strict genus accuracy of a scheme on a region is A/R, where A is the number of read pairs whose true genus alone has the largest W_g. In detail:
+- a tie for the largest weight counts as wrong;
+- so does a read pair with no weight at all (no MEM in either mate);
+- a read whose true genus name is missing from SILVA's genus rank, or occurs at more than one node of it, counts as correct, as in Cliffy's scoring (`classify_silva_readset.py`). This applies only to reads from genera whose names are ambiguous in SILVA.
+
+A table entry is the mean of the four regions' strict accuracies, each computed from its exact count (`strict_correct` / R), as in `silva_tables.py`.
+
 **For the desktop, after its SILVA queue:**
 
 ```
@@ -524,7 +593,10 @@ tool/experiments/silva_queue.sh collect
 python3 tool/scripts/dial_tables.py tool/results/silva_queue
 ```
 
-(The every-50th set is a uniform sample of these reads, so the aquatic truth files give its composition too.) The α fit answers what the existing read sets correspond to. Its output line per region goes into `tool/results/silva/README.md` with the tables.
+(The every-50th set is a uniform sample of these reads, so the aquatic truth files give its composition too.) The α fit answers what the existing read sets correspond to. For each region it prints:
+- the least-squares slope of log k_g on log N_g over the genera with reads, and Spearman's correlation;
+- the fraction of SILVA's sequences in those genera;
+- their ranks by N_g among all the reference's genera, genera without reads included (1 = largest, ties sharing the best rank): median, range, and how many are in the top 1% and 10%. Its output line per region goes into `tool/results/silva/README.md` with the tables.
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
 - **The simulation,** for α = 1 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.

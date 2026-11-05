@@ -152,27 +152,23 @@ step_uniform() {  # the uniform-abundance simulation and its accuracy (proportio
 }
 
 step_dial() {     # credit schemes when the sample doesn't follow the database: reads with k_g ~ N_g^alpha
-  # (alpha = 0 is the uniform step's simulation, reused), every scheme, genus level
+  # (every alpha with scripts/simulate_dial.py; the uniform step's MicrobeMixer run stays a separate check), every scheme, genus level
   nseq
   for al in ${ALPHAS:-1 0 -1}; do
     local A=$Q/dial/a$al W=$Q/dial/a$al/work
     mkdir -p "$A/out" "$A/credit"
-    if [ "$al" = 0 ]; then
-      [ -s "$Q/uniform/work/${REGIONS##* }/done" ] || step_uniform
-      W=$Q/uniform/work
-    else
-      stamp "dial: simulating alpha = $al"
-      ALPHA=$al NSEQ=$Q/nseq.txt SEED=${SEED:-1} bash "$HERE/experiments/uniform_microbemixer.sh" "$MM" "$FASTA" "$TAX" "$D2T" "$W" ${NREADS:-200000} "$REGIONS"
-    fi
+    stamp "dial: simulating alpha = $al"      # every alpha with simulate_dial.py (the uniform step is the separate check)
+    DIAL=1 ALPHA=$al NSEQ=$Q/nseq.txt SEED=${SEED:-1} bash "$HERE/experiments/uniform_microbemixer.sh" "$MM" "$FASTA" "$TAX" "$D2T" "$W" ${NREADS:-200000} "$REGIONS"
     for r in $REGIONS; do
       cp "$W/$r/${r}_seqtax.txt" "$A/$r.seqtax.txt"
       for m in 1 2; do
         [ -s "$A/out/${r}_$m.out" ] || { stamp "dial: alpha = $al, $r mate $m"; $CAP $K find --preset silva -j $THREADS "$IDX" "$W/$r/${r}_mate_$m.fq" "$A/out/${r}_$m.out" 2> "$A/out/${r}_$m.log"; }
       done
-      for mode in lca one cliffs list norm freq prior mix em; do
+      for mode in lca one cliffs list norm freq prior mix em bayes; do
         [ -s "$A/credit/$mode.$r.csv" ] && continue
         stamp "dial: alpha = $al, $r, $mode"
-        local extra="--levels genus"; [ $mode = norm ] || [ $mode = prior ] || [ $mode = em ] && extra="$extra --nseq $Q/nseq.txt"
+        local extra="--levels genus"; [ $mode = norm ] || [ $mode = prior ] || [ $mode = em ] || [ $mode = bayes ] && extra="$extra --nseq $Q/nseq.txt"
+        [ $mode = bayes ] && extra="$extra --alpha $al"   # the Bayes reference, with the sample's own prior
         python3 "$HERE/scripts/score_silva.py" --mode $mode --mate1-listings "$A/out/${r}_1.out" --mate2-listings "$A/out/${r}_2.out" \
             --doc-id-to-traversal "$D2T" --silva-tax-ranks "$TAX" --readset-truthset "$W/$r/${r}_seqtax.txt" --trav-to-length "$T2L" \
             --exp-src "$EXP" --output "$A/credit/$mode.$r.csv" --threads $THREADS $extra > "$A/credit/$mode.$r.csv.log" 2>&1 \

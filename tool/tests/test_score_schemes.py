@@ -164,5 +164,14 @@ E = {k: v["genus"] for k, v in score(d, "em", ["--em-iters", "0,5,20"]).items()}
 E["freq"] = score(d, "freq")["freq"]["genus"]
 check("hand: proportional credit ties on {C, D} (10 of 11 strictly correct)", counts(E["freq"])[2] == 10)
 check("hand: EM (5 and 20 iterations) learns C is common: 11 of 11", counts(E["em5"])[2] == 11 and counts(E["em20"])[2] == 11)
+# the Bayes reference: a read with matches {A:1, B:5} and {A:1}, N_A = 1, N_B = 10.  Summed (proportional) credit
+# gives B 5/6 of the first match's length (200) and A 1/6 + all of the second (100): B wins, 167 to 133.  The
+# product gives A 1/2 * 1/2 (both strands), B 5/20 * epsilon: A wins, with any prior N_g^alpha, alpha in -1..1
+nseq = [1, 10] + [1] * (G - 2)
+reads = [(0, [(200, {0: 1, 1: 5})], [(100, {0: 1})])]
+d = write_set("hand3", reads, nseq)
+check("hand: proportional credit picks B for {A:1, B:5} + {A:1}", counts(score(d, "freq")["freq"]["genus"])[2] == 0)
+check("hand: the Bayes reference picks A (alpha = 1, 0, -1)",
+      all(counts(score(d, "bayes", ["--alpha", al])["bayes"]["genus"])[2] == 1 for al in ("1", "0", "-1")))
 print("%d failures" % fails)
 sys.exit(1 if fails else 0)

@@ -10,15 +10,17 @@ Q/dial/a<alpha>/credit/<scheme>.<region>.csv (scripts/score_silva.py, genus leve
 Accuracy is as in scripts/silva_tables.py's tables: strict genus accuracy (a tie for the top weight counts as
 wrong), the mean of the regions' accuracies; here each region's accuracy is computed from its exact count
 (strict_correct / reads).  Schemes: range (lca), one, sample (cliffs), even (list), normalised (norm), proportional
-(freq), the prior mixture prior<beta>, the linear mixture mix<beta> (proportional and even), and EM em<iterations>.
+(freq), the prior mixture prior<beta>, the linear mixture mix<beta> (proportional and even), EM em<iterations>, and
+the Bayes reference (bayes: the product of the matches' likelihoods with the sample's own prior).
 A missing or unusable input is printed as MISSING: <file> or BAD: <file> (<why>), never left blank; the script then
 lists them and exits 1.
 """
 import argparse, os, sys
 
 NAMES = {"lca": "range (Cliffy's LCA query)", "one": "one label per MEM", "cliffs": "sample (simulated cliffs)",
-         "list": "even", "norm": "normalised (c_g / N_g)", "freq": "proportional"}
-FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em"]
+         "list": "even", "norm": "normalised (c_g / N_g)", "freq": "proportional",
+         "bayes": "Bayes reference (product, the sample's prior)"}
+FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em", "bayes"]
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("q", nargs="?", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "results", "silva_queue"))
