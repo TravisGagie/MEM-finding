@@ -1,0 +1,35 @@
+first-vertex x [124.0, 206.0, 288.0, 370.0] ; lines 24 ; markers 153 ; axes [(547.58, 639.52)]
+
+region  query    digestion         Genus  Family   Order   Class  Phylum  Domain
+V1_V2   LCA      dna_minimizers    86.86   90.73   92.94   96.84   98.34  100.00
+V1_V2   LCA      minimizers        86.27   89.62   92.06   96.24   98.06  100.00
+V1_V2   LCA      none              87.42   90.92   93.26   96.64   98.30  100.00
+V1_V2   listing  dna_minimizers    93.95   95.47   95.61   98.91   99.03  100.00
+V1_V2   listing  minimizers        93.38   95.51   95.85   98.83   98.97  100.00
+V1_V2   listing  none              94.06   95.76   96.72   98.85   98.95  100.00
+V3_V4   LCA      dna_minimizers    88.12   95.25   95.76   99.83   99.76  100.00
+V3_V4   LCA      minimizers        88.31   95.06   95.81   99.84   99.74  100.00
+V3_V4   LCA      none              90.16   96.54   97.08   99.93   99.91  100.00
+V3_V4   listing  dna_minimizers    93.15   96.66   96.04   99.64   99.55   99.99
+V3_V4   listing  minimizers        93.35   97.01   96.39   99.70   99.63   99.98
+V3_V4   listing  none              94.72   97.84   97.39   99.80   99.76  100.00
+V4_V4   LCA      dna_minimizers    87.84   95.98   96.78   99.77   99.70  100.00
+V4_V4   LCA      minimizers        87.53   95.44   96.37   99.72   99.68  100.00
+V4_V4   LCA      none              88.31   96.05   96.95   99.87   99.87  100.00
+V4_V4   listing  dna_minimizers    92.71   97.25   97.50   99.63   99.49   99.96
+V4_V4   listing  minimizers        92.88   97.35   97.55   99.66   99.57   99.99
+V4_V4   listing  none              93.18   97.81   98.03   99.83   99.75  100.00
+V4_V5   LCA      dna_minimizers    88.58   96.48   97.55   99.79   99.71  100.00
+V4_V5   LCA      minimizers        88.49   96.16   97.20   99.76   99.69  100.00
+V4_V5   LCA      none              89.76   96.75   97.67   99.87   99.85  100.00
+V4_V5   listing  dna_minimizers    93.22   97.63   97.79   99.59   99.28   99.99
+V4_V5   listing  minimizers        93.30   97.71   97.75   99.62   99.41  100.00
+V4_V5   listing  none              94.17   98.11   98.32   99.72   99.59  100.00
+
+Genus, by query and digestion: V1_V2 V3_V4 V4_V4 V4_V5
+  LCA      none            87.42 90.16 88.31 89.76   range 87.4 to 90.2
+  LCA      minimizers      86.27 88.31 87.53 88.49   range 86.3 to 88.5
+  LCA      dna_minimizers  86.86 88.12 87.84 88.58   range 86.9 to 88.6
+  listing  none            94.06 94.72 93.18 94.17   range 93.2 to 94.7
+  listing  minimizers      93.38 93.35 92.88 93.30   range 92.9 to 93.4
+  listing  dna_minimizers  93.95 93.15 92.71 93.22   range 92.7 to 93.9

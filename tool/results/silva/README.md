@@ -307,3 +307,37 @@ Range by region, with Cliffy's scoring, mean of the repeats:
 - **Repeats vary by about ±0.15 to 0.25 points.** Repeat MSv1.1 is the best of the three under nearly every scheme, so the numbers used so far (93.77, 94.70, 86.95) are at the top of their ranges; 93.59, 94.57 and 86.68 are the better estimates.
 - **Range here isn't Cliffy itself:** it is our MEMs at L = 30 with an LCA rule, not Cliffy's own query.
 - **EM is the best scheme on the aquatic reads,** 96.32 against naive Bayes's 94.57, by about 1.8 points on every repeat. It wasn't in the earlier aquatic table. On the dial it was behind naive Bayes (92.31, 90.20, 90.22). The aquatic reads come from about 100 genera, and EM learns that from the reads themselves, so this doesn't carry over to a sample with many genera.
+
+## Cliffy's published accuracies: Figure 3 (2026-11-05)
+
+**No result files are public.**
+- `cliffy-experiments` (566f647, all 10 commits' file lists checked) holds 16 files of code and no results. `analysis/exp3.r` line 45 reads `accuracy.csv` from `/Users/omarahmed/Downloads/work_dir/cliffy_paper/exp_3/`, which was never committed; line 279 of `src/analyze_classifications.py` writes per-sample CSVs, also not committed.
+- `oma219/cliffy` has `analysis/analyze_cliffy.py` and `analyze_doclisting.py`, and example data only.
+- The journal's Supplemental Section 4 and Code weren't available here.
+
+**So the values were read from the figure.** Figure 3 is vector graphics, so its points are exact coordinates: page 9 of the Genome Research PDF and page 13 of the bioRxiv PDF. `cliffy_fig3_values.py` reads them, and `cliffy_fig3_values.txt` has all 24 series at all 6 ranks. The two versions give the same values to two decimals. The axis calibration uses the 6 tick marks, labelled 0.75 to 1.00 in the preprint; ticks are 19 units per 5 points of accuracy, so reading precision is about 0.01 points. Series are identified as in `exp3.r`: `y = sensitivity` (line 69), the legend's "Cliffy (TP/n)"; line type gives the query; marker shape gives digestion (from line 88).
+
+Genus-level accuracy on the aquatic reads:
+
+| query | digestion | V1–V2 | V3–V4 | V4 | V4–V5 | range | mean |
+|---|---|---:|---:|---:|---:|---:|---:|
+| LCA | none | 87.42 | 90.16 | 88.31 | 89.76 | 87.4–90.2 | 88.91 |
+| LCA | minimizers | 86.27 | 88.31 | 87.53 | 88.49 | 86.3–88.5 | 87.65 |
+| LCA | DNA minimizers | 86.86 | 88.12 | 87.84 | 88.58 | 86.9–88.6 | 87.85 |
+| approximate listing | none | 94.06 | 94.72 | 93.18 | 94.17 | 93.2–94.7 | 94.03 |
+| approximate listing | minimizers | 93.38 | 93.35 | 92.88 | 93.30 | 92.9–93.4 | 93.23 |
+| approximate listing | DNA minimizers | 93.95 | 93.15 | 92.71 | 93.22 | 92.7–94.0 | 93.26 |
+
+- **The draft's ranges are close, with small errors.** LCA undigested: draft 87.5–90.2, figure 87.4–90.2. LCA minimizers: draft 86.3–88.5, which matches. Listing: draft 93.3–94.8, figure 93.2–94.7 undigested.
+- **The script and the figure disagree on read count.** `exp3.r` line 63 onward titles the panels "n=200k", while the published panels say "n=10mil", as does the caption. The script was edited after, or the titles were; this doesn't settle how many reads were scored.
+- **The gap to our range depends on the region.** With Cliffy's scoring, MSv1, mean of 3 repeats:
+
+| region | Cliffy LCA, undigested, its reads | range, our reads | ours − Cliffy |
+|---|---:|---:|---:|
+| V1–V2 | 87.42 | 89.34 | +1.92 |
+| V3–V4 | 90.16 | 87.70 | −2.46 |
+| V4 | 88.31 | 85.55 | −2.76 |
+| V4–V5 | 89.76 | 86.74 | −3.02 |
+| mean | 88.91 | 87.33 | −1.58 |
+
+  The difference changes sign by region, so a single offset, such as "our reads are harder", doesn't describe it. Cliffy's query and our range rule also differ, so this is not a test of the reads alone.
