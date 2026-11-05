@@ -646,6 +646,80 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
   - So about 4 minutes per region and α, or about 45 minutes in all.
 - **In all:** about 12 MicrobeMixer-sized simulations, plus under an hour (the three naive-Bayes files add three scorings per region and α, the flat one with five values of ε).
 
+### Block length as genomes are added (2026-11-05)
+
+The question: with the smallest successor, every new genome can only add successors to a phrase, so the smallest one is eventually a rare variant and block steps should fail at almost every phrase. Any rule that picks one successor per phrase works if each block symbol carries a bit ω (*More RLBWT Tricks* v2, the lemma on other continuations), and the most frequent successor should keep blocks long.
+
+**The most frequent successor was already in the tool** (`index --twolevel --continuation frequent`, `src/twolevel_build.hpp`):
+- Ties go to the smallest phrase id.
+- ω = 1 when the next block's first phrase is larger than the successor of the block's last phrase; under the smallest successor it is always 1, and isn't stored.
+- Symbols are ordered by δ, then ω = 0 by ascending j, then ω = 1 by descending j, as the lemma needs.
+- `selftest.sh` checks it against plain search, with brute-force MEMs and intervals, on the chr19-like collection, as for the smallest successor. It passed again on 2026-11-05.
+
+**Synthetic pangenomes: `scripts/pangenome_sim.py OUT --haplotypes N --queries Q --length L --seed S`.**
+- **Model:** a coalescent with recombination (msprime 1.4.5, `pip install msprime`), with these parameters, all options of the script:
+  - N_e = 20,000;
+  - exponential growth to 10⁶ over the last 400 generations (recent human growth, which makes most variants rare and gives each new haplotype private ones);
+  - μ = 1.25·10⁻⁸ and ρ = 10⁻⁸ per base per generation;
+  - 10% of variant sites are indels of 1–10 bases (geometric, mean 2), the rest SNPs, on a random ancestral sequence.
+- **Output:** `collection.txt`, the reference (sample 0) and then N haplotypes, so the first n lines are every smaller collection; `queries.txt`, Q held-out haplotypes; `stats.txt`.
+- **With N = 1024 and L = 300 kb** (the run below):
+  - 2,013 variant sites;
+  - diversity 4.6·10⁻⁴ per base (humans: 6·10⁻⁴ to 10⁻³, with SVs);
+  - singletons are 44% of the segregating sites;
+  - each new haplotype adds about 26 new variants at N ≈ 16, 5 at 64, 1.8 at 256 and 0.8 at 1,024, about one of them private.
+- It takes 2 s.
+
+**The measurement: `experiments/block_scaling.sh DATA WORK "n1 n2 ..." [L]`.**
+- **Input:** DATA has `collection.txt` and `queries.txt`, the generator's or chr19's. For each n, the collection is the first n sequences.
+- **Indexes:** it builds the index (prep, BWT, `index --csa --twolevel`), or links to an existing one with `EXISTING=prefix%d`. It then rebuilds only `PREFIX.lvl` with `--continuation frequent`, under links to the same text, BWT and RLCSA.
+- **Searches:** `find -L L --format mems --csa --twolevel --stats`, with and without block steps, single-threaded and pinned. Every output must be byte-identical, and with `CHECK_PLAIN=1`, equal to plain search.
+- **Table** (also `WORK/blocks.tsv`), by n and rule:
+  - the parse's phrases and distinct phrases;
+  - blocks and phrases per block;
+  - the fraction of phrase positions that are continuations;
+  - the `.lvl` size;
+  - character, parse and block steps per pattern character;
+  - phrases crossed per block step, the mean block length as the patterns see it: parse steps without blocks minus parse steps with them, over block steps;
+  - search times with and without block steps.
+
+**Results on the synthetic pangenome** (`results/block_scaling/`). These are 300 kb haplotypes; the 20 held-out haplotypes are the patterns (6.0 million characters), with MEMs of at least 1000, k = 51 and s = 12. Every output was identical under both rules, with and without block steps, and equal to plain search.
+
+| N | rule | phrases/block | continuations | phrases per block step | parse steps/char | block steps/char | time (s) |
+|---|---|---|---|---|---|---|---|
+| 16 | smallest | 62.9 | 98.4% | 51.5 | 0.0230 | 0.0014 | 0.17 |
+| 16 | frequent | 184.9 | 99.5% | 116.7 | 0.0554 | 0.0004 | 0.17 |
+| 64 | smallest | 43.0 | 97.7% | 39.7 | 0.0078 | 0.0018 | 0.14 |
+| 64 | frequent | 179.5 | 99.4% | 135.9 | 0.0286 | 0.0004 | 0.15 |
+| 256 | smallest | 27.1 | 96.3% | 26.3 | 0.0028 | 0.0028 | 0.13 |
+| 256 | frequent | 171.8 | 99.4% | 147.9 | 0.0153 | 0.0004 | 0.14 |
+| 1024 | smallest | 16.3 | 93.8% | 16.1 | 0.0010 | 0.0042 | 0.10 |
+| 1024 | frequent | 169.9 | 99.4% | 157.3 | 0.0093 | 0.0004 | 0.13 |
+
+- **The expectation holds for block length.**
+  - Under the smallest successor, the mean block length falls steadily, from 63 phrases at N = 16 to 16 at N = 1024, roughly halving with every fourfold increase in N. As the patterns see it, it falls from 52 to 16 phrases per block step.
+  - Under the most frequent successor it stays flat, 185 to 170 phrases per block, and as the patterns see it, it even rises, from 117 to 157.
+- **It doesn't make the search faster on these data.**
+  - The most frequent successor takes 2.4 to 9 times as many parse steps per pattern character, so its parse and block steps together exceed the smallest successor's at every N: 0.0558 against 0.0244 at 16, and 0.0097 against 0.0052 at 1024.
+  - These are the extra parse steps at the ends of matches and when backing up that the paper's §4 mentions. A block whose phrases follow the frequent path is crossed in one step, but wherever the pattern leaves the frequent path the search falls back to parse steps.
+  - The search times are the same within noise (0.10–0.18 s), because character steps dominate and are the same under both rules (0.0029–0.0245 per character).
+  - So block length as genomes are added is not what limits two-level search here. Under the smallest successor, the count of parse plus block steps per character even falls as N grows, since longer matches cross more phrases in one block step.
+- **Caveat:** the synthetic haplotypes are short (300 kb), have no repeats or structural variants, and their patterns are held-out haplotypes from the same population. Real chr19 decides.
+
+**For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
+
+```
+cd ~/MEM-finding && git pull origin tool && make -C tool
+EXISTING=$HOME/tool/chr19/c%d PIN=9 tool/experiments/block_scaling.sh ~/shortcuts/chr19_scaling ~/tool/chr19/blocks "33 65 129" 1000
+cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv     # and commit, with the printed table
+```
+
+- **What it builds:** for each n, the most frequent successor's `.lvl` (under `~/tool/chr19/blocks/c<n>f`, linked to the existing text, BWT and RLCSA), and the smallest successor's `.lvl` once more, under a probe prefix, only for its statistics; the probe is deleted.
+- **Cost:** each two-level build is the two-level step of the original build: about 200 s and 4.6 GB at 33, 360 s and 5.2 GB at 65, and 700 s and 8.3 GB at 129. Then four searches per n of 5–10 s each.
+- **In all:** about 45 minutes, within the 11 GB cap.
+- **If `c129` was deleted for disk space:** put a link `collection.txt -> hprc_chr19` in `~/shortcuts/chr19_scaling` and run without `EXISTING` for 129, with `BIGBWT=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt`. It needs about 40 GB of disk, as before.
+- **Optional:** `L = 100` instead of 1000 is the paper's other threshold.
+
 ### Cliffy (2026-11-04)
 
 Cliffy, github.com/oma219/cliffy at `3763529`, built here with `katka/silva/build_cliffy.sh`'s steps (`cliffy_rz.patch`, `gxx-compat`) under GCC 13 and CMake 3.28. Indexed: 20 synthetic genomes as 20 documents, with `--taxcomp --num-col 7 --two-pass`, with and without `--revcomp`.
