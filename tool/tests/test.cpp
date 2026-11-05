@@ -211,7 +211,7 @@ static int mems_test(int argc, char **argv) {
     twolevel_locate TLC;
     if (tl) {
         L2.load(prefix + ".lvl");
-        if (L2.has_blocks) {                      // the toehold samples (with the two-level index's own parse)
+        if (L2.has_blocks && !L2.maxblock) {      // the toehold samples (with the two-level index's own parse; not with a cap)
             parse_text PTl;
             PTl.build(prefix + ".S", L2.K, L2.SM, prefix + ".ptxt.tmp");
             build_twolevel_locate(prefix + ".bwt", B, L2, PTl, TLC);

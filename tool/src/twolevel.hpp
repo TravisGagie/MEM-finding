@@ -179,6 +179,7 @@ struct two_level {
     EliasFano dstart;               // symbols of d are dstart[d] .. dstart[d+1]-1 (0-based)
     PackedInts jv;                  // j of each symbol, in symbol order within each d
     uint8_t sided = 0;              // 1: symbols have sides (sidev); 0: all +
+    uint32_t maxblock = 0;          // --max-block B: a block also ends after B phrases (0: no cap); stored in KTLVL002 files
     std::vector<uint64_t> sidev;
     std::vector<uint64_t> ccont;    // bit x: phrase x is a continuation somewhere in the parse
     PhraseDict dict;
@@ -205,8 +206,9 @@ struct two_level {
 
     void save(const std::string &path) const {
         FILE *f = open_or_die(path, "wb");
-        wmagic(f, "KTLVL001");
+        wmagic(f, maxblock ? "KTLVL002" : "KTLVL001");
         wr(f, K); wr(f, SM); wr(f, n); wr(f, m); wr(f, sigma); wr(f, nblocks); wr(f, nsym); wr(f, has_blocks); wr(f, sided);
+        if (maxblock) wr(f, maxblock);
         B.save(f); pbwt.save(f); dict.save(f);
         if (has_blocks) { BS.save(f); bbwt.save(f); succp.save(f); dstart.save(f); jv.save(f); wvec(f, ccont); wvec(f, sidev); }
         fclose(f);
@@ -215,8 +217,10 @@ struct two_level {
     // and dropped
     void load(const std::string &path, bool parse_only = false) {
         FILE *f = open_or_die(path, "rb");
-        rmagic(f, "KTLVL001", path);
+        char mg[8];
+        if (fread(mg, 1, 8, f) != 8 || (memcmp(mg, "KTLVL001", 8) && memcmp(mg, "KTLVL002", 8))) die(path + ": not a KTLVL001/2 file (rebuild it)");
         rd(f, K); rd(f, SM); rd(f, n); rd(f, m); rd(f, sigma); rd(f, nblocks); rd(f, nsym); rd(f, has_blocks); rd(f, sided);
+        maxblock = 0; if (!memcmp(mg, "KTLVL002", 8)) rd(f, maxblock);
         B.load(f); pbwt.load(f); dict.load(f);
         if (parse_only) { pbwt = EFRank(); has_blocks = 0; fclose(f); return; }
         if (has_blocks) { BS.load(f); bbwt.load(f); succp.load(f); dstart.load(f); jv.load(f); rvec(f, ccont); rvec(f, sidev); }
@@ -228,13 +232,18 @@ struct two_level {
 struct pattern_parse {
     std::vector<int64_t> S;         // syncmer starts
     std::vector<uint32_t> pid;      // pid[i]: id of P[S[i] .. S[i+1]+K), 0 if not a phrase (or i is last)
-    std::vector<uint8_t> cont;      // cont[i]: phrase i is a continuation of phrase i-1
+    std::vector<uint8_t> cont;      // cont[i]: phrase i continues phrase i-1's block (with a cap, within B phrases)
+    std::vector<uint8_t> real;      // real[i]: phrase i follows phrase i-1 and is not its successor (a block start in
+                                    // every occurrence of phrases i-1, i, ...); without a cap, real = !cont but for i = 0
     std::vector<int32_t> bstart;    // bstart[i]: the block of phrase i starts at phrase bstart[i]
     void finish(const two_level &L) {
         size_t z = S.size();
-        cont.assign(z, 0); bstart.assign(z, 0);
+        cont.assign(z, 0); real.assign(z, 0); bstart.assign(z, 0);
         for (size_t i = 0; i < z; ++i) {
-            cont[i] = L.has_blocks && i > 0 && pid[i] && pid[i - 1] && L.succ(pid[i - 1]) == pid[i];
+            const bool succ = L.has_blocks && i > 0 && pid[i] && pid[i - 1] && L.succ(pid[i - 1]) == pid[i];
+            real[i] = L.has_blocks && i > 0 && pid[i] && pid[i - 1] && !succ;
+            // a cap B: the block also ends after B phrases, counted from its run's start (as in the text)
+            cont[i] = succ && (!L.maxblock || (uint64_t)(i - bstart[i - 1]) < L.maxblock);
             bstart[i] = cont[i] ? bstart[i - 1] : (int32_t)i;
         }
     }
@@ -280,7 +289,16 @@ struct search_counters {
     // middle (one per pattern phrase), parse-sample binary searches and their comparisons, and character
     // steps of the character-level STPD at the left end
     u64 ps_right = 0, ps_mid = 0, ps_jumps = 0, ps_compares = 0, ps_left = 0;
+    // two-level search with blocks: where the parse steps come from.  entry: before the first block attempt (the
+    // right end of the search); inside: re-crossing a block phrase by phrase, after a block attempt that failed or
+    // backed up, when the match went on past it; end: the same when the match ended there (a failed parse step or
+    // the left end of the search).  Block attempts: block steps that found the symbol absent (nosym, not counted
+    // as steps) or an empty interval (bfail); back-ups (to the last exact interval before the last block); exact
+    // exits (Lemma "backup", first case)
+    u64 pe_entry = 0, pe_inside = 0, pe_end = 0, b_nosym = 0, b_fail = 0, b_backups = 0, b_exact = 0, b_attempts = 0;
     void add(const search_counters &o) {
+        pe_entry += o.pe_entry; pe_inside += o.pe_inside; pe_end += o.pe_end; b_nosym += o.b_nosym; b_fail += o.b_fail;
+        b_backups += o.b_backups; b_exact += o.b_exact; b_attempts += o.b_attempts;
         ps_right += o.ps_right; ps_mid += o.ps_mid; ps_jumps += o.ps_jumps; ps_compares += o.ps_compares; ps_left += o.ps_left;
         searches += o.searches; char_steps += o.char_steps; parse_steps += o.parse_steps; block_steps += o.block_steps;
         kmer_tests += o.kmer_tests; kmer_restarts += o.kmer_restarts; stpd_jumps += o.stpd_jumps; stpd_compares += o.stpd_compares;
@@ -394,24 +412,33 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
         if (TLc && TLc->pstarts.access(u) != t) die("internal error: two-level locate (the toehold is not at a boundary)");
         int64_t i = idx, noblock_above = idx - 1;
         jumps = jumps && L.has_blocks;
+        u64 seg = 0; int segkind = 0;                        // parse steps since the last attempt; 0: entry, 1: re-crossing
         while (i > 0 && S[i - 1] >= begin && pi.pid[i - 1]) {
             if (jumps && i <= noblock_above && !pi.cont[i]) {
+                (segkind ? cnt.pe_inside : cnt.pe_entry) += seg; seg = 0;    // the match went on past them
+                ++cnt.b_attempts;
                 uint64_t blo = L.BS.count_less(plo), bhi = L.BS.count_less(phi + 1);
                 int64_t cur = i, taken = 0;
-                uint64_t pblo = 0, pbhi = 0; int64_t pcur = i;
-                u64 bt = 0, pbt = 0;                         // the block toehold, and the one before the last block step
+                // the last exact interval before the last block step: the attempt's own (scur = i, the parse interval
+                // plo..phi) or the block interval at a real boundary (without a cap, every block start of the pattern
+                // is one, and this is the interval before the last block)
+                uint64_t sblo = 0, sbhi = 0; int64_t scur = i; u64 sbt = 0;
+                u64 bt = 0;                                  // the block toehold
                 if (TLc && blo < bhi) bt = TLc->block_of(TLc->parse_sa_at(L.BS.access(blo), plo, u));
                 while (cur > 0 && blo < bhi) {
                     int32_t t0 = pi.bstart[cur - 1];
                     if (S[t0] < begin || !pi.pid[t0]) break;
-                    const bool plus = pi.pid[cur] > L.succ(pi.pid[cur - 1]);
-                    uint32_t y = L.sym(pi.pid[t0], (uint64_t)(cur - 1 - t0), plus);
-                    if (!y) break;
+                    // the block [t0, cur - 1] and its side: + if the next phrase is larger than the successor; a block
+                    // cut by the cap (the next phrase is the successor) has the key (B, +), after all - and before all +
+                    const bool capped = L.maxblock && pi.pid[cur] == L.succ(pi.pid[cur - 1]);
+                    const bool plus = capped || pi.pid[cur] > L.succ(pi.pid[cur - 1]);
+                    uint32_t y = L.sym(pi.pid[t0], capped ? (uint64_t)L.maxblock : (uint64_t)(cur - 1 - t0), plus);
+                    if (!y) { ++cnt.b_nosym; break; }
                     uint64_t o1, o2;
                     L.bbwt.lf2(y, blo, bhi, o1, o2);
                     ++cnt.block_steps;
-                    if (o1 >= o2) break;
-                    pblo = blo; pbhi = bhi; pcur = cur; pbt = bt;
+                    if (o1 >= o2) { ++cnt.b_fail; break; }
+                    if (cur != i && pi.real[cur]) { sblo = blo; sbhi = bhi; scur = cur; sbt = bt; }
                     if (TLc) bt = twolevel_locate::rank_step(L.bbwt, TLc->brow, TLc->bsamp, y, blo, bt);
                     blo = o1; bhi = o2; cur = t0; ++taken;
                 }
@@ -420,22 +447,26 @@ inline u64 search2(const stepper &st, const two_level &L, const pattern_parse &p
                     if (TLc) u = TLc->bstarts.access(bt);
                     i = cur;
                     noblock_above = i;
+                    ++cnt.b_exact; segkind = 1;
                     continue;
                 }
-                if (taken >= 2) {             // back up to the interval before the last block
-                    plo = L.BS.access(pblo); phi = L.BS.access(pbhi - 1);
-                    if (TLc) u = TLc->bstarts.access(pbt);
-                    i = pcur;
+                if (taken >= 1 && scur != i) {    // back up to the last exact interval before the last block
+                    plo = L.BS.access(sblo); phi = L.BS.access(sbhi - 1);
+                    if (TLc) u = TLc->bstarts.access(sbt);
+                    i = scur;
+                    ++cnt.b_backups;
                 }
                 noblock_above = pi.bstart[i - 1];
+                segkind = 1;
             }
             uint64_t o1, o2;
             L.pbwt.lf2(pi.pid[i - 1], plo, phi + 1, o1, o2);
-            ++cnt.parse_steps;
+            ++cnt.parse_steps; ++seg;
             if (o1 >= o2) break;
             if (TLc) u = twolevel_locate::rank_step(L.pbwt, TLc->prow, TLc->psamp, pi.pid[i - 1], plo, u);
             plo = o1; phi = o2 - 1; --i;
         }
+        (segkind ? cnt.pe_end : cnt.pe_entry) += seg;       // the steps of the last segment: the match ended there
         I.sp = L.B.select1(plo - 1); I.ep = L.B.select1(phi - 1) + 1;
         if (TLc) t = TLc->pstarts.access(u);
         j = S[i];

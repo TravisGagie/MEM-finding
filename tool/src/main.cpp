@@ -227,6 +227,7 @@ static const char *INDEX_USAGE =
     "    --syncmer k,s     closed syncmers (default 51,12)\n"
     "    --no-blocks       parse only\n"
     "    --continuation smallest|frequent   successor that continues a block (default smallest)\n"
+    "    --max-block B     a block also ends after B phrases (either rule; default no cap)\n"
     "  --stpd-parse        STPD over the parse (PREFIX.pstpd: parse sample, entry table, C, parse phi^-1), from\n"
     "                      PREFIX.ptxt (built first if missing or not of PREFIX.lvl's k, s); needs PREFIX.lvl;\n"
     "                      find --stpd-parse also needs PREFIX.stpd (index --stpd); alone, reads no BWT\n"
@@ -297,7 +298,7 @@ static int cmd_index(int argc, char **argv) {
         {"bwt", 1, 0, 'b'}, {"csa", 0, 0, 'c'}, {"efcsa", 0, 0, 'e'}, {"tags", 0, 0, 't'}, {"by-tag", 0, 0, 'S'},
         {"sample", 1, 0, 's'}, {"no-rmq", 0, 0, 'n'}, {"grammar", 0, 0, 'g'}, {"bigrepair", 1, 0, 'G'}, {"tag-out", 1, 0, 'o'},
         {"kebab", 1, 0, 'k'}, {"kebab-eps", 1, 0, 'E'}, {"twolevel", 0, 0, '2'}, {"syncmer", 1, 0, 'y'}, {"no-blocks", 0, 0, 'B'},
-        {"continuation", 1, 0, 'C'}, {"tag-lcp", 1, 0, 'l'}, {"tmp", 1, 0, 1001}, {"blam-mem", 1, 0, 1002}, {"blam-external", 0, 0, 1003}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"twolevel-locate", 0, 0, 'W'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"continuation", 1, 0, 'C'}, {"max-block", 1, 0, 1004}, {"tag-lcp", 1, 0, 'l'}, {"tmp", 1, 0, 1001}, {"blam-mem", 1, 0, 1002}, {"blam-external", 0, 0, 1003}, {"parse-oracle", 0, 0, 'O'}, {"stpd-parse", 0, 0, 'Y'}, {"rlzap", 2, 0, 'Z'}, {"twolevel-locate", 0, 0, 'W'}, {"stpd", 0, 0, 'P'}, {"stpd-all", 0, 0, 'Q'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     int stpd = 0;
     bool poracle = false, pstpd = false, rlzap = false, tlocate = false;
@@ -337,6 +338,7 @@ static int cmd_index(int argc, char **argv) {
                 if (optarg && sscanf(optarg, "%lu,%ld,%lu", &rz_J, &rz_D, &rz_M) != 3) die("--rlzap[=J,D,M]");
                 break;
             case 'C': { string v = optarg; if (v == "frequent") to.frequent = true; else if (v != "smallest") die("--continuation smallest|frequent"); break; }
+            case 1004: to.max_block = (uint32_t)std::stoul(optarg); break;
             default: fputs(INDEX_USAGE, stderr); return 1;
         }
     }
@@ -356,7 +358,7 @@ static int cmd_index(int argc, char **argv) {
     auto build_parse_stpd = [&]() {
         int32_t k = 0, sm = 0;
         {   // k and s of PREFIX.lvl
-            FILE *f = open_or_die(prefix + ".lvl", "rb"); rmagic(f, "KTLVL001", prefix + ".lvl"); rd(f, k); rd(f, sm); fclose(f);
+            FILE *f = open_or_die(prefix + ".lvl", "rb"); char mg[8]; if (fread(mg, 1, 8, f) != 8 || memcmp(mg, "KTLVL00", 7)) die(prefix + ".lvl: not a two-level index"); rd(f, k); rd(f, sm); fclose(f);
         }
         reset_step_peak();
         parse_text PT;
@@ -942,6 +944,9 @@ static int cmd_find(int argc, char **argv) {
     if (stats)
         fprintf(stderr, "searches=%lu char_steps=%lu parse_steps=%lu block_steps=%lu kmer_tests=%lu kmer_restarts=%lu stpd_jumps=%lu stpd_compares=%lu\n",
                 st.sc.searches, st.sc.char_steps, st.sc.parse_steps, st.sc.block_steps, st.sc.kmer_tests, st.sc.kmer_restarts, st.sc.stpd_jumps, st.sc.stpd_compares);
+    if (stats && st.sc.parse_steps)
+            fprintf(stderr, "parse steps: entry=%lu inside=%lu end=%lu; block attempts=%lu, symbol absent=%lu, failed block steps=%lu, back-ups=%lu, exact exits=%lu\n",
+                    st.sc.pe_entry, st.sc.pe_inside, st.sc.pe_end, st.sc.b_attempts, st.sc.b_nosym, st.sc.b_fail, st.sc.b_backups, st.sc.b_exact);
     if (stats && K.opt.fixed_top && K.opt.pseudo)
         fprintf(stderr, "kebab (top, fixed L = %lu, t = %lu): pseudo-MEMs %lu (%.2f per read), searched %lu (%.2f per read), backward steps %.1f per read\n",
                 K.opt.L, K.opt.fixed_top, st.sc.kb_pseudo, (double)st.sc.kb_pseudo / std::max<u64>(1, st.reads), st.sc.kb_searched,

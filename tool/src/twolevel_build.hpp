@@ -13,6 +13,7 @@ struct twolevel_options {
     int k = 51, s = 12;
     bool blocks = true;
     bool frequent = false;          // continuation: the most frequent successor instead of the smallest
+    uint32_t max_block = 0;         // a block also ends after this many phrases (0: no cap)
     std::string tmp;                // where the parse is spilled (default: the text's name + .parse.tmp)
 };
 
@@ -220,10 +221,12 @@ inline void build_twolevel(const std::string &Sfile, const rlbwt &bwt, const ste
         bs.init(m + 1);
         bs.set(0); bs.set(m);
         L.ccont.assign(sigma / 64 + 1, 0);
+        uint64_t run = 1;                       // phrases in the current block
         for (uint64_t i = 1; i < m; ++i) {
-            if (succ[pz[i - 1]] == pz[i]) L.ccont[pz[i] >> 6] |= 1ull << (pz[i] & 63);
-            else bs.set(i);
+            if (succ[pz[i - 1]] == pz[i] && (!o.max_block || run < o.max_block)) { L.ccont[pz[i] >> 6] |= 1ull << (pz[i] & 63); ++run; }
+            else { bs.set(i); run = 1; }
         }
+        L.maxblock = o.max_block;
         bs.finish();
         // symbols: keys d << 33 | sym_key(j, side), sorted in the symbol order (the last block gets +, which
         // is safe since its last phrase occurs only once)
@@ -238,7 +241,11 @@ inline void build_twolevel(const std::string &Sfile, const rlbwt &bwt, const ste
                 if (bs.get(i)) {
                     uint64_t j = i - 1 - start;
                     if (j >= (1ull << 32) - 1) die("block too long");
-                    bool plus = !o.frequent || (i < m && pz[i] > succ[pz[i - 1]]);
+                    // a block cut by the cap (followed by its successor) gets the key (B, +): after every - and
+                    // before every + of the same first phrase, as the suffixes are (Lemma "Other continuations")
+                    const bool capped = o.max_block && i < m && pz[i] == succ[pz[i - 1]];
+                    bool plus = capped || !o.frequent || (i < m && pz[i] > succ[pz[i - 1]]);
+                    if (capped) j = o.max_block;
                     uint64_t key = ((uint64_t)pz[start] << 33) | two_level::sym_key(j, plus);
                     auto it = num.emplace(key, (uint32_t)syms.size()).first;
                     if (it->second == syms.size()) syms.push_back(key);

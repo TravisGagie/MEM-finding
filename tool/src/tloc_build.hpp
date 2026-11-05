@@ -9,6 +9,7 @@
 namespace katka {
 
 inline void build_twolevel_locate(const std::string &bwtfile, const rlbwt &B, const two_level &L, const parse_text &PT, twolevel_locate &T) {
+    if (L.maxblock) die("two-level locating is not supported with --max-block (a cut breaks the toehold's entry into the blocks)");
     double t0 = now();
     if (!L.has_blocks) die("two-level locating needs the blocks (an index without --no-blocks)");
     if (PT.m != L.m || PT.n != L.n || (int32_t)PT.K != L.K || (int32_t)PT.SM != L.SM) die("the parse oracle does not match the two-level index");
