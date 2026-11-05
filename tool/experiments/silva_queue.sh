@@ -167,11 +167,11 @@ step_dial() {     # credit schemes when the sample doesn't follow the database: 
       # NAME:MODE:OPTIONS (OPTIONS with + for spaces): one csv per NAME
       for spec in lca:lca: one:one: cliffs:cliffs: list:list: norm:norm: freq:freq: prior:prior: mix:mix: em:em: \
                   bayes:bayes:--prior+sample+--alpha+$al bayesflat:bayes:--prior+flat+--epsilon+1e-2,1e-3,1e-4,1e-6,1e-9 \
-                  bayesdb:bayes:--prior+db; do
+                  bayesdb:bayes:--prior+db bayesauto:bayesauto:; do
         local name=${spec%%:*} rest=${spec#*:}; local mode=${rest%%:*} opts=${rest#*:}; opts=${opts//+/ }
         [ -s "$A/credit/$name.$r.csv" ] && continue
         stamp "dial: alpha = $al, $r, $name"
-        local extra="--levels genus $opts"; case $mode in norm|prior|em|bayes) extra="$extra --nseq $Q/nseq.txt" ;; esac
+        local extra="--levels genus $opts"; case $mode in norm|prior|em|bayes|bayesauto) extra="$extra --nseq $Q/nseq.txt" ;; esac
         python3 "$HERE/scripts/score_silva.py" --mode $mode --mate1-listings "$A/out/${r}_1.out" --mate2-listings "$A/out/${r}_2.out" \
             --doc-id-to-traversal "$D2T" --silva-tax-ranks "$TAX" --readset-truthset "$W/$r/${r}_seqtax.txt" --trav-to-length "$T2L" \
             --exp-src "$EXP" --output "$A/credit/$name.$r.csv" --threads $THREADS $extra > "$A/credit/$name.$r.csv.log" 2>&1 \

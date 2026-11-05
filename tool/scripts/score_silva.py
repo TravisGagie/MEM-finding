@@ -43,12 +43,14 @@ p.add_argument("--doc-id-to-traversal", required=True); p.add_argument("--silva-
 p.add_argument("--readset-truthset", required=True); p.add_argument("--trav-to-length", required=True)
 p.add_argument("--output", required=True); p.add_argument("--exp-src", required=True)
 p.add_argument("--threads", type=int, default=os.cpu_count())
-p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes"], default="lca")
+p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes", "bayesauto"], default="lca")
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
 p.add_argument("--prior", choices=["sample", "flat", "db"], default="sample",
                help="--mode bayes: the prior: sample (N_g^alpha, the sample's own, with --alpha: the reference), flat (1/G) or db (N_g / N)")
 p.add_argument("--alpha", type=float, default=None, help="--mode bayes --prior sample: the prior is proportional to N_g^alpha")
 p.add_argument("--epsilon", default="1e-6", help="--mode bayes: the likelihood of a match for a genus without it (comma-separated values)")
+p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2,0.1,0.2,0.3,0.5",
+               help="--mode bayesauto: the values of epsilon searched")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
@@ -70,10 +72,13 @@ def parse(listing):
         out.append((int(e) - int(s) + 1, d, t[i + 1][0] == "<", c))   # <l,r>: an LCA answer in a hybrid listing
     return out
 NSEQ = [int(l) for l in open(a.nseq)] if a.nseq else None
-if a.mode in ("norm", "prior", "em", "bayes") and NSEQ is None:
+if a.mode in ("norm", "prior", "em", "bayes", "bayesauto") and NSEQ is None:
     sys.exit("--mode %s needs --nseq" % a.mode)
 NTOT, NGEN = (sum(NSEQ), len(NSEQ)) if NSEQ else (0, 0)
 PI0 = [n / NTOT for n in NSEQ] if NSEQ else None      # the database prior, EM's start
+if a.mode == "bayesauto":
+    import math
+    GRID = [float(x) for x in a.eps_grid.split(",")]
 if a.mode == "bayes":
     import math
     if a.prior == "sample" and a.alpha is None: sys.exit("--mode bayes --prior sample needs --alpha")
@@ -111,7 +116,22 @@ def work(rng):
                 for doc, v in sc.items():
                     t = d2c.get(doc)
                     if t and t in keys: acc[t] = acc.get(t, 0) + math.exp(v - top)
-        for listing in (r.mate1_listings, r.mate2_listings) if G["mode"] != "bayes" else ():
+        if G["mode"] == "bayesauto":
+            # the mixture model with the fitted epsilon: S_g = sum over the read's matches of
+            # log((1 - eps) c_g / (2 N_g) + eps C / (2 N)), flat prior, over the genera of the read's matches
+            feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+            eps = G["eps"]; base = 0.0; ll = {}; hits = {}
+            for L, d, _, cnt in feats:
+                q = eps * sum(cnt) / (2 * NTOT); base += math.log(q)
+                for doc, c in zip(d, cnt):
+                    ll[doc] = ll.get(doc, 0.0) + math.log((1 - eps) * c / (2 * NSEQ[doc]) + q) - math.log(q)
+            sc = {doc: base + v for doc, v in ll.items()}
+            if sc:
+                top = max(sc.values())
+                for doc, v in sc.items():
+                    t = d2c.get(doc)
+                    if t and t in keys: acc[t] = acc.get(t, 0) + math.exp(v - top)
+        for listing in (r.mate1_listings, r.mate2_listings) if G["mode"] not in ("bayes", "bayesauto") else ():
             feats = parse(listing)
             if G["mode"] == "longest" and feats:      # only the longest MEMs of each mate vote (e.g. katka-classify -L 1 -X)
                 top = max(f[0] for f in feats); feats = [f for f in feats if f[0] == top]
@@ -194,6 +214,24 @@ def em_pass(rng):
                 for doc, x in zip(d, f): T[doc] += L * x / tot
     return T
 
+def auto_pass(rng):
+    """the log-likelihood of reads lo..hi under the mixture model, for each epsilon of the grid"""
+    lo, hi = rng; out = [0.0] * len(GRID); lg = math.log(NGEN)
+    for r in rs.read_list[lo:hi]:
+        feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+        if not feats: continue
+        for k, eps in enumerate(GRID):
+            base = 0.0; ll = {}
+            for L, d, _, cnt in feats:
+                q = eps * sum(cnt) / (2 * NTOT); base += math.log(q)
+                for doc, c in zip(d, cnt):
+                    ll[doc] = ll.get(doc, 0.0) + math.log((1 - eps) * c / (2 * NSEQ[doc]) + q) - math.log(q)
+            # log sum over all G genera, flat prior: the candidates, plus the others (all matches noise)
+            vals = list(ll.values()); top = max(vals)
+            ssum = sum(math.exp(v - top) for v in vals) + (NGEN - len(vals)) * math.exp(-top)
+            out[k] += base + top + math.log(ssum) - lg
+    return out
+
 N = len(rs.read_list)
 step = (N + 4 * a.threads - 1) // (4 * a.threads)
 chunks = [(i, min(N, i + step)) for i in range(0, N, step)]
@@ -212,6 +250,14 @@ elif a.mode == "em":
         T = [sum(x[i] for x in parts) for i in range(NGEN)]; tt = sum(T)
         pi = [x / tt for x in T]
         print("EM iteration %d: %d genera with credit" % (k + 1, sum(1 for x in pi if x > 0)), file=sys.stderr, flush=True)
+elif a.mode == "bayesauto":
+    with Pool(a.threads) as pool:
+        parts = pool.map(auto_pass, chunks)
+    LL = [sum(x[k] for x in parts) for k in range(len(GRID))]
+    kbest = max(range(len(GRID)), key=lambda k: LL[k])
+    print("bayesauto: log-likelihood by epsilon: %s" % ", ".join("%g: %.1f" % (e, v) for e, v in zip(GRID, LL)), file=sys.stderr)
+    print("bayesauto: epsilon = %g" % GRID[kbest], file=sys.stderr, flush=True)
+    variants = [("bayesauto", {"eps": GRID[kbest]})]
 elif a.mode == "bayes":
     # labels: bayes (the sample's prior), bayesflat, bayesdb; with the value of epsilon appended unless it is 1e-6
     tag = {"sample": "", "flat": "flat", "db": "db"}[a.prior]

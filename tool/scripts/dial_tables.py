@@ -23,8 +23,9 @@ import argparse, os, sys
 NAMES = {"lca": "range (Cliffy's LCA query)", "one": "one label per MEM", "cliffs": "sample (simulated cliffs)",
          "list": "even", "norm": "normalised (c_g / N_g)", "freq": "proportional",
          "bayes": "naive Bayes, the sample's prior (reference; epsilon = 1e-06)", "bayesflat": "naive Bayes, flat prior, epsilon = 1e-06",
-         "bayesdb": "naive Bayes, database prior, epsilon = 1e-06"}
-FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em", "bayes", "bayesflat", "bayesdb"]
+         "bayesdb": "naive Bayes, database prior, epsilon = 1e-06",
+         "bayesauto": "naive Bayes, mixture with epsilon fitted to the reads"}
+FILES = ["lca", "one", "cliffs", "list", "norm", "freq", "prior", "mix", "em", "bayes", "bayesflat", "bayesdb", "bayesauto"]
 FAMILIES = ("prior", "mix", "em", "bayesflat")       # files with several lines (one per beta, iteration count or epsilon)
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -165,6 +166,19 @@ if "0" in alphas and eps:
                          mean(al, own) if own else "-"])
         show("Naive Bayes, flat prior: epsilon chosen on alpha = 0 (%s), and the best epsilon for each alpha"
              % name(best).split("epsilon = ")[-1], ["", "chosen epsilon", "best epsilon", "its accuracy"], rows)
+# the epsilon bayesauto fitted, per alpha and region (from its log)
+rows = []
+for al in alphas:
+    row = ["alpha = %s" % al]
+    for r in regions:
+        f = os.path.join(Q, "dial", "a" + al, "credit", "bayesauto.%s.csv.log" % r)
+        m = None
+        if os.path.isfile(f):
+            for line in open(f):
+                if line.startswith("bayesauto: epsilon = "): m = line.split("=")[1].strip()
+        row.append(m if m else miss(f))
+    rows.append(row)
+show("Naive Bayes (mixture): the epsilon fitted to each read set", [""] + regions, rows)
 for al in alphas:
     show("alpha = %s, each region" % al, ["credit scheme", "mean"] + regions,
          [[name(l), mean(al, l)] + [cell(al, r, l) for r in regions] for l in labels])

@@ -209,5 +209,44 @@ d = write_set("hand4", reads, nseq)
 F4 = score(d, "bayes", ["--prior", "flat", "--epsilon", ",".join(EPS)])
 check("hand: the flat-prior Bayes picks A for epsilon = 1e-2 and 1e-3 only",
       [counts(F4[l]["genus"])[2] for l in ["bayesflat0.01", "bayesflat0.001", "bayesflat0.0001", "bayesflat", "bayesflat1e-09"]] == [1, 1, 0, 0, 0])
+# bayesauto: the fitted epsilon maximises the read set's likelihood under the mixture model (checked against an
+# independent computation on a small grid), and the reads are then classified with it
+GRID = [1e-6, 1e-3, 3e-2, 0.3]
+def mix_ll(reads, nseq, eps):
+    N, Gn = sum(nseq), len(nseq); tot = 0.0
+    for r in reads:
+        feats = [f for m in (1, 2) for f in r[m]]
+        if not feats: continue
+        terms = []
+        for g in range(Gn):
+            v = math.log(1 / Gn)
+            for _, f in feats:
+                q = eps * sum(f.values()) / (2 * N)
+                v += math.log((1 - eps) * f.get(g, 0) / (2 * nseq[g]) + q)
+            terms.append(v)
+        top = max(terms); tot += top + math.log(sum(math.exp(t - top) for t in terms))
+    return tot
+def mix_ref(reads, nseq, eps):
+    N = sum(nseq); tp = uncl = strict = 0
+    for r in reads:
+        feats = [f for m in (1, 2) for f in r[m]]
+        cand = {g for _, f in feats for g in f}
+        if not cand: uncl += 1; continue
+        sc = {g: sum(math.log((1 - eps) * f.get(g, 0) / (2 * nseq[g]) + eps * sum(f.values()) / (2 * N)) for _, f in feats) for g in cand}
+        top = max(sc.values())
+        if sc.get(r[0]) == top:
+            tp += 1; strict += sum(1 for v in sc.values() if v == top) == 1
+    return tp, uncl, strict
+d = os.path.join(W, "generic")
+out = os.path.join(d, "bayesauto.csv")
+r = subprocess.run([sys.executable, SCORE, "--mode", "bayesauto", "--eps-grid", ",".join(map(str, GRID)), "--mate1-listings", d + "/m1",
+                    "--mate2-listings", d + "/m2", "--doc-id-to-traversal", D2T, "--silva-tax-ranks", TAX, "--readset-truthset",
+                    d + "/seqtax.txt", "--trav-to-length", T2L, "--exp-src", EXP, "--output", out, "--nseq", d + "/nseq.txt",
+                    "--threads", "2"], capture_output=True, text=True)
+chosen = float(next(l for l in r.stderr.splitlines() if l.startswith("bayesauto: epsilon = ")).split("=")[1])
+lls = [mix_ll(BAYES_READS, BAYES_NSEQ, e) for e in GRID]
+check("bayesauto: the epsilon of largest likelihood (%g)" % chosen, chosen == GRID[max(range(len(GRID)), key=lambda k: lls[k])])
+got = next(l.strip().split(",") for l in open(out) if ",genus," in l)
+check("reference: bayesauto's calls with its epsilon", counts(got[3:]) == mix_ref(BAYES_READS, BAYES_NSEQ, chosen))
 print("%d failures" % fails)
 sys.exit(1 if fails else 0)
