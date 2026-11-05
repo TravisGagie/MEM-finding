@@ -706,6 +706,51 @@ The question: with the smallest successor, every new genome can only add success
   - So block length as genomes are added is not what limits two-level search here. Under the smallest successor, parse plus block steps per character even fall as N grows (0.0244 at 16, 0.0052 at 1024).
 - **Caveat:** the synthetic haplotypes are short (300 kb), have no repeats or structural variants, and their patterns are held-out haplotypes from the same population. Real chr19 decides.
 
+**Where the parse steps come from, and capped blocks (2026-11-05).**
+- **Counters** (`find --stats`, a second line). Parse steps are split into:
+  - **entry:** before the search's first block attempt, at the right end of what it searches;
+  - **inside:** re-crossing a block phrase by phrase, after an attempt that failed or backed up, when another attempt followed, so the match went on past the segment;
+  - **end:** the same, when the match ended in the segment, by a failed parse step or the left end of the search.
+
+  Block attempts are reported with:
+  - the attempts whose symbol was absent (not counted as steps);
+  - failed block steps (an empty interval);
+  - back-ups, and exact exits (Lemma "backup", first case).
+
+  Without a cap, the steps and outputs are as before.
+- **Uncapped, the most frequent successor's extra parse steps are all at match ends.** Per pattern character:
+
+  | N | rule | parse | entry | inside | end |
+  |---|---|---|---|---|---|
+  | 16 | smallest | 0.0230 | 0.0142 | 0.00003 | 0.0087 |
+  | 16 | frequent | 0.0554 | 0.0366 | 0.00004 | 0.0187 |
+  | 1024 | smallest | 0.0010 | 0.0004 | 0.00003 | 0.0005 |
+  | 1024 | frequent | 0.0093 | 0.0048 | 0.00002 | 0.0045 |
+
+  Block attempts start only at a pattern's real block boundaries. With long blocks, the first boundary in from each end of a match is far away, and the search crosses up to it phrase by phrase.
+- **`index --twolevel [--continuation ...] --max-block B`:** a block also ends after B phrases, under either rule.
+  - **Ordering:** a block cut by the cap is followed by its own successor. Among the symbols with the same first phrase, its suffix therefore sorts after every ω = 0 symbol and before every ω = 1 symbol. It gets the key (B, +), with j = B larger than any real block's j ≤ B − 1. So the ordering lemma holds, with that one addition.
+  - **Lemma 6 does not hold for cuts.** A pattern's block starts are text block starts in every occurrence that extends one phrase to the left only at real boundaries, where the next phrase is not the successor. A cut's position in the text depends on where its run of continuations started, and an occurrence that doesn't reach back to that start can be cut elsewhere.
+  - **So the search keeps exactness differently.** Block steps never give false occurrences, only possible misses. After an inexact exit, the search backs up only to an exact interval: the attempt's own parse interval, or the block interval at a real boundary. The exact exit (the current phrase never continues) is unchanged. Without a cap every pattern block start is a real boundary, and this is the old rule.
+  - **Format:** the cap is stored in the `.lvl` file under a new format version, KTLVL002, written only with a cap; KTLVL001 files load as before.
+  - **Locating:** two-level locating (`--twolevel-locate`) is refused with a cap. A cut breaks the toehold's entry into the blocks: the first block row of a parse interval need no longer be its first row or a run start.
+  - **Checks:** `katka-test mems PREFIX queries --twolevel --random 20` on the chr19-like test collection compares MEMs and intervals with plain search. It passes with both rules and B = 1, 2, 3, 4, 8 and 16, as do the uncapped ones; in the scaling runs every variant gave the same MEMs.
+- **The scaling series with caps** (`results/block_scaling/table.txt`; most frequent successor with B = 8, 16, 32, 64). At N = 1024, per pattern character:
+
+  | rule | phrases/block | parse | entry | inside | end | block | parse + block |
+  |---|---|---|---|---|---|---|---|
+  | smallest | 16.3 | 0.0010 | 0.0004 | 0.00003 | 0.0005 | 0.0042 | 0.0052 |
+  | frequent | 169.9 | 0.0093 | 0.0048 | 0.00002 | 0.0045 | 0.0004 | 0.0097 |
+  | frequent, B = 8 | 7.8 | 0.0059 | 0.0002 | 0.0055 | 0.0002 | 0.0163 | 0.0222 |
+  | frequent, B = 16 | 15.3 | 0.0060 | 0.0003 | 0.0052 | 0.0005 | 0.0057 | 0.0117 |
+  | frequent, B = 32 | 29.3 | 0.0062 | 0.0006 | 0.0047 | 0.0010 | 0.0023 | 0.0085 |
+  | frequent, B = 64 | 53.2 | 0.0065 | 0.0012 | 0.0042 | 0.0011 | 0.0012 | 0.0077 |
+
+  - A cap removes the entry and end steps, as intended, but brings as many re-crossing steps elsewhere ("inside"). The total of parse plus block steps stays above the smallest successor's at every N and every B; the same holds at N = 16 (0.0244 against 0.0413 for B = 64).
+  - The likely mechanism is the one above. Near a match's left end, many occurrences sit in text runs that started earlier, with different cuts. Attempts at cuts then fail, or end at a cut that can't be trusted, and the search backs up and re-crosses the run phrase by phrase, attempting again at each cut.
+  - The counter calls these steps "inside" because another attempt follows, though the match's end causes them. A counter that separates them was not added.
+  - Search times are the same within noise (0.11–0.23 s), as before.
+
 **For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
 
 ```
@@ -719,6 +764,7 @@ cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv   
 - **In all:** about 45 minutes, within the 11 GB cap.
 - **If `c129` was deleted for disk space:** put a link `collection.txt -> hprc_chr19` in `~/shortcuts/chr19_scaling` and run without `EXISTING` for 129, with `BIGBWT=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt`. It needs about 40 GB of disk, as before.
 - **Optional:** `L = 100` instead of 1000 is the paper's other threshold.
+- **Capped blocks as well:** add `CAPS="16 64"`, which builds the most frequent successor with blocks of at most 16 and 64 phrases. Each cap costs one more two-level build per n.
 
 ### Cliffy (2026-11-04)
 
