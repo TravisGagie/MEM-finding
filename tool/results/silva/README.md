@@ -433,8 +433,8 @@ Strict genus accuracy, mean of the four regions, 20 iterations, mean of the repe
 Excluding reads from genera with ambiguous names, on the dense dial (the other sets have none): NB + EM prior 91.84, 93.53, 94.77 at α = 1, 0, −1, and mixture + EM prior 90.71, 93.52, 95.14.
 
 - **The EM prior helps on sparse samples and does little on dense ones.** Against naive Bayes with a flat prior it gains 1.4 to 2.0 points on the aquatic and sparse sets, and changes the dense dial by −0.3 to +0.1.
-- **It's the most robust scheme here.** Its lowest entry, 92.57, is the highest of any scheme's lowest (flat naive Bayes 92.66 is close; plain EM 90.20; normalised 91.22).
-- **Plain EM stays best on the aquatic reads** by 0.4 points, and on the uniform draws by 0.6, but loses about 4 points on the dense dial at α = 0 and −1. On the smallest genera it is 1.1 points behind.
+- **It has the highest mean over these seven rows,** 95.09, against 94.91 for the mixture with an EM prior, 94.21 for flat naive Bayes and 93.90 for plain EM. Its lowest entry, 92.57, is just below flat naive Bayes's 92.66, and well above plain EM's 90.20. This is a mean over sets chosen here, not over any real distribution of samples.
+- **Plain EM stays best on the aquatic reads** by 0.4 points, and on the uniform draws by 0.6, but loses 3.7 to 4.7 points on the dense dial at α = 0 and −1. On the smallest genera it is 1.1 points behind.
 - **Convergence:** 5 iterations are within 0.05 points of 20.
 - **The prior learned doesn't go to zero outside the sample:** on V1–V2 about 3,700 genera keep a prior above 0, against about 100 in the sample. Whether a sparser estimate would help wasn't tested.
 - This prior is learned from the reads being classified, like plain EM's, so it needs the whole read set before calling any read, unlike `find --classify bayes`.
