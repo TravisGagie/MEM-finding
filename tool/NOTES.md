@@ -518,13 +518,13 @@ Accuracy is defined as in `silva_tables.py` (strict, the mean of the regions' ac
 cd ~/MEM-finding && git pull origin tool && make -C tool
 S=~/MEM-finding/katka/silva
 python3 tool/scripts/silva_alpha_fit.py $S/work/ref/rna/doc_to_traversal.txt ~/tool/silva/queue/nseq.txt \
-    $S/work/reads/aquatic/*/*_seqtax.txt $S/work/reads/sample50/*_seqtax.txt 2>/dev/null
+    $S/work/reads/aquatic/*/*_seqtax.txt
 tool/experiments/silva_queue.sh dial
 tool/experiments/silva_queue.sh collect
 python3 tool/scripts/dial_tables.py tool/results/silva_queue
 ```
 
-(If `sample50` has no truth files, the aquatic ones give the composition of the every-50th set too, since it is a uniform sample of them.) The α fit answers what the existing read sets correspond to. Its output line per region goes into `tool/results/silva/README.md` with the tables.
+(The every-50th set is a uniform sample of these reads, so the aquatic truth files give its composition too.) The α fit answers what the existing read sets correspond to. Its output line per region goes into `tool/results/silva/README.md` with the tables.
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
 - **The simulation,** for α = 1 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
