@@ -221,5 +221,5 @@ SILVA's sequences (59,103 of 402,378 in V1_V2, 59,321 elsewhere). Their median r
 with 12 in the top 1% and 63–64 in the top 10%. N_g runs from 5 to 15,700, median 111.5.
 
 **Timing, 5 repeats** (`timing_repeats.txt`): mean per-read time 45.57 µs (median; range 45.46–45.87), 167,224
-reads/s with 12 threads (164,575–167,504). This replaces the queue's single 52.3 µs and 145,500 reads/s, which ran with
-other load on the machine; the 45.9 µs seen in another run agrees with these repeats.
+reads/s with 12 threads (164,575–167,504). This replaces the queue's single 52.3 µs and 145,500 reads/s. The cause of that
+slower run was not established; the 45.9 µs seen in another run agrees with these repeats.
