@@ -350,7 +350,7 @@ Is EM's lead on the aquatic reads, and proportional credit's, due to the sample 
 - The aquatic sample's 100 abundances, in order, go to 100 random genera. Then MicrobeMixer at 6409f5d, MSv1, the same regions, 10 million pairs per region, every 50th pair kept, `find --preset silva`, every scheme.
 - 3 draws, each with its own simulation, of two sets. **uniform:** any usable genus. **small:** usable genera with N_g ≤ 2, which are SILVA's smallest 3,974 genera (the third, with ties).
 - **Deviation from "drawn from all 9,118 genera":** each region gets its own draw from the genera that can supply reads in that region. Of 8,721 uniquely named genera, the usable ones are 3,002 in V1–V2, 3,781 in V3–V4, 5,009 in V4 and 8,135 in V4–V5, and a genus outside these gets no reads. MicrobeMixer would spread such a genus's reads evenly over the others, destroying the table. Requiring all four regions would leave about 3,000 genera, with median N_g 21 against 4 overall. So the genera differ by region. Usable means over 55% of its amplicons are at least 250 bases and only A, C, G and T: ART silently makes no reads from an amplicon with an N.
-- **Median N_g:** aquatic 111.5; the uniform draws range from 2 to 22 by region, the smallest being V4–V5; small 1 to 2.
+- **Median N_g:** aquatic 111.5; the uniform draws range from 4 to 24 by region and draw, the smallest being V4–V5; small 1 to 2.
 - **Limit of the small set:** only 151 such genera are usable in V1–V2, so its draws share about 70 of their 100 genera there.
 
 Strict genus accuracy, mean of the four regions, mean of the draws (range). No read is from a genus with an ambiguous name, so that exclusion changes nothing here:
