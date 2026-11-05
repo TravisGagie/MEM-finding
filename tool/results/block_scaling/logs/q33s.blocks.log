@@ -1,0 +1,4 @@
+index loaded in 0.0 s
+reads=20 MEMs=355 without MEMs=0 | threads=1 wall 0.13 s, 6621.8 us/read
+timing: 20 reads, 1 threads; mean per-read time 6021.00 us; total time / reads 6621.83 us (total 0.132 s)
+searches=1329 char_steps=98256 parse_steps=84997 block_steps=10668 kmer_tests=0 kmer_restarts=0 stpd_jumps=0 stpd_compares=0
