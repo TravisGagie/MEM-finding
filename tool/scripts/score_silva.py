@@ -51,6 +51,8 @@ p.add_argument("--alpha", type=float, default=None, help="--mode bayes --prior s
 p.add_argument("--epsilon", default="1e-6", help="--mode bayes: the likelihood of a match for a genus without it (comma-separated values)")
 p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e-4,3e-4,1e-3,3e-3,1e-2,3e-2,0.1,0.2,0.3,0.5",
                help="--mode bayesauto: the values of epsilon searched")
+p.add_argument("--calls", default=None, help="--mode bayes: also write each read's top documents (0-based, comma-separated; - if none), "
+               "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
@@ -281,3 +283,17 @@ with open(a.output, "w") as out:
         line = (f"katka,{label},{level},{round(tp / N, 4)},correct={tp},unclassified={uncl},wrong={N - tp - uncl},"
                 f"reads={N},ambiguous_truth={amb},theirs={round((tp + uth) / N, 4)},strict={round(st / N, 4)},strict_correct={st}")
         print(line, flush=True); out.write(line + "\n")
+if a.calls and a.mode == "bayes":
+    le = variants[0][1]["logeps"]
+    with open(a.calls, "w") as o:
+        for r in rs.read_list:
+            feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+            ll = {}; hits = {}
+            for L, d, _, cnt in feats:
+                for doc, c in zip(d, cnt):
+                    ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
+            sc = {doc: LOGPRIOR[doc] + v + (len(feats) - hits[doc]) * le for doc, v in ll.items()}
+            top = max(sc.values()) if sc else None
+            best = sorted(doc for doc, v in sc.items() if v == top)
+            o.write("%s\t%s\n" % (r.name, ",".join(map(str, best)) or "-"))
+

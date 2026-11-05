@@ -543,6 +543,9 @@ static const char *FIND_USAGE =
     "    --range           the smallest and largest tags (range scheme, LCA) [default with tags]\n"
     "    -T FILE           the tag array (default PREFIX.tag)\n"
     "    --format F        listing (default), or mems: name, start, end, sp, ep per MEM, no tags\n"
+    "    --classify bayes  per read, the genus by naive Bayes over its MEMs (flat prior): name, then the top documents\n"
+    "                      (0-based tags, comma-separated if tied; - without MEMs); needs --nseq FILE (sequences per\n"
+    "                      document, one per line) and counting tags; --epsilon E for a missing MEM (default 1e-6)\n"
     "  -j p                p threads (the output is the same as with one)\n"
     "  --stats             search step counts\n";
 
@@ -557,6 +560,12 @@ struct finder {
     mem_options opt;
     answer_mode mode = RANGE;
     bool hpc = false, mems_format = false;
+    // --classify bayes: naive Bayes over the read's MEMs with a flat prior: genus (document) g's score is the sum
+    // over the MEMs of log(c_g / (2 N_g)), or log epsilon where g lacks the MEM (as scripts/score_silva.py --mode
+    // bayes --prior flat, in the same order of operations, so ties come out the same)
+    bool classify = false;
+    std::vector<u64> nseq;                    // N_g per document (--nseq)
+    double logeps = 0;
     const unsigned char *comp = nullptr;      // digests: complement of each symbol
     const stpd_index *SP = nullptr;
     const parse_stpd *PS = nullptr;
@@ -595,8 +604,23 @@ struct finder {
         }
         u64 nm = 0;
         char b[160];
-        if (!mems_format) line = ">" + name + "\n";
+        if (!mems_format && !classify) line = ">" + name + "\n";
+        static thread_local std::vector<std::pair<u64, double>> ll;   // (document, sum of log p) in first-seen order
+        static thread_local std::vector<u64> hits, slot;
+        if (classify) { ll.clear(); hits.clear(); if (slot.size() < nseq.size()) slot.assign(nseq.size(), ~0ull); }
         find_mems(Q, hpc ? h : read, opt, [&](const mem &M) {
+            if (classify) {
+                static thread_local std::vector<std::pair<u64, u64>> tc;
+                tags->count(M.I.sp, M.I.ep, tc);
+                for (auto &[doc, c] : tc) {
+                    if (doc >= nseq.size()) die("--classify bayes: a tag beyond --nseq");
+                    if (slot[doc] == ~0ull) { slot[doc] = ll.size(); ll.push_back({doc, 0.0}); hits.push_back(0); }
+                    ll[slot[doc]].second += std::log((double)c / (double)(2 * nseq[doc]));
+                    ++hits[slot[doc]];
+                }
+                ++nm;
+                return;
+            }
             u64 first = hpc ? pos[M.a] : M.a, last = hpc ? pos[M.e] - 1 : M.e - 1;
             if (pl) {                               // --locate-out: name, start, end, the sorted positions (of rc(MEM) in S)
                 static thread_local std::vector<u64> ps;
@@ -620,7 +644,21 @@ struct finder {
             }
             ++nm;
         });
-        if (!mems_format) line += "\n";
+        if (classify) {             // the top documents (0-based, sorted, comma-separated), or - for a read without MEMs
+            double top = -INFINITY;
+            static thread_local std::vector<double> sc;
+            sc.resize(ll.size());
+            for (size_t q = 0; q < ll.size(); ++q) { sc[q] = 0.0 + ll[q].second + (double)(nm - hits[q]) * logeps; top = std::max(top, sc[q]); }
+            static thread_local std::vector<u64> best;
+            best.clear();
+            for (size_t q = 0; q < ll.size(); ++q) if (sc[q] == top) best.push_back(ll[q].first);
+            std::sort(best.begin(), best.end());
+            line = name + "\t";
+            if (best.empty()) line += "-";
+            for (size_t q = 0; q < best.size(); ++q) { snprintf(b, sizeof b, q ? ",%lu" : "%lu", best[q]); line += b; }
+            line += "\n";
+            for (auto &x : ll) slot[x.first] = ~0ull;
+        } else if (!mems_format) line += "\n";
         if (sl) {
             const search_counters &c = Q.cnt;
             const char *why = c.kb_fb_few > before.kb_fb_few ? "few_pseudo_mems" : c.kb_fb_short > before.kb_fb_short ? "few_long_mems"
@@ -744,13 +782,14 @@ static int cmd_find(int argc, char **argv) {
     bool twolevel = false, stats = false, use_stpd = false, poracle = false, kebab_rule_set = false, use_pstpd = false, rlzap_oracle = false;
     string readstats, locate_out;
     bool fixed_L = false;
+    double epsilon = 1e-6;
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"longest", 1, 0, 18}, {"kebab-top", 1, 0, 19}, {"kebab-batch", 1, 0, 20},
         {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"classify", 1, 0, 29}, {"nseq", 1, 0, 30}, {"epsilon", 1, 0, 31}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -790,6 +829,9 @@ static int cmd_find(int argc, char **argv) {
             case 'F': ft = std::stoi(optarg); break;
             case 'j': nthreads = std::max(1, std::stoi(optarg)); break;
             case 12: stats = true; break;
+            case 29: if (string(optarg) != "bayes") die("--classify bayes"); K.classify = true; break;
+            case 30: { std::ifstream in(optarg); if (!in) die(string("cannot open ") + optarg); u64 x; while (in >> x) K.nseq.push_back(x); break; }
+            case 31: epsilon = std::stod(optarg); break;
             case 13: mode = NONE; break;
             case 14: use_stpd = true; break;
             case 17: poracle = true; break;
@@ -807,6 +849,12 @@ static int cmd_find(int argc, char **argv) {
     if (ft < 0 || ft > 13) die("-F needs t <= 13");
     if (format != "listing" && format != "mems") die("--format listing|mems");
     K.mems_format = format == "mems";
+    K.logeps = std::log(epsilon);
+    if (K.classify) {
+        if (K.nseq.empty()) die("--classify bayes needs --nseq FILE (sequences per document, one per line)");
+        if (K.mems_format) die("--classify bayes writes its own format (name, top documents)");
+        mode = COUNT;
+    }
     K.hpc = hpc < 0 ? read_info_hpc(prefix) : hpc == 1;
     if (hpc == 1 && !read_info_hpc(prefix) && file_exists(prefix + ".info")) fprintf(stderr, "warning: -U, but the index was built without homopolymer compression\n");
     if (K.opt.adaptive && K.opt.top) die("-X and --top are exclusive");

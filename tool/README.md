@@ -119,6 +119,7 @@ Finds the MEMs of each read and answers each one from the tags. Reads may be FAS
 | `--range` | the smallest and largest tags (range scheme, LCA). This is the default when there is a tag array |
 | `--no-tags` | no answers |
 | `-T FILE` | the tag array, if not `PREFIX.tag` |
+| `--classify bayes` | per read, the genus by naive Bayes over its MEMs with a flat prior: `name`, then the top documents (0-based tags, comma-separated if tied; `-` without MEMs). Needs `--nseq FILE` (sequences per document, one per line) and a tag array; `--epsilon E` for a MEM the genus lacks (default 10⁻⁶). Gives exactly `scripts/score_silva.py --mode bayes --prior flat --calls`'s calls, read by read |
 | `--format listing\|mems` | Cliffy's listing format extended with counts (default), or one line per MEM, `name start end sp ep` (0-based, half-open), with no tags |
 | `-j p` | p threads, which take chunks of 256 reads; the output is the same as with one thread |
 | `--stats` | numbers of searches and of character, parse and block steps |
