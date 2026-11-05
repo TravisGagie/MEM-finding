@@ -273,4 +273,37 @@ The digest's three figures for "the same configuration" are not three samples of
 - **Code:** every commit of MicrobeMixer runs `art_illumina -ss MSv1`, and the preprint's own Appendix A.4 prints that command. `MSv1` is ART's MiSeq v1 profile; MiSeq v3 is `MSv3`. Both are 250 bp in ART 2.5.8.
 - **Not available here:** the journal's Supplemental Section 4, which holds the journal version's commands.
 
-So the reads were most likely made with MSv1, as ours were, and the caption is wrong; this can't be settled from the paper alone. The table below compares the two profiles.
+So the reads were most likely made with MSv1, as ours were, and the caption is wrong; this can't be settled from the paper alone.
+
+**The two profiles compared** (`experiments/aquatic_art_profiles.sh`; `art_profile_tables.txt`; CSVs in `art_profiles/`).
+Aquatic abundances, the same four regions, 10 million pairs per region, every 50th pair kept, `find --preset silva`, and every scheme.
+The repeat MSv1.1 is the reads used everywhere above; the other five are new, with 3 repeats per profile. The sampled reads are on the
+external drive (`moved_2026-11-05/art_profiles_samples`), since neither ART nor MicrobeMixer is seeded. Genus accuracy, mean of the four
+regions, mean of the repeats (range):
+
+| scheme | MSv1, strict | MSv3, strict | MSv1, Cliffy's scoring | MSv3, Cliffy's scoring |
+|---|---:|---:|---:|---:|
+| range | 86.68 (86.45–86.95) | 86.01 (85.85–86.20) | 87.33 (87.10–87.60) | 86.86 (86.73–87.00) |
+| one label per MEM | 92.01 (91.81–92.17) | 91.82 (91.75–91.91) | 92.09 | 91.93 |
+| sample (simulated cliffs) | 90.34 (90.22–90.46) | 89.61 (89.51–89.67) | 90.91 | 90.49 |
+| even | 90.20 (90.06–90.28) | 89.38 (89.25–89.46) | 91.75 | 91.40 |
+| normalised | 92.66 (92.52–92.76) | 92.06 (91.94–92.16) | 92.66 | 92.07 |
+| proportional | 93.59 (93.44–93.77) | 93.28 (93.23–93.37) | 93.62 | 93.34 |
+| EM, 20 iterations | 96.32 (96.13–96.43) | 96.03 (95.94–96.14) | 96.32 | 96.03 |
+| naive Bayes, flat, ε = 10⁻⁶ | 94.57 (94.41–94.70) | 93.98 (93.91–94.02) | 94.57 | 93.98 |
+| naive Bayes, mixture | 93.95 (93.74–94.12) | 93.22 (93.13–93.29) | 93.95 | 93.22 |
+
+Range by region, with Cliffy's scoring, mean of the repeats:
+
+| region | MSv1 | MSv3 |
+|---|---:|---:|
+| V1_V2 | 89.34 | 89.03 |
+| V3_V4 | 87.70 | 87.42 |
+| V4_V4 | 85.55 | 85.89 |
+| V4_V5 | 86.74 | 85.11 |
+
+- **The profile doesn't explain the gap to Cliffy's published LCA accuracy.** `silva.tex` line 256 gives 87.5 to 90.2% for Cliffy's own reads (read from their figures; no table of these values is in the paper's text). Range with Cliffy's scoring is 85.55 to 89.34 under MSv1 and 85.11 to 89.03 under MSv3. So MSv3 is slightly further away on average, not closer.
+- **The profile's effect is small:** range is lower under MSv3 by 0.67 points strict and 0.47 with Cliffy's scoring. Every scheme is lower under MSv3, by 0.2 to 0.8 points, and the strict means' ranges don't overlap for most schemes. By region it isn't uniform: V4_V5 falls by 1.6, while V4_V4 rises by 0.3.
+- **Repeats vary by about ±0.15 to 0.25 points.** Repeat MSv1.1 is the best of the three under nearly every scheme, so the numbers used so far (93.77, 94.70, 86.95) are at the top of their ranges; 93.59, 94.57 and 86.68 are the better estimates.
+- **Range here isn't Cliffy itself:** it is our MEMs at L = 30 with an LCA rule, not Cliffy's own query.
+- **EM is the best scheme on the aquatic reads,** 96.32 against naive Bayes's 94.57, by about 1.8 points on every repeat. It wasn't in the earlier aquatic table. On the dial it was behind naive Bayes (92.31, 90.20, 90.22). The aquatic reads come from about 100 genera, and EM learns that from the reads themselves, so this doesn't carry over to a sample with many genera.

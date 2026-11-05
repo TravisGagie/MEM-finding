@@ -1,0 +1,40 @@
+repeats: MSv1: 3, MSv3: 3 (MSv1.1 is the existing reads)
+
+== genus accuracy, strict, mean of the four regions: mean of the repeats (range)
+  scheme                                  MSv1                          MSv3                          
+  range (Cliffy's LCA query)              86.68 (86.45-86.95; n=3)      86.01 (85.85-86.20; n=3)      
+  one label per MEM                       92.01 (91.81-92.17; n=3)      91.82 (91.75-91.91; n=3)      
+  sample (simulated cliffs)               90.34 (90.22-90.46; n=3)      89.61 (89.51-89.67; n=3)      
+  even                                    90.20 (90.06-90.28; n=3)      89.38 (89.25-89.46; n=3)      
+  normalised                              92.66 (92.52-92.76; n=3)      92.06 (91.94-92.16; n=3)      
+  proportional                            93.59 (93.44-93.77; n=3)      93.28 (93.23-93.37; n=3)      
+  prior mixture, beta = 0.5               93.47 (93.28-93.63; n=3)      92.99 (92.88-93.09; n=3)      
+  proportional/even mix, beta = 0.5       93.07 (92.93-93.23; n=3)      92.67 (92.59-92.72; n=3)      
+  EM, 20 iterations                       96.32 (96.13-96.43; n=3)      96.03 (95.94-96.14; n=3)      
+  naive Bayes, flat, eps = 1e-6           94.57 (94.41-94.70; n=3)      93.98 (93.91-94.02; n=3)      
+  naive Bayes, mixture, eps at the peak   93.95 (93.74-94.12; n=3)      93.22 (93.13-93.29; n=3)      
+
+== genus accuracy, Cliffy's scoring, mean of the four regions: mean of the repeats (range)
+  scheme                                  MSv1                          MSv3                          
+  range (Cliffy's LCA query)              87.33 (87.10-87.60; n=3)      86.86 (86.73-87.00; n=3)      
+  one label per MEM                       92.09 (91.91-92.24; n=3)      91.93 (91.86-92.03; n=3)      
+  sample (simulated cliffs)               90.91 (90.80-91.03; n=3)      90.49 (90.38-90.61; n=3)      
+  even                                    91.75 (91.61-91.83; n=3)      91.40 (91.27-91.56; n=3)      
+  normalised                              92.66 (92.52-92.76; n=3)      92.07 (91.94-92.16; n=3)      
+  proportional                            93.62 (93.48-93.79; n=3)      93.34 (93.28-93.44; n=3)      
+  prior mixture, beta = 0.5               93.47 (93.28-93.63; n=3)      92.99 (92.88-93.09; n=3)      
+  proportional/even mix, beta = 0.5       93.10 (92.97-93.26; n=3)      92.73 (92.64-92.80; n=3)      
+  EM, 20 iterations                       96.32 (96.13-96.43; n=3)      96.03 (95.94-96.14; n=3)      
+  naive Bayes, flat, eps = 1e-6           94.57 (94.41-94.70; n=3)      93.98 (93.91-94.02; n=3)      
+  naive Bayes, mixture, eps at the peak   93.95 (93.75-94.12; n=3)      93.22 (93.14-93.28; n=3)      
+
+== range (Cliffy's LCA query) by region
+                  MSv1                          MSv3                          
+  V1_V2  strict   88.69 (88.04-89.04; n=3)      87.95 (87.60-88.56; n=3)      
+  V3_V4  strict   87.34 (86.91-87.57; n=3)      87.01 (86.94-87.06; n=3)      
+  V4_V4  strict   84.41 (84.17-84.66; n=3)      84.73 (84.41-84.92; n=3)      
+  V4_V5  strict   86.27 (86.03-86.51; n=3)      84.38 (84.28-84.44; n=3)      
+  V1_V2  Cliffy's 89.34 (88.71-89.70; n=3)      89.03 (88.49-89.58; n=3)      
+  V3_V4  Cliffy's 87.70 (87.27-87.91; n=3)      87.42 (87.33-87.53; n=3)      
+  V4_V4  Cliffy's 85.55 (85.26-85.92; n=3)      85.89 (85.49-86.17; n=3)      
+  V4_V5  Cliffy's 86.74 (86.51-86.96; n=3)      85.11 (85.03-85.23; n=3)      

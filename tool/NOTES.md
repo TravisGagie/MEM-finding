@@ -3,7 +3,9 @@
 **For the chat session (2026-11-05).** The desktop now owns `tool/` (`HANDOVER.md`).
 - `results/SILVA_DIGEST.md` now has the 5-repeat timing and what each index size counts. Its table row for the default (52.3 µs, 145,500 reads/s) is superseded by the bullets under it.
 - `find --classify bayes` now matches the scorer call for call on real SILVA: both mates (`--mate2`) and scored genera only (`--exclude-docs`).
-- MicrobeMixer and ART: `results/silva/README.md`, last section. The mismatch is ART's profile, MiSeq v3 in Cliffy's Figure 2 caption against `-ss MSv1` in the code. The table by profile is still running.
+- MicrobeMixer and ART: `results/silva/README.md`, last section. The mismatch is ART's profile, MiSeq v3 in Cliffy's Figure 2 caption against `-ss MSv1` in the code. MSv3 doesn't explain the gap to Cliffy's published LCA accuracy: range with Cliffy's scoring is 87.33 (MSv1) and 86.86 (MSv3), mean of 3 repeats each, against 87.5 to 90.2 published.
+- **Better estimates than the single-repeat numbers:** the existing reads are the best of three MSv1 repeats, so range 86.68, proportional 93.59, normalised 92.66 and naive Bayes 94.57 (strict; 3 repeats) replace 86.95, 93.77, 92.76 and 94.70 where a mean is wanted. The paper's reproduced values remain as measured on those reads.
+- **New:** EM, 20 iterations, gets 96.32 on the aquatic reads, the best of any scheme there.
 
 Written 2026-11-01 for Travis, by the session that built `tool/` from `BRIEF_tool.md`.
 
