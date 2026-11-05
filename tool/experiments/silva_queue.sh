@@ -2,7 +2,7 @@
 # The desktop's SILVA queue, one step at a time, writing its outputs where scripts/silva_tables.py reads them
 # (tool/NOTES.md, "SILVA queue: runner and tables").
 #
-#   silva_queue.sh STEP [STEP ...]        STEP: timing credit blam grammar digests uniform (or all), collect
+#   silva_queue.sh STEP [STEP ...]        STEP: timing credit blam grammar digests uniform (or all), dial, collect
 #
 # Environment (defaults for the desktop):
 #   Q       the output directory (default ~/tool/silva/queue).  The finds' outputs (*.out) are large; everything
@@ -151,17 +151,47 @@ step_uniform() {  # the uniform-abundance simulation and its accuracy (proportio
   for r in $REGIONS; do cp "$Q/uniform/work/$r/score.csv" "$Q/uniform/$r.score.csv"; cp "$Q/uniform/work/$r/counts.txt" "$Q/uniform/$r.counts.txt"; cp "$Q/uniform/work/$r/dropped.txt" "$Q/uniform/$r.dropped.txt"; done
 }
 
+step_dial() {     # credit schemes when the sample doesn't follow the database: reads with k_g ~ N_g^alpha
+  # (alpha = 0 is the uniform step's simulation, reused), every scheme, genus level
+  nseq
+  for al in ${ALPHAS:-1 0 -1}; do
+    local A=$Q/dial/a$al W=$Q/dial/a$al/work
+    mkdir -p "$A/out" "$A/credit"
+    if [ "$al" = 0 ]; then
+      [ -s "$Q/uniform/work/${REGIONS##* }/done" ] || step_uniform
+      W=$Q/uniform/work
+    else
+      stamp "dial: simulating alpha = $al"
+      ALPHA=$al NSEQ=$Q/nseq.txt SEED=${SEED:-1} bash "$HERE/experiments/uniform_microbemixer.sh" "$MM" "$FASTA" "$TAX" "$D2T" "$W" ${NREADS:-200000} "$REGIONS"
+    fi
+    for r in $REGIONS; do
+      cp "$W/$r/${r}_seqtax.txt" "$A/$r.seqtax.txt"
+      for m in 1 2; do
+        [ -s "$A/out/${r}_$m.out" ] || { stamp "dial: alpha = $al, $r mate $m"; $CAP $K find --preset silva -j $THREADS "$IDX" "$W/$r/${r}_mate_$m.fq" "$A/out/${r}_$m.out" 2> "$A/out/${r}_$m.log"; }
+      done
+      for mode in lca one cliffs list norm freq prior mix em; do
+        [ -s "$A/credit/$mode.$r.csv" ] && continue
+        stamp "dial: alpha = $al, $r, $mode"
+        local extra="--levels genus"; [ $mode = norm ] || [ $mode = prior ] || [ $mode = em ] && extra="$extra --nseq $Q/nseq.txt"
+        python3 "$HERE/scripts/score_silva.py" --mode $mode --mate1-listings "$A/out/${r}_1.out" --mate2-listings "$A/out/${r}_2.out" \
+            --doc-id-to-traversal "$D2T" --silva-tax-ranks "$TAX" --readset-truthset "$W/$r/${r}_seqtax.txt" --trav-to-length "$T2L" \
+            --exp-src "$EXP" --output "$A/credit/$mode.$r.csv" --threads $THREADS $extra > "$A/credit/$mode.$r.csv.log" 2>&1 \
+          || { echo "scoring $mode $r (alpha = $al) failed (see $A/credit/$mode.$r.csv.log)"; exit 1; }
+      done
+    done
+  done
+}
 step_collect() {  # the small outputs (all that scripts/silva_tables.py reads), to OUT
   local out=${OUT:-$HERE/results/silva_queue}; mkdir -p "$out"
-  (cd "$Q" && find . -type f ! -name '*.out' ! -name '*.out[0-9]*' ! -path './uniform/work/*' -print0 | xargs -0 -r cp --parents -t "$out")
+  (cd "$Q" && find . -type f ! -name '*.out' ! -name '*.out[0-9]*' ! -path './uniform/work/*' ! -path './dial/*/work/*' -print0 | xargs -0 -r cp --parents -t "$out")
   stamp "copied $(cd "$out" && find . -type f | wc -l) files ($(du -sh "$out" | cut -f1)) to $out"
 }
 
-[ $# -gt 0 ] || { echo "usage: silva_queue.sh timing|credit|blam|grammar|digests|uniform|all|collect ..."; exit 1; }
+[ $# -gt 0 ] || { echo "usage: silva_queue.sh timing|credit|blam|grammar|digests|uniform|dial|all|collect ..."; exit 1; }
 for s in "$@"; do
   case $s in
     all) for t in timing credit blam grammar digests uniform; do step_$t; done ;;
-    timing|credit|blam|grammar|digests|uniform|collect) step_$s ;;
+    timing|credit|blam|grammar|digests|uniform|dial|collect) step_$s ;;
     *) echo "unknown step $s"; exit 1 ;;
   esac
 done

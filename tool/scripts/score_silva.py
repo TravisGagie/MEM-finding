@@ -42,6 +42,7 @@ p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs"
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
+p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
 p.add_argument("--nseq", default=None, help="sequences per document (one per line), for --mode norm, prior and em")
 a = p.parse_args()
 spec = importlib.util.spec_from_file_location("csr", os.path.join(a.exp_src, "classify_silva_readset.py"))
@@ -183,7 +184,7 @@ else:
 with open(a.output, "w") as out:
   for label, settings in variants:
     G.update(settings)
-    for level in ["genus", "family", "order", "class", "phylum", "domain"]:
+    for level in a.levels.split(","):
         labels = {}
         for x in rs.silva_nodes_at_each_level[level]:
             c = x.get_certain_level(level); labels[c] = labels.get(c, 0) + 1
