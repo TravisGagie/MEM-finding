@@ -599,14 +599,14 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 - their ranks by N_g among all the reference's genera, genera without reads included (1 = largest, ties sharing the best rank): median, range, and how many are in the top 1% and 10%. Its output line per region goes into `tool/results/silva/README.md` with the tables.
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
-- **The simulation,** for α = 1 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
+- **The simulation,** for α = 1, 0 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
 - **The searches:** 24 runs of 200,000 reads with 12 threads, a few seconds each.
 - **The scoring** (genus level only):
   - Six single schemes at about 15 s each.
   - prior and mix, 6 β each, about 30 s each.
   - EM, 20 passes of about 3 s, so about 70 s.
   - So about 4 minutes per region and α, or about 45 minutes in all.
-- **In all:** about 8 MicrobeMixer-sized simulations, plus under an hour.
+- **In all:** about 12 MicrobeMixer-sized simulations, plus under an hour (the Bayes reference adds one scoring per region and α).
 
 ### Cliffy (2026-11-04)
 
