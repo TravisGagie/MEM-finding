@@ -1,0 +1,4 @@
+bml, L = 30, plain: 17.9559 s (speedup 1); steps: char 55072105, parse 0, block 0, shortcuts 0; parsing the patterns 0.00456754 s
+bml, L = 30, 2LJ: 12.3793 s (speedup 1.45048); steps: char 35938210, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.464252 s
+fb, L = 30, plain: 17.8042 s (speedup 1); steps: char 54117270, parse 0, block 0, shortcuts 0; parsing the patterns 0.00456954 s
+fb, L = 30, 2LJ: 12.2698 s (speedup 1.45106); steps: char 34983375, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.463572 s

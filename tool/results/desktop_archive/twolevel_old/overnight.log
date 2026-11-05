@@ -1,0 +1,181 @@
+machine:     travis-gagie-desktop, 12 CPUs
+data:        /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16
+collection:  /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/../collection.txt
+queries:     /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/../queries.txt
+RLBWTs:      /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3/rlbwt.bin ok, /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t3/rlbwt.bin ok
+shortcuts:   ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t3,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t3,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t3,ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t6,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t6,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t6
+source:      /home/travis/shortcuts_build/reportable-shortcuts ok
+collection used: /home/travis/twolevel_runs/twolevel/data/n16.collection.txt (2032742765 bytes, 33 sequences)
+[2026-10-26 18:25:01] compiling
+[2026-10-26 18:25:07] self-test on a small synthetic collection
+[2026-10-26 18:25:10] self-test passed: the same MEMs and intervals as plain search
+[2026-10-26 18:25:10] queries pinned to CPU 9
+[2026-10-26 18:25:10] full run: BML, L = 100 and 1000
+shortcuts ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 293.745 MiB on disk (both directions)
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 226.256 MiB on disk (both directions)
+shortcuts ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 131.612 MiB on disk (both directions)
+shortcuts ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 296.66 MiB on disk (both directions)
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 228.408 MiB on disk (both directions)
+shortcuts ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 132.813 MiB on disk (both directions)
+text level: m = 106862424, sigma = 4172042, blocks = 11235462; MiB: B 6.1764, parse BWT 21.9296, phrase table 46.2639, succ 11.439, BS 8.04934, block BWT 4.71458, symbols 1.49081
+reversed level: m = 106862424, sigma = 4172042, blocks = 11218382; MiB: B 6.21642, parse BWT 21.962, phrase table 3.43323e-05, succ 11.439, BS 8.04043, block BWT 4.72126, symbols 1.48899
+extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 153.932 MiB
+loaded in 1.71509 s
+bml, L = 100, plain: 287.069 s (speedup 1); steps: char 439189640, parse 0, block 0, shortcuts 0; parsing the patterns 2.82e-07 s
+bml, L = 100, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 63.874 s (speedup 4.49431); steps: char 91589880, parse 0, block 0, shortcuts 4568468; parsing the patterns 2.84e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 43.6202 s (speedup 6.58111); steps: char 65605665, parse 0, block 0, shortcuts 3135947; parsing the patterns 3.29e-07 s
+bml, L = 100, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 45.5748 s (speedup 6.29886); steps: char 69647790, parse 0, block 0, shortcuts 1703938; parsing the patterns 3.17e-07 s
+bml, L = 100, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 49.9451 s (speedup 5.74769); steps: char 74832616, parse 0, block 0, shortcuts 2637820; parsing the patterns 2.84e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 39.8735 s (speedup 7.19951); steps: char 61172790, parse 0, block 0, shortcuts 2022720; parsing the patterns 3.17e-07 s
+bml, L = 100, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 45.2604 s (speedup 6.34261); steps: char 69438390, parse 0, block 0, shortcuts 1316075; parsing the patterns 2.81e-07 s
+bml, L = 100, 2L: 14.9917 s (speedup 19.1485); steps: char 13527228, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.08254 s
+bml, L = 100, 2LJ: 10.4255 s (speedup 27.5352); steps: char 13527228, parse 2707075, block 2570737, shortcuts 0; parsing the patterns 1.08222 s
+bml, L = 1000, plain: 290.609 s (speedup 1); steps: char 449674966, parse 0, block 0, shortcuts 0; parsing the patterns 5.46e-07 s
+bml, L = 1000, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 61.961 s (speedup 4.6902); steps: char 88473910, parse 0, block 0, shortcuts 4721729; parsing the patterns 2.78e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 41.1704 s (speedup 7.05869); steps: char 61233541, parse 0, block 0, shortcuts 3245695; parsing the patterns 2.89e-07 s
+bml, L = 1000, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 43.0717 s (speedup 6.74711); steps: char 64463216, parse 0, block 0, shortcuts 1795277; parsing the patterns 3.33e-07 s
+bml, L = 1000, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 47.8768 s (speedup 6.06994); steps: char 71193286, parse 0, block 0, shortcuts 2736744; parsing the patterns 3.03e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 37.4436 s (speedup 7.76124); steps: char 56673441, parse 0, block 0, shortcuts 2108896; parsing the patterns 3.92e-07 s
+bml, L = 1000, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 42.7565 s (speedup 6.79685); steps: char 64249116, parse 0, block 0, shortcuts 1405244; parsing the patterns 3.28e-07 s
+bml, L = 1000, 2L: 12.8372 s (speedup 22.6381); steps: char 8795757, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.08332 s
+bml, L = 1000, 2LJ: 8.22035 s (speedup 35.3524); steps: char 8795757, parse 3110685, block 2492720, shortcuts 0; parsing the patterns 1.12365 s
+[2026-10-26 20:04:17] full run: forward-backward, L = 1000
+shortcuts ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 293.745 MiB on disk (both directions)
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 226.256 MiB on disk (both directions)
+shortcuts ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 131.612 MiB on disk (both directions)
+shortcuts ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 296.66 MiB on disk (both directions)
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 228.408 MiB on disk (both directions)
+shortcuts ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 132.813 MiB on disk (both directions)
+text level: m = 106862424, sigma = 4172042, blocks = 11235462; MiB: B 6.1764, parse BWT 21.9296, phrase table 46.2639, succ 11.439, BS 8.04934, block BWT 4.71458, symbols 1.49081
+reversed level: m = 106862424, sigma = 4172042, blocks = 11218382; MiB: B 6.21642, parse BWT 21.962, phrase table 3.43323e-05, succ 11.439, BS 8.04043, block BWT 4.72126, symbols 1.48899
+extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 153.932 MiB
+loaded in 0.898431 s
+fb, L = 1000, plain: 286.184 s (speedup 1); steps: char 438062856, parse 0, block 0, shortcuts 0; parsing the patterns 3.19e-07 s
+fb, L = 1000, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 63.8147 s (speedup 4.48461); steps: char 91913080, parse 0, block 0, shortcuts 4514708; parsing the patterns 2.95e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 43.3343 s (speedup 6.6041); steps: char 65755806, parse 0, block 0, shortcuts 3096144; parsing the patterns 3.15e-07 s
+fb, L = 1000, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3: 44.6801 s (speedup 6.40517); steps: char 68574256, parse 0, block 0, shortcuts 1702873; parsing the patterns 3.67e-07 s
+fb, L = 1000, ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 49.9536 s (speedup 5.72899); steps: char 75155816, parse 0, block 0, shortcuts 2584060; parsing the patterns 3.5e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 39.6331 s (speedup 7.22082); steps: char 61322931, parse 0, block 0, shortcuts 1982917; parsing the patterns 4.61e-07 s
+fb, L = 1000, ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 44.3923 s (speedup 6.4467); steps: char 68364856, parse 0, block 0, shortcuts 1315010; parsing the patterns 4.22e-07 s
+fb, L = 1000, 2L: 14.2233 s (speedup 20.1208); steps: char 13210279, parse 22554013, block 0, shortcuts 0; parsing the patterns 1.09009 s
+fb, L = 1000, 2LJ: 9.74438 s (speedup 29.3691); steps: char 13210279, parse 2627593, block 2566152, shortcuts 0; parsing the patterns 1.09044 s
+[2026-10-26 20:53:58] done
+machine:     travis-gagie-desktop, 12 CPUs
+data:        /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32
+collection:  /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/../collection.txt
+queries:     /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/../queries.txt
+RLBWTs:      /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t3/rlbwt.bin ok, /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t3/rlbwt.bin ok
+shortcuts:   ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t3,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t3,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t3,ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t6,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t6,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t6
+source:      /home/travis/shortcuts_build/reportable-shortcuts ok
+[2026-10-26 20:53:58] writing the first 4002108658 bytes of /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/../collection.txt to /home/travis/twolevel_runs/twolevel/data/n32.collection.txt
+collection used: /home/travis/twolevel_runs/twolevel/data/n32.collection.txt (4002108658 bytes, 65 sequences)
+[2026-10-26 20:54:01] compiling
+[2026-10-26 20:54:02] self-test on a small synthetic collection
+[2026-10-26 20:54:05] self-test passed: the same MEMs and intervals as plain search
+[2026-10-26 20:54:05] building the levels of T and of the reversed collection
+== T
+text: 4002108659 characters; 210365737 phrases, 4703288 distinct (335.902 MB) (75.4092 s)
+distinct syncmers: 4102256
+B: 2675944 runs, 7.50861 MB (189.638 s)
+blocks: 25282495 (8.32061 phrases each), 868734 symbols
+parse BWT: 6379253 runs, 30.107 MB (222.884 s)
+block BWT: 2229716 runs, 9.0064 MB; BS 18.346 MB (228.198 s)
+== the reversed collection
+text: 4002108659 characters; 210365737 phrases, 4703288 distinct (335.902 MB) (300.725 s)
+distinct syncmers: 4102256
+B: 2699027 runs, 7.56272 MB (414.463 s)
+blocks: 25292877 (8.31719 phrases each), 866996 symbols
+parse BWT: 6393076 runs, 30.167 MB (447.708 s)
+block BWT: 2236954 runs, 9.03194 MB; BS 18.3517 MB (453.016 s)
+shared dictionary: 4703288 phrases, 2 without a reverse in the reversed collection
+text sizes (MB): B 7.50861, parse BWT 30.107, phrase table 57.1064, succ 14.1099, BS 18.346, block BWT 9.0064, symbols 2.1523
+reversed sizes (MB): B 7.56272, parse BWT 30.167, phrase table 3.6e-05, succ 14.1099, BS 18.3517, block BWT 9.03194, symbols 2.14961
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 7:35.32
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Maximum resident set size (kbytes): 3751968
+[2026-10-26 21:01:40] queries pinned to CPU 9
+[2026-10-26 21:01:40] lean run: BML, L = 100 and 1000
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 350.058 MiB on disk (both directions)
+text level: m = 210365737, sigma = 4703288, blocks = 25282495; MiB: B 7.16077, parse BWT 28.7122, phrase table 54.4609, succ 13.4562, BS 17.4961, block BWT 8.58917, symbols 2.05259
+reversed level: m = 210365737, sigma = 4703288, blocks = 25292877; MiB: B 7.21237, parse BWT 28.7695, phrase table 3.43323e-05, succ 13.4562, BS 17.5015, block BWT 8.61353, symbols 2.05003
+extra space over the two RLBWTs: 2L 126.316 MiB, 2LJ 209.531 MiB
+loaded in 0.73153 s
+bml, L = 100, plain: 317.694 s (speedup 1); steps: char 482446274, parse 0, block 0, shortcuts 0; parsing the patterns 1.66e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 42.4932 s (speedup 7.47634); steps: char 63432624, parse 0, block 0, shortcuts 2208153; parsing the patterns 1.79e-07 s
+bml, L = 100, 2L: 14.1224 s (speedup 22.4957); steps: char 10740097, parse 25038099, block 0, shortcuts 0; parsing the patterns 1.09161 s
+bml, L = 100, 2LJ: 8.83404 s (speedup 35.9624); steps: char 10740097, parse 1645937, block 3090240, shortcuts 0; parsing the patterns 1.09176 s
+bml, L = 1000, plain: 323.253 s (speedup 1); steps: char 491499618, parse 0, block 0, shortcuts 0; parsing the patterns 1.63e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 40.6926 s (speedup 7.94378); steps: char 59709268, parse 0, block 0, shortcuts 2294348; parsing the patterns 1.63e-07 s
+bml, L = 1000, 2L: 12.6058 s (speedup 25.6432); steps: char 7159034, parse 25600897, block 0, shortcuts 0; parsing the patterns 1.09788 s
+bml, L = 1000, 2LJ: 7.22695 s (speedup 44.7288); steps: char 7159034, parse 1936230, block 3015132, shortcuts 0; parsing the patterns 1.09861 s
+[2026-10-26 22:05:38] lean run: forward-backward, L = 1000
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 350.058 MiB on disk (both directions)
+text level: m = 210365737, sigma = 4703288, blocks = 25282495; MiB: B 7.16077, parse BWT 28.7122, phrase table 54.4609, succ 13.4562, BS 17.4961, block BWT 8.58917, symbols 2.05259
+reversed level: m = 210365737, sigma = 4703288, blocks = 25292877; MiB: B 7.21237, parse BWT 28.7695, phrase table 3.43323e-05, succ 13.4562, BS 17.5015, block BWT 8.61353, symbols 2.05003
+extra space over the two RLBWTs: 2L 126.316 MiB, 2LJ 209.531 MiB
+loaded in 0.471189 s
+fb, L = 1000, plain: 320.497 s (speedup 1); steps: char 480803314, parse 0, block 0, shortcuts 0; parsing the patterns 2.95e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 42.1047 s (speedup 7.61191); steps: char 62671389, parse 0, block 0, shortcuts 2180541; parsing the patterns 2.84e-07 s
+fb, L = 1000, 2L: 13.2978 s (speedup 24.1016); steps: char 9729459, parse 24969492, block 0, shortcuts 0; parsing the patterns 1.09732 s
+fb, L = 1000, 2LJ: 8.03508 s (speedup 39.8872); steps: char 9729459, parse 1583663, block 3082387, shortcuts 0; parsing the patterns 1.09882 s
+[2026-10-26 22:37:42] done
+machine:     travis-gagie-desktop, 12 CPUs
+data:        /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64
+collection:  /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/../collection.txt
+queries:     /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/../queries.txt
+RLBWTs:      /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t3/rlbwt.bin ok, /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t3/rlbwt.bin ok
+shortcuts:   ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t3,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t3,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t3@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t3,ell16_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t6,ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t6,ell50_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t6
+source:      /home/travis/shortcuts_build/reportable-shortcuts ok
+collection used: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/../collection.txt (7948893095 bytes, 129 sequences)
+[2026-10-26 22:37:47] compiling
+[2026-10-26 22:37:47] self-test on a small synthetic collection
+[2026-10-26 22:37:50] self-test passed: the same MEMs and intervals as plain search
+[2026-10-26 22:37:50] building the levels of T and of the reversed collection
+== T
+text: 7948893096 characters; 417683930 phrases, 5567336 distinct (403.763 MB) (145.522 s)
+distinct syncmers: 4711110
+B: 2996852 runs, 9.00122 MB (277.052 s)
+blocks: 58426017 (7.14894 phrases each), 1265686 symbols
+parse BWT: 8718566 runs, 43.0927 MB (348.95 s)
+block BWT: 3942394 runs, 16.6738 MB; BS 42.5959 MB (361.841 s)
+== the reversed collection
+text: 7948893096 characters; 417683930 phrases, 5567336 distinct (403.763 MB) (511.165 s)
+distinct syncmers: 4711110
+B: 3026510 runs, 9.07816 MB (641.39 s)
+blocks: 58611618 (7.1263 phrases each), 1263918 symbols
+parse BWT: 8744213 runs, 43.2041 MB (713.113 s)
+block BWT: 3958824 runs, 16.7402 MB; BS 42.6742 MB (725.619 s)
+shared dictionary: 5567336 phrases, 2 without a reverse in the reversed collection
+text sizes (MB): B 9.00122, parse BWT 43.0927, phrase table 66.8269, succ 16.702, BS 42.5959, block BWT 16.6738, symbols 2.91485
+reversed sizes (MB): B 9.07816, parse BWT 43.2041, phrase table 3.6e-05, succ 16.702, BS 42.6742, block BWT 16.7402, symbols 2.91212
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 12:08.51
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Maximum resident set size (kbytes): 7472648
+[2026-10-26 22:49:59] queries pinned to CPU 9
+[2026-10-26 22:49:59] lean run: BML, L = 100 and 1000
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 592.143 MiB on disk (both directions)
+text level: m = 417683930, sigma = 5567336, blocks = 58426017; MiB: B 8.58424, parse BWT 41.0964, phrase table 63.7311, succ 15.9283, BS 40.6226, block BWT 15.9013, symbols 2.77982
+reversed level: m = 417683930, sigma = 5567336, blocks = 58611618; MiB: B 8.65761, parse BWT 41.2026, phrase table 3.43323e-05, succ 15.9283, BS 40.6973, block BWT 15.9647, symbols 2.77721
+extra space over the two RLBWTs: 2L 163.272 MiB, 2LJ 313.872 MiB
+loaded in 1.15525 s
+bml, L = 100, plain: 344.821 s (speedup 1); steps: char 512626179, parse 0, block 0, shortcuts 0; parsing the patterns 1.89e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 45.4966 s (speedup 7.57904); steps: char 65554629, parse 0, block 0, shortcuts 2354384; parsing the patterns 2.03e-07 s
+bml, L = 100, 2L: 14.9925 s (speedup 22.9996); steps: char 9610588, parse 26690765, block 0, shortcuts 0; parsing the patterns 1.13532 s
+bml, L = 100, 2LJ: 8.69755 s (speedup 39.6457); steps: char 9610588, parse 1157868, block 3740644, shortcuts 0; parsing the patterns 1.13566 s
+bml, L = 1000, plain: 347.628 s (speedup 1); steps: char 521104517, parse 0, block 0, shortcuts 0; parsing the patterns 1.94e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 43.788 s (speedup 7.93888); steps: char 62513292, parse 0, block 0, shortcuts 2435997; parsing the patterns 1.61e-07 s
+bml, L = 1000, 2L: 13.5382 s (speedup 25.6776); steps: char 6613899, parse 27211648, block 0, shortcuts 0; parsing the patterns 1.13643 s
+bml, L = 1000, 2LJ: 7.2651 s (speedup 47.849); steps: char 6613899, parse 1363964, block 3694522, shortcuts 0; parsing the patterns 1.13695 s
+[2026-10-26 23:58:52] lean run: forward-backward, L = 1000
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 592.143 MiB on disk (both directions)
+text level: m = 417683930, sigma = 5567336, blocks = 58426017; MiB: B 8.58424, parse BWT 41.0964, phrase table 63.7311, succ 15.9283, BS 40.6226, block BWT 15.9013, symbols 2.77982
+reversed level: m = 417683930, sigma = 5567336, blocks = 58611618; MiB: B 8.65761, parse BWT 41.2026, phrase table 3.43323e-05, succ 15.9283, BS 40.6973, block BWT 15.9647, symbols 2.77721
+extra space over the two RLBWTs: 2L 163.272 MiB, 2LJ 313.872 MiB
+loaded in 0.675719 s
+fb, L = 1000, plain: 344.076 s (speedup 1); steps: char 510984201, parse 0, block 0, shortcuts 0; parsing the patterns 3.03e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 44.8978 s (speedup 7.66353); steps: char 64659726, parse 0, block 0, shortcuts 2330910; parsing the patterns 2.77e-07 s
+fb, L = 1000, 2L: 13.9687 s (speedup 24.6319); steps: char 8526940, parse 26627851, block 0, shortcuts 0; parsing the patterns 1.13372 s
+fb, L = 1000, 2LJ: 7.84659 s (speedup 43.8503); steps: char 8526940, parse 1102798, block 3731082, shortcuts 0; parsing the patterns 1.13341 s
+[2026-10-27 00:33:07] done

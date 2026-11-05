@@ -1,0 +1,6 @@
+bml, L = 100, plain: 287.476 s (speedup 1); steps: char 438174042, parse 0, block 0, shortcuts 0; parsing the patterns 6.97e-07 s
+bml, L = 100, 2L: 14.4956 s (speedup 19.832); steps: char 12511630, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.10019 s
+bml, L = 100, 2LJ: 10.3156 s (speedup 27.8681); steps: char 12511630, parse 2707075, block 2570544, shortcuts 0; parsing the patterns 1.10201 s
+bml, L = 1000, plain: 291.264 s (speedup 1); steps: char 448653968, parse 0, block 0, shortcuts 0; parsing the patterns 4.9e-07 s
+bml, L = 1000, 2L: 12.3369 s (speedup 23.6091); steps: char 7774759, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.10225 s
+bml, L = 1000, 2LJ: 8.09902 s (speedup 35.9629); steps: char 7774759, parse 3110685, block 2492630, shortcuts 0; parsing the patterns 1.10276 s

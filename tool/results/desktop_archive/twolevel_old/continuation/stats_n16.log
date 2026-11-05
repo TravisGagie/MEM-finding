@@ -1,0 +1,29 @@
+text: 2032742766 characters; 106862424 phrases, 4172042 distinct (296.09 MB) (38.187 s)
+block stats: 106862424 phrases, 4172042 distinct, 4579093 distinct adjacent pairs; 3897946 phrases with a single successor
+  smallest successor: 11235462 blocks (9.51117 phrases each), 595026 symbols
+  largest successor: 11557232 blocks (9.24637 phrases each), 594894 symbols
+  smaller or larger, more frequent: 8430117 blocks (12.6763 phrases each), 570570 symbols
+  most frequent successor: 3403828 blocks (31.3948 phrases each), 630355 symbols
+	Command being timed: "/home/travis/Hybrid-FM-CSA/twolevel/build/build_twolevel --text /home/travis/twolevel_runs/twolevel/data/n16.collection.txt --block-stats"
+	User time (seconds): 50.76
+	System time (seconds): 1.37
+	Percent of CPU this job got: 97%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 0:53.46
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1773804
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 839738
+	Voluntary context switches: 2618
+	Involuntary context switches: 441
+	Swaps: 0
+	File system inputs: 3970216
+	File system outputs: 8
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

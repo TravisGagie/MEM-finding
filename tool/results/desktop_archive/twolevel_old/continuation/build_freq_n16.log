@@ -1,0 +1,20 @@
+== T
+text: 2032742766 characters; 106862424 phrases, 4172042 distinct (296.09 MB) (38.3815 s)
+sorted (40.9705 s)
+distinct syncmers: 3738618
+B: 2493084 runs, 6.47642 MB (143.72 s)
+blocks: 3403828 (31.3948 phrases each), 630355 symbols
+parse BWT: 5057685 runs, 22.9948 MB (165.55 s)
+block BWT: 980774 runs, 3.50281 MB; BS 0.67848 (run-length, 310343 runs; the other encoding 3.43497 MB) MB (167.27 s)
+== the reversed collection
+text: 2032742766 characters; 106862424 phrases, 4172042 distinct (296.09 MB) (203.73 s)
+sorted (206.29 s)
+distinct syncmers: 3738618
+B: 2513128 runs, 6.51839 MB (307.775 s)
+blocks: 3383225 (31.586 phrases each), 629770 symbols
+parse BWT: 5065986 runs, 23.0288 MB (328.952 s)
+block BWT: 979304 runs, 3.49526 MB; BS 0.674088 (run-length, 308056 runs; the other encoding 3.42112 MB) MB (330.514 s)
+shared dictionary: 4172042 phrases, 2 without a reverse in the reversed collection
+text sizes (MB): B 6.47642, parse BWT 22.9948, phrase table 48.5112, succ 11.9947, BS 0.67848, block BWT 3.50281, symbols 1.84985
+reversed sizes (MB): B 6.51839, parse BWT 23.0288, phrase table 3.6e-05, succ 11.9947, BS 0.674088, block BWT 3.49526, symbols 1.8488
+wrote /home/travis/Hybrid-FM-CSA/twolevel/continuation/n16.freq.text.lvl and .rev.lvl (332.395 s)

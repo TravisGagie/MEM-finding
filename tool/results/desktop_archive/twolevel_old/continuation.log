@@ -1,0 +1,55 @@
+[2026-10-28 11:01:15] compiling
+[2026-10-28 11:01:26] n16: block statistics (/home/travis/twolevel_runs/twolevel/data/n16.collection.txt)
+n16: block stats: 106862424 phrases, 4172042 distinct, 4579093 distinct adjacent pairs; 3897946 phrases with a single successor
+n16:   smallest successor: 11235462 blocks (9.51117 phrases each), 595026 symbols
+n16:   largest successor: 11557232 blocks (9.24637 phrases each), 594894 symbols
+n16:   most frequent successor: 3403828 blocks (31.3948 phrases each), 630355 symbols
+n16: 	Maximum resident set size (kbytes): 1773804
+[2026-10-28 11:02:19] n32: block statistics (/home/travis/twolevel_runs/twolevel/data/n32.collection.txt)
+n32: block stats: 210365737 phrases, 4703288 distinct, 5283644 distinct adjacent pairs; 4328733 phrases with a single successor
+n32:   smallest successor: 25282495 blocks (8.32061 phrases each), 868734 symbols
+n32:   largest successor: 26082669 blocks (8.06535 phrases each), 866454 symbols
+n32:   most frequent successor: 6811028 blocks (30.886 phrases each), 956800 symbols
+n32: 	Maximum resident set size (kbytes): 3054668
+[2026-10-28 11:04:06] n64: block statistics (/home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt)
+n64: block stats: 417683930 phrases, 5567336 distinct, 6412372 distinct adjacent pairs; 5051785 phrases with a single successor
+n64:   smallest successor: 58426017 blocks (7.14894 phrases each), 1265686 symbols
+n64:   largest successor: 60367018 blocks (6.91908 phrases each), 1261000 symbols
+n64:   most frequent successor: 13715233 blocks (30.454 phrases each), 1460334 symbols
+n64: 	Maximum resident set size (kbytes): 5597176
+[2026-10-28 11:07:38] n16: levels with the most frequent successor
+blocks: 3403828 (31.3948 phrases each), 630355 symbols
+blocks: 3383225 (31.586 phrases each), 629770 symbols
+text sizes (MB): B 6.47642, parse BWT 22.9948, phrase table 48.5112, succ 11.9947, BS 0.67848, block BWT 3.50281, symbols 1.84985
+reversed sizes (MB): B 6.51839, parse BWT 23.0288, phrase table 3.6e-05, succ 11.9947, BS 0.674088, block BWT 3.49526, symbols 1.8488
+[2026-10-28 11:13:11] n16, smallest: bml
+smallest: bml, L = 100, plain: 287.476 s (speedup 1); steps: char 438174042, parse 0, block 0, shortcuts 0; parsing the patterns 6.97e-07 s
+smallest: bml, L = 100, 2L: 14.4956 s (speedup 19.832); steps: char 12511630, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.10019 s
+smallest: bml, L = 100, 2LJ: 10.3156 s (speedup 27.8681); steps: char 12511630, parse 2707075, block 2570544, shortcuts 0; parsing the patterns 1.10201 s
+smallest: bml, L = 1000, plain: 291.264 s (speedup 1); steps: char 448653968, parse 0, block 0, shortcuts 0; parsing the patterns 4.9e-07 s
+smallest: bml, L = 1000, 2L: 12.3369 s (speedup 23.6091); steps: char 7774759, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.10225 s
+smallest: bml, L = 1000, 2LJ: 8.09902 s (speedup 35.9629); steps: char 7774759, parse 3110685, block 2492630, shortcuts 0; parsing the patterns 1.10276 s
+smallest: extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 139.571 MiB
+smallest bml: mismatches against plain search: 0
+[2026-10-28 11:44:24] n16, smallest: fb
+smallest: fb, L = 1000, plain: 286.955 s (speedup 1); steps: char 437047858, parse 0, block 0, shortcuts 0; parsing the patterns 5.71e-07 s
+smallest: fb, L = 1000, 2L: 13.8381 s (speedup 20.7366); steps: char 12195281, parse 22554013, block 0, shortcuts 0; parsing the patterns 1.09689 s
+smallest: fb, L = 1000, 2LJ: 9.63626 s (speedup 29.7786); steps: char 12195281, parse 2627593, block 2565925, shortcuts 0; parsing the patterns 1.09797 s
+smallest: extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 139.571 MiB
+smallest fb: mismatches against plain search: 0
+[2026-10-28 11:59:57] n16, frequent: bml
+frequent: bml, L = 100, plain: 287.897 s (speedup 1); steps: char 438174042, parse 0, block 0, shortcuts 0; parsing the patterns 3.8e-07 s
+frequent: bml, L = 100, 2L: 14.4887 s (speedup 19.8705); steps: char 12511630, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.10033 s
+frequent: bml, L = 100, 2LJ: 10.8332 s (speedup 26.5755); steps: char 12511630, parse 7231378, block 639588, shortcuts 0; parsing the patterns 1.09976 s
+frequent: bml, L = 1000, plain: 291.479 s (speedup 1); steps: char 448653968, parse 0, block 0, shortcuts 0; parsing the patterns 3.42e-07 s
+frequent: bml, L = 1000, 2L: 12.3388 s (speedup 23.623); steps: char 7774759, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.10086 s
+frequent: bml, L = 1000, 2LJ: 8.61904 s (speedup 33.8181); steps: char 7774759, parse 7669481, block 637630, shortcuts 0; parsing the patterns 1.10119 s
+frequent: extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 136.917 MiB
+frequent bml: mismatches against plain search: 0
+[2026-10-28 12:31:15] n16, frequent: fb
+frequent: fb, L = 1000, plain: 286.546 s (speedup 1); steps: char 437047858, parse 0, block 0, shortcuts 0; parsing the patterns 3.59e-07 s
+frequent: fb, L = 1000, 2L: 13.833 s (speedup 20.7147); steps: char 12195281, parse 22554013, block 0, shortcuts 0; parsing the patterns 1.09648 s
+frequent: fb, L = 1000, 2LJ: 10.1535 s (speedup 28.2213); steps: char 12195281, parse 7150092, block 639408, shortcuts 0; parsing the patterns 1.09735 s
+frequent: extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 136.917 MiB
+frequent fb: mismatches against plain search: 0
+[2026-10-28 12:46:48] done

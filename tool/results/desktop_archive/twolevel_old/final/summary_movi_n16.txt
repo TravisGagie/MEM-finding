@@ -1,0 +1,23 @@
+Movi 2 index (regular, both strands): 522 MiB, plus ftab (k = 10) 32 MiB
+Movi 2 MEMs, L = 100: 28.860 s
+Movi 2 MEMs, L = 1000: 25.870 s
+Movi 2 MEMs, L = 1: 57.325 s
+check, Movi 2 against ours (differences must be reverse-strand matches, or N in the collection read as A):
+bml_L100 vs movi100: only theirs 363, of which 223 occur only on the reverse strand; only ours 173, of which 157 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (0, 85, 241) length 156
+   their MEM not explained by the reverse strand: (0, 86, 265) length 179
+   their MEM not explained by the reverse strand: (0, 87, 265) length 178
+   their MEM not explained by the reverse strand: (0, 88, 344) length 256
+   their MEM not explained by the reverse strand: (0, 391, 620) length 229
+   our MEM not explained: (0, 85, 272) length 187
+   our MEM not explained: (0, 2440, 2668) length 228
+   our MEM not explained: (0, 3341, 3670) length 329
+   our MEM not explained: (0, 3885, 4057) length 172
+   our MEM not explained: (0, 3938, 4457) length 519
+bml_L1000 vs movi1000: only theirs 19, of which 17 occur only on the reverse strand; only ours 3, of which 2 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (0, 17707911, 17710125) length 2214
+   their MEM not explained by the reverse strand: (0, 17707912, 17714221) length 6309
+   our MEM not explained: (0, 17707911, 17714221) length 6310
+fb_L1000 vs movi1: only theirs 7, of which 5 occur only on the reverse strand; only ours 2, of which 2 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (1, 20556129, 20557614) length 1485
+   their MEM not explained by the reverse strand: (2, 748, 1840) length 1092

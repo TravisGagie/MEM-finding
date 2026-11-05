@@ -1,0 +1,192 @@
+reads: 2000 of 10000 bases per error rate (1 5 %), from /home/travis/twolevel_runs/twolevel/final/queries.txt; MEMs of length at least 30 100
+machine: travis-gagie-desktop, pinned to CPU 9, 5 rounds, medians
+
+== n16, 1% errors
+bml, L = 30, plain: 38.3022 s (speedup 1); steps: char 59349869, parse 0, block 0, shortcuts 0; parsing the patterns 0.000184855 s
+bml, L = 30, ell25_theta0: 26.2879 s (speedup 1.45703); steps: char 38411769, parse 0, block 0, shortcuts 430118; parsing the patterns 0.00011109 s
+bml, L = 30, 2L: 26.1189 s (speedup 1.46646); steps: char 40215974, parse 1156772, block 0, shortcuts 0; parsing the patterns 0.250725 s
+bml, L = 30, 2LJ: 25.9981 s (speedup 1.47327); steps: char 40215974, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.249345 s
+bml, L = 100, plain: 29.146 s (speedup 1); steps: char 48124288, parse 0, block 0, shortcuts 0; parsing the patterns 0.000209934 s
+bml, L = 100, ell25_theta0: 17.1575 s (speedup 1.69873); steps: char 24372513, parse 0, block 0, shortcuts 511416; parsing the patterns 0.000126966 s
+bml, L = 100, 2L: 17.7561 s (speedup 1.64147); steps: char 27489217, parse 1266656, block 0, shortcuts 0; parsing the patterns 0.248606 s
+bml, L = 100, 2LJ: 17.388 s (speedup 1.67621); steps: char 27489217, parse 1140694, block 124649, shortcuts 0; parsing the patterns 0.244611 s
+fb, L = 30, plain: 53.2083 s (speedup 1); steps: char 101058537, parse 0, block 0, shortcuts 0; parsing the patterns 0.000206734 s
+fb, L = 30, ell25_theta0: 40.872 s (speedup 1.30183); steps: char 80120437, parse 0, block 0, shortcuts 430118; parsing the patterns 0.000170889 s
+fb, L = 30, 2L: 41.1166 s (speedup 1.29409); steps: char 81924642, parse 1156772, block 0, shortcuts 0; parsing the patterns 0.248061 s
+fb, L = 30, 2LJ: 41.0486 s (speedup 1.29623); steps: char 81924642, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.246956 s
+mismatches against plain search: 0
+MEMs (BML): L = 30: 197092; L = 100: 79035; 
+KeBaB scan (fwd, L = 30): 0.492 s; 147493 fragments, 19686902 of 19999677 characters kept
+KeBaB + bml, L = 30, plain: 17.9559 s (speedup 1); steps: char 55072105, parse 0, block 0, shortcuts 0; parsing the patterns 0.00456754 s
+KeBaB + bml, L = 30, 2LJ: 12.3793 s (speedup 1.45048); steps: char 35938210, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.464252 s
+KeBaB + fb, L = 30, plain: 17.8042 s (speedup 1); steps: char 54117270, parse 0, block 0, shortcuts 0; parsing the patterns 0.00456954 s
+KeBaB + fb, L = 30, 2LJ: 12.2698 s (speedup 1.45106); steps: char 34983375, parse 1030990, block 122644, shortcuts 0; parsing the patterns 0.463572 s
+  check, KeBaB + bml, L = 30: 197092 MEMs from the fragments, 197092 from the full patterns: identical (positions and counts)
+  check, KeBaB + fb, L = 30: 197092 MEMs from the fragments, 197092 from the full patterns: identical (positions and counts)
+KeBaB scan (fwd, L = 100): 0.507 s; 74273 fragments, 15265247 of 19999677 characters kept
+KeBaB + bml, L = 100, plain: 14.5639 s (speedup 1); steps: char 43509848, parse 0, block 0, shortcuts 0; parsing the patterns 0.00238882 s
+KeBaB + bml, L = 100, 2LJ: 8.4165 s (speedup 1.73039); steps: char 22802790, parse 1135862, block 124885, shortcuts 0; parsing the patterns 0.318252 s
+  check, KeBaB + bml, L = 100: 79035 MEMs from the fragments, 79035 from the full patterns: identical (positions and counts)
+ropebwt3 BML, L = 30: 10.066 s
+KeBaB + ropebwt3 BML, L = 30: 8.488 s (plus the canonical scan)
+ropebwt3 BML, L = 100: 7.151 s
+KeBaB + ropebwt3 BML, L = 100: 5.756 s (plus the canonical scan)
+ropebwt3 forward-backward (--old-mem), L = 30: 18.069 s
+check, ropebwt3 against ours:
+bml_L30 vs bml30: only theirs 17851, of which 17851 occur only on the reverse strand; only ours 9242, of which 9242 lie inside a MEM only they report
+bml_L100 vs bml100: only theirs 63, of which 63 occur only on the reverse strand; only ours 15, of which 15 lie inside a MEM only they report
+fb_L30 vs fb30: only theirs 17851, of which 17851 occur only on the reverse strand; only ours 9242, of which 9242 lie inside a MEM only they report
+Movi 2 MEMs, L = 30: 33.171 s
+Movi 2 MEMs, L = 100: 14.748 s
+check, Movi 2 against ours:
+bml_L30 vs movi30: only theirs 17851, of which 17851 occur only on the reverse strand; only ours 9242, of which 9242 lie inside a MEM only they report
+bml_L100 vs movi100: only theirs 66, of which 63 occur only on the reverse strand; only ours 16, of which 15 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (1884, 8336, 8436) length 100
+   their MEM not explained by the reverse strand: (1884, 8337, 8437) length 100
+   their MEM not explained by the reverse strand: (1884, 8338, 8466) length 128
+   our MEM not explained: (1884, 8336, 8466) length 130
+
+== n16, 5% errors
+bml, L = 30, plain: 33.1642 s (speedup 1); steps: char 58715114, parse 0, block 0, shortcuts 0; parsing the patterns 0.000100892 s
+bml, L = 30, ell25_theta0: 34.5114 s (speedup 0.960963); steps: char 55866789, parse 0, block 0, shortcuts 98809; parsing the patterns 0.000121585 s
+bml, L = 30, 2L: 33.4792 s (speedup 0.99059); steps: char 57812249, parse 91736, block 0, shortcuts 0; parsing the patterns 0.202404 s
+bml, L = 30, 2LJ: 33.3083 s (speedup 0.995673); steps: char 57812249, parse 89825, block 4410, shortcuts 0; parsing the patterns 0.201586 s
+bml, L = 100, plain: 3.3878 s (speedup 1); steps: char 8582498, parse 0, block 0, shortcuts 0; parsing the patterns 0.000106962 s
+bml, L = 100, ell25_theta0: 3.26791 s (speedup 1.03669); steps: char 7315648, parse 0, block 0, shortcuts 37852; parsing the patterns 8.2106e-05 s
+bml, L = 100, 2L: 3.31588 s (speedup 1.02169); steps: char 7854503, parse 55615, block 0, shortcuts 0; parsing the patterns 0.18727 s
+bml, L = 100, 2LJ: 3.25096 s (speedup 1.04209); steps: char 7854503, parse 54018, block 3421, shortcuts 0; parsing the patterns 0.180937 s
+fb, L = 30, plain: 104.693 s (speedup 1); steps: char 256468631, parse 0, block 0, shortcuts 0; parsing the patterns 0.000174791 s
+fb, L = 30, ell25_theta0: 106.43 s (speedup 0.983675); steps: char 253620306, parse 0, block 0, shortcuts 98809; parsing the patterns 0.000131941 s
+fb, L = 30, 2L: 105.507 s (speedup 0.992288); steps: char 255565766, parse 91736, block 0, shortcuts 0; parsing the patterns 0.204023 s
+fb, L = 30, 2LJ: 105.425 s (speedup 0.993057); steps: char 255565766, parse 89825, block 4410, shortcuts 0; parsing the patterns 0.203226 s
+mismatches against plain search: 0
+MEMs (BML): L = 30: 297315; L = 100: 6889; 
+KeBaB scan (fwd, L = 30): 0.552 s; 253133 fragments, 12730859 of 20000101 characters kept
+KeBaB + bml, L = 30, plain: 12.2641 s (speedup 1); steps: char 44238573, parse 0, block 0, shortcuts 0; parsing the patterns 0.00801082 s
+KeBaB + bml, L = 30, 2LJ: 12.2108 s (speedup 1.00436); steps: char 43335708, parse 89825, block 4410, shortcuts 0; parsing the patterns 0.269651 s
+KeBaB + fb, L = 30, plain: 13.4324 s (speedup 1); steps: char 46740211, parse 0, block 0, shortcuts 0; parsing the patterns 0.00816592 s
+KeBaB + fb, L = 30, 2LJ: 13.3923 s (speedup 1.003); steps: char 45837346, parse 89825, block 4410, shortcuts 0; parsing the patterns 0.269625 s
+  check, KeBaB + bml, L = 30: 297315 MEMs from the fragments, 297315 from the full patterns: identical (positions and counts)
+  check, KeBaB + fb, L = 30: 297315 MEMs from the fragments, 297315 from the full patterns: identical (positions and counts)
+KeBaB scan (fwd, L = 100): 0.520 s; 9027 fragments, 1096301 of 20000101 characters kept
+KeBaB + bml, L = 100, plain: 0.919028 s (speedup 1); steps: char 2871023, parse 0, block 0, shortcuts 0; parsing the patterns 0.000286033 s
+KeBaB + bml, L = 100, 2LJ: 0.738863 s (speedup 1.24384); steps: char 2132446, parse 53271, block 3472, shortcuts 0; parsing the patterns 0.0302356 s
+  check, KeBaB + bml, L = 100: 6889 MEMs from the fragments, 6889 from the full patterns: identical (positions and counts)
+ropebwt3 BML, L = 30: 12.613 s
+KeBaB + ropebwt3 BML, L = 30: 7.227 s (plus the canonical scan)
+ropebwt3 BML, L = 100: 2.568 s
+KeBaB + ropebwt3 BML, L = 100: 0.424 s (plus the canonical scan)
+ropebwt3 forward-backward (--old-mem), L = 30: 37.925 s
+check, ropebwt3 against ours:
+bml_L30 vs bml30: only theirs 29222, of which 29222 occur only on the reverse strand; only ours 14977, of which 14977 lie inside a MEM only they report
+bml_L100 vs bml100: only theirs 7, of which 7 occur only on the reverse strand; only ours 1, of which 1 lie inside a MEM only they report
+fb_L30 vs fb30: only theirs 29222, of which 29222 occur only on the reverse strand; only ours 14977, of which 14977 lie inside a MEM only they report
+Movi 2 MEMs, L = 30: 58.869 s
+Movi 2 MEMs, L = 100: 8.768 s
+check, Movi 2 against ours:
+bml_L30 vs movi30: only theirs 29224, of which 29222 occur only on the reverse strand; only ours 14977, of which 14977 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (1313, 1822, 1853) length 31
+   their MEM not explained by the reverse strand: (1701, 3562, 3596) length 34
+bml_L100 vs movi100: only theirs 7, of which 7 occur only on the reverse strand; only ours 1, of which 1 lie inside a MEM only they report
+
+== n64, 1% errors
+bml, L = 30, plain: 39.4219 s (speedup 1); steps: char 60241854, parse 0, block 0, shortcuts 0; parsing the patterns 0.00010497 s
+bml, L = 30, ell25_theta0: 27.3605 s (speedup 1.44083); steps: char 39225804, parse 0, block 0, shortcuts 432477; parsing the patterns 0.000108634 s
+bml, L = 30, 2L: 27.0041 s (speedup 1.45985); steps: char 40691077, parse 1181715, block 0, shortcuts 0; parsing the patterns 0.243987 s
+bml, L = 30, 2LJ: 26.8805 s (speedup 1.46656); steps: char 40691077, parse 998709, block 158310, shortcuts 0; parsing the patterns 0.242516 s
+bml, L = 100, plain: 31.043 s (speedup 1); steps: char 48889884, parse 0, block 0, shortcuts 0; parsing the patterns 0.000167582 s
+bml, L = 100, ell25_theta0: 18.6404 s (speedup 1.66536); steps: char 25062934, parse 0, block 0, shortcuts 513786; parsing the patterns 0.000124445 s
+bml, L = 100, 2L: 18.9105 s (speedup 1.64158); steps: char 27821680, parse 1294900, block 0, shortcuts 0; parsing the patterns 0.249944 s
+bml, L = 100, 2LJ: 18.5285 s (speedup 1.67542); steps: char 27821680, parse 1110558, block 161463, shortcuts 0; parsing the patterns 0.242065 s
+fb, L = 30, plain: 55.8824 s (speedup 1); steps: char 101710465, parse 0, block 0, shortcuts 0; parsing the patterns 0.000163216 s
+fb, L = 30, ell25_theta0: 43.2326 s (speedup 1.2926); steps: char 80694415, parse 0, block 0, shortcuts 432477; parsing the patterns 0.00021383 s
+fb, L = 30, 2L: 43.3646 s (speedup 1.28866); steps: char 82159688, parse 1181715, block 0, shortcuts 0; parsing the patterns 0.244905 s
+fb, L = 30, 2LJ: 43.3513 s (speedup 1.28906); steps: char 82159688, parse 998709, block 158310, shortcuts 0; parsing the patterns 0.243647 s
+mismatches against plain search: 0
+MEMs (BML): L = 30: 199121; L = 100: 79971; 
+KeBaB scan (fwd, L = 30): 0.512 s; 145423 fragments, 19590719 of 19999677 characters kept
+KeBaB + bml, L = 30, plain: 18.6645 s (speedup 1); steps: char 54819076, parse 0, block 0, shortcuts 0; parsing the patterns 0.00456111 s
+KeBaB + bml, L = 30, 2LJ: 12.7089 s (speedup 1.46862); steps: char 35268299, parse 998709, block 158310, shortcuts 0; parsing the patterns 0.446048 s
+KeBaB + fb, L = 30, plain: 17.9099 s (speedup 1); steps: char 51758054, parse 0, block 0, shortcuts 0; parsing the patterns 0.0045831 s
+KeBaB + fb, L = 30, 2LJ: 11.9864 s (speedup 1.49418); steps: char 32207277, parse 998709, block 158310, shortcuts 0; parsing the patterns 0.453338 s
+  check, KeBaB + bml, L = 30: 199121 MEMs from the fragments, 199121 from the full patterns: identical (positions and counts)
+  check, KeBaB + fb, L = 30: 199121 MEMs from the fragments, 199121 from the full patterns: identical (positions and counts)
+KeBaB scan (fwd, L = 100): 0.545 s; 73653 fragments, 15252960 of 19999677 characters kept
+KeBaB + bml, L = 100, plain: 14.9018 s (speedup 1); steps: char 42969496, parse 0, block 0, shortcuts 0; parsing the patterns 0.00215769 s
+KeBaB + bml, L = 100, 2LJ: 8.53458 s (speedup 1.74605); steps: char 22038050, parse 1088708, block 161550, shortcuts 0; parsing the patterns 0.327308 s
+  check, KeBaB + bml, L = 100: 79971 MEMs from the fragments, 79971 from the full patterns: identical (positions and counts)
+ropebwt3 BML, L = 30: 10.788 s
+KeBaB + ropebwt3 BML, L = 30: 9.172 s (plus the canonical scan)
+ropebwt3 BML, L = 100: 7.548 s
+KeBaB + ropebwt3 BML, L = 100: 6.194 s (plus the canonical scan)
+ropebwt3 forward-backward (--old-mem), L = 30: 19.044 s
+check, ropebwt3 against ours:
+bml_L30 vs bml30: only theirs 17530, of which 17530 occur only on the reverse strand; only ours 9173, of which 9173 lie inside a MEM only they report
+bml_L100 vs bml100: only theirs 106, of which 106 occur only on the reverse strand; only ours 29, of which 29 lie inside a MEM only they report
+fb_L30 vs fb30: only theirs 17530, of which 17530 occur only on the reverse strand; only ours 9173, of which 9173 lie inside a MEM only they report
+Movi 2 MEMs, L = 30: 66.700 s
+Movi 2 MEMs, L = 100: 32.510 s
+check, Movi 2 against ours:
+bml_L30 vs movi30: only theirs 17534, of which 17526 occur only on the reverse strand; only ours 9176, of which 9175 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (6, 2055, 2100) length 45
+   their MEM not explained by the reverse strand: (221, 5496, 5568) length 72
+   their MEM not explained by the reverse strand: (1033, 9146, 9346) length 200
+   their MEM not explained by the reverse strand: (1124, 7469, 7504) length 35
+   their MEM not explained by the reverse strand: (1124, 7891, 7938) length 47
+   our MEM not explained: (1289, 7175, 7212) length 37
+bml_L100 vs movi100: only theirs 112, of which 105 occur only on the reverse strand; only ours 29, of which 28 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (1033, 9146, 9346) length 200
+   their MEM not explained by the reverse strand: (1124, 6483, 6591) length 108
+   their MEM not explained by the reverse strand: (1124, 6528, 6637) length 109
+   their MEM not explained by the reverse strand: (1124, 7736, 7842) length 106
+   their MEM not explained by the reverse strand: (1124, 7737, 7846) length 109
+   our MEM not explained: (1124, 7736, 7846) length 110
+
+== n64, 5% errors
+bml, L = 30, plain: 35.344 s (speedup 1); steps: char 59932362, parse 0, block 0, shortcuts 0; parsing the patterns 0.000116802 s
+bml, L = 30, ell25_theta0: 36.8392 s (speedup 0.959413); steps: char 57062037, parse 0, block 0, shortcuts 99645; parsing the patterns 0.000102526 s
+bml, L = 30, 2L: 35.5543 s (speedup 0.994084); steps: char 58992516, parse 95539, block 0, shortcuts 0; parsing the patterns 0.195876 s
+bml, L = 30, 2LJ: 35.3481 s (speedup 0.999884); steps: char 58992516, parse 92881, block 5829, shortcuts 0; parsing the patterns 0.195476 s
+bml, L = 100, plain: 3.69961 s (speedup 1); steps: char 8762023, parse 0, block 0, shortcuts 0; parsing the patterns 7.8644e-05 s
+bml, L = 100, ell25_theta0: 3.57147 s (speedup 1.03588); steps: char 7480723, parse 0, block 0, shortcuts 38368; parsing the patterns 8.4591e-05 s
+bml, L = 100, 2L: 3.61408 s (speedup 1.02367); steps: char 7999251, parse 58777, block 0, shortcuts 0; parsing the patterns 0.183633 s
+bml, L = 100, 2LJ: 3.54482 s (speedup 1.04367); steps: char 7999251, parse 56494, block 4607, shortcuts 0; parsing the patterns 0.176523 s
+fb, L = 30, plain: 111.601 s (speedup 1); steps: char 257404258, parse 0, block 0, shortcuts 0; parsing the patterns 0.000133508 s
+fb, L = 30, ell25_theta0: 113.405 s (speedup 0.984093); steps: char 254533933, parse 0, block 0, shortcuts 99645; parsing the patterns 0.000132029 s
+fb, L = 30, 2L: 112.434 s (speedup 0.992587); steps: char 256464412, parse 95539, block 0, shortcuts 0; parsing the patterns 0.197012 s
+fb, L = 30, 2LJ: 112.421 s (speedup 0.992702); steps: char 256464412, parse 92881, block 5829, shortcuts 0; parsing the patterns 0.195862 s
+mismatches against plain search: 0
+MEMs (BML): L = 30: 304013; L = 100: 7163; 
+KeBaB scan (fwd, L = 30): 0.589 s; 246443 fragments, 12455206 of 20000101 characters kept
+KeBaB + bml, L = 30, plain: 12.6694 s (speedup 1); steps: char 43386112, parse 0, block 0, shortcuts 0; parsing the patterns 0.00706164 s
+KeBaB + bml, L = 30, 2LJ: 12.5915 s (speedup 1.00619); steps: char 42446266, parse 92881, block 5829, shortcuts 0; parsing the patterns 0.269018 s
+KeBaB + fb, L = 30, plain: 12.5445 s (speedup 1); steps: char 41491459, parse 0, block 0, shortcuts 0; parsing the patterns 0.00718115 s
+KeBaB + fb, L = 30, 2LJ: 12.48 s (speedup 1.00517); steps: char 40551613, parse 92881, block 5829, shortcuts 0; parsing the patterns 0.269612 s
+  check, KeBaB + bml, L = 30: 304013 MEMs from the fragments, 304013 from the full patterns: identical (positions and counts)
+  check, KeBaB + fb, L = 30: 304013 MEMs from the fragments, 304013 from the full patterns: identical (positions and counts)
+KeBaB scan (fwd, L = 100): 0.555 s; 9254 fragments, 1130554 of 20000101 characters kept
+KeBaB + bml, L = 100, plain: 0.950425 s (speedup 1); steps: char 2894391, parse 0, block 0, shortcuts 0; parsing the patterns 0.000270782 s
+KeBaB + bml, L = 100, 2LJ: 0.765734 s (speedup 1.2412); steps: char 2141758, parse 54107, block 4643, shortcuts 0; parsing the patterns 0.0316267 s
+  check, KeBaB + bml, L = 100: 7163 MEMs from the fragments, 7163 from the full patterns: identical (positions and counts)
+ropebwt3 BML, L = 30: 13.855 s
+KeBaB + ropebwt3 BML, L = 30: 8.010 s (plus the canonical scan)
+ropebwt3 BML, L = 100: 2.806 s
+KeBaB + ropebwt3 BML, L = 100: 0.478 s (plus the canonical scan)
+ropebwt3 forward-backward (--old-mem), L = 30: 39.712 s
+check, ropebwt3 against ours:
+bml_L30 vs bml30: only theirs 29057, of which 29057 occur only on the reverse strand; only ours 15099, of which 15099 lie inside a MEM only they report
+bml_L100 vs bml100: only theirs 10, of which 10 occur only on the reverse strand; only ours 1, of which 1 lie inside a MEM only they report
+fb_L30 vs fb30: only theirs 29057, of which 29057 occur only on the reverse strand; only ours 15099, of which 15099 lie inside a MEM only they report
+Movi 2 MEMs, L = 30: 127.894 s
+Movi 2 MEMs, L = 100: 18.974 s
+check, Movi 2 against ours:
+bml_L30 vs movi30: only theirs 29072, of which 29056 occur only on the reverse strand; only ours 15107, of which 15106 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (561, 3361, 3391) length 30
+   their MEM not explained by the reverse strand: (700, 520, 553) length 33
+   their MEM not explained by the reverse strand: (811, 4426, 4467) length 41
+   their MEM not explained by the reverse strand: (848, 5372, 5402) length 30
+   their MEM not explained by the reverse strand: (848, 5373, 5403) length 30
+   our MEM not explained: (848, 5372, 5448) length 76
+bml_L100 vs movi100: only theirs 10, of which 10 occur only on the reverse strand; only ours 1, of which 1 lie inside a MEM only they report
+
+finished 2026-10-29 19:06:09

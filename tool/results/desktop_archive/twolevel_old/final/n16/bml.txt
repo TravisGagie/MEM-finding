@@ -1,0 +1,8 @@
+bml, L = 100, plain: 287.314 s (speedup 1); steps: char 438174042, parse 0, block 0, shortcuts 0; parsing the patterns 4.16e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 39.5126 s (speedup 7.27146); steps: char 60157192, parse 0, block 0, shortcuts 2022720; parsing the patterns 1.025e-06 s
+bml, L = 100, 2L: 14.4829 s (speedup 19.8382); steps: char 12511630, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.21181 s
+bml, L = 100, 2LJ: 10.2742 s (speedup 27.9645); steps: char 12511630, parse 2707075, block 2570737, shortcuts 0; parsing the patterns 1.09601 s
+bml, L = 1000, plain: 290.538 s (speedup 1); steps: char 448653968, parse 0, block 0, shortcuts 0; parsing the patterns 3.95e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 37.2004 s (speedup 7.81007); steps: char 55652443, parse 0, block 0, shortcuts 2108896; parsing the patterns 7.55e-07 s
+bml, L = 1000, 2L: 12.2858 s (speedup 23.6483); steps: char 7774759, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.09665 s
+bml, L = 1000, 2LJ: 8.04757 s (speedup 36.1025); steps: char 7774759, parse 3110685, block 2492720, shortcuts 0; parsing the patterns 1.09723 s

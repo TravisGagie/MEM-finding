@@ -1,0 +1,2 @@
+bml, L = 100, plain: 0.919028 s (speedup 1); steps: char 2871023, parse 0, block 0, shortcuts 0; parsing the patterns 0.000286033 s
+bml, L = 100, 2LJ: 0.738863 s (speedup 1.24384); steps: char 2132446, parse 53271, block 3472, shortcuts 0; parsing the patterns 0.0302356 s

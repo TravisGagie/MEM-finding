@@ -1,0 +1,4 @@
+fb, L = 30, plain: 55.8824 s (speedup 1); steps: char 101710465, parse 0, block 0, shortcuts 0; parsing the patterns 0.000163216 s
+fb, L = 30, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 43.2326 s (speedup 1.2926); steps: char 80694415, parse 0, block 0, shortcuts 432477; parsing the patterns 0.00021383 s
+fb, L = 30, 2L: 43.3646 s (speedup 1.28866); steps: char 82159688, parse 1181715, block 0, shortcuts 0; parsing the patterns 0.244905 s
+fb, L = 30, 2LJ: 43.3513 s (speedup 1.28906); steps: char 82159688, parse 998709, block 158310, shortcuts 0; parsing the patterns 0.243647 s

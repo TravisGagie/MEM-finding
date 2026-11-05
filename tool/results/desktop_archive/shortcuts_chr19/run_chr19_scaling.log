@@ -1,0 +1,815 @@
+[2026-10-24 17:32:20] sizes 16,32,64, queries HG00423,HG00438, data in /home/travis/shortcuts/chr19_scaling (155 GB free)
+               total        used        free      shared  buff/cache   available
+Mem:              14           3           0           1          12          11
+[2026-10-24 17:32:20] building and testing the code
+178534343 checks, 0 failed
+124456 checks, 0 failed
+82646 checks, 0 failed
+[2026-10-24 17:32:35] building Big-BWT
+[2026-10-24 17:32:49] Big-BWT is /home/travis/shortcuts_build/Big-BWT/bigbwt
+[2026-10-24 17:32:49] downloading chromosome 19s for 64 individuals
+reference CHM13 chr19: 61707364 bases
+HG00423 hap1 -> query: HG00423#1#CM089409.1, 61651182 bases
+HG00438 hap1 -> query: HG00438#1#CM089182.1, 60966508 bases
+HG00097 hap1 -> collection: HG00097#1#CM094070.1, 61077493 bases, strand +
+HG00097 hap2 -> collection: HG00097#2#CM094085.1, 61125280 bases, strand +
+HG00099 hap1 -> collection: HG00099#1#CM087326.1, 62336960 bases, strand +
+HG00099 hap2 -> collection: HG00099#2#CM087370.1, 62320705 bases, strand +
+HG00126 hap1 -> collection: HG00126#1#CM090118.1, 61924483 bases, strand +
+HG00126 hap2 -> collection: HG00126#2#CM090133.1, 61592150 bases, strand +
+HG00128 hap1 -> collection: HG00128#1#CM090090.1, 60445756 bases, strand +
+HG00128 hap2 -> collection: HG00128#2#CM090105.1, 61467610 bases, strand +
+HG00133: skipped
+HG00140 hap1 -> collection: HG00140#1#CM087120.1, 61951028 bases, strand +
+HG00140 hap2 -> collection: HG00140#2#CM087145.1, 59211742 bases, strand +
+HG00146: skipped
+HG002: skipped
+HG00232 hap1 -> collection: HG00232#1#CM090000.1, 60318481 bases, strand +
+HG00232 hap2 -> collection: HG00232#2#CM090032.1, 61648317 bases, strand +
+HG00235 hap1 -> collection: HG00235#1#CM094378.1, 61759272 bases, strand +
+HG00235 hap2 -> collection: HG00235#2#CM094405.1, 61339476 bases, strand +
+HG00253: skipped
+HG00272 hap1 -> collection: HG00272#1#CM094199.1, 61221721 bases, strand +
+HG00272 hap2 -> collection: HG00272#2#CM094225.1, 63486065 bases, strand +
+HG00280 hap1 -> collection: HG00280#1#CM087157.1, 62168755 bases, strand +
+HG00280 hap2 -> collection: HG00280#2#CM087169.1, 59604861 bases, strand +
+HG00290 hap1 -> collection: HG00290#1#CM089990.1, 61006069 bases, strand +
+HG00290 hap2 -> collection: HG00290#2#CM090011.1, 61094987 bases, strand +
+HG00320 hap1 -> collection: HG00320#1#CM089959.1, 61987789 bases, strand +
+HG00320 hap2 -> collection: HG00320#2#CM089975.1, 61506238 bases, strand +
+HG00321 hap1 -> collection: HG00321#1#CM089551.1, 60983011 bases, strand +
+HG00321 hap2 -> collection: HG00321#2#CM089581.1, 63745078 bases, strand +
+HG00323: skipped
+HG00329 hap1 -> collection: HG00329#1#CM094236.1, 60473049 bases, strand +
+HG00329 hap2 -> collection: HG00329#2#CM094247.1, 62456877 bases, strand +
+HG00344 hap1 -> collection: HG00344#1#CM094509.1, 62001390 bases, strand +
+HG00344 hap2 -> collection: HG00344#2#CM094520.1, 60540825 bases, strand +
+HG00350 hap1 -> collection: HG00350#1#CM094479.1, 61981818 bases, strand +
+HG00350 hap2 -> collection: HG00350#2#CM094499.1, 64240453 bases, strand +
+HG00408 hap1 -> collection: HG00408#1#CM085963.1, 61061584 bases, strand +
+HG00408 hap2 -> collection: HG00408#2#CM085976.1, 62956045 bases, strand +
+HG005 hap1 -> collection: HG005#1#CM099993.1, 60960980 bases, strand +
+HG005 hap2 -> collection: HG005#2#CM099982.1, 63280514 bases, strand +
+HG00544 hap1 -> collection: HG00544#1#CM089379.1, 61072110 bases, strand +
+HG00544 hap2 -> collection: HG00544#2#CM089394.1, 62474007 bases, strand +
+HG00558: skipped
+HG00597 hap1 -> collection: HG00597#1#CM085776.1, 62199542 bases, strand +
+HG00597 hap2 -> collection: HG00597#2#CM085790.1, 63449984 bases, strand +
+HG00609: skipped
+HG00621 hap1 -> collection: HG00621#1#CM087860.1, 61553647 bases, strand +
+HG00621 hap2 -> collection: HG00621#2#CM087873.1, 61666653 bases, strand +
+HG00639: skipped
+HG00642 hap1 -> collection: HG00642#1#CM086615.1, 60360452 bases, strand +
+HG00642 hap2 -> collection: HG00642#2#CM086631.1, 61778322 bases, strand +
+HG00658 hap1 -> collection: HG00658#1#CM088784.1, 60719003 bases, strand +
+HG00658 hap2 -> collection: HG00658#2#CM088807.1, 61539013 bases, strand +
+HG00673: skipped
+HG00706 hap1 -> collection: HG00706#1#CM100023.1, 61215485 bases, strand +
+HG00706 hap2 -> collection: HG00706#2#CM100068.1, 61217943 bases, strand +
+HG00733 hap1 -> collection: HG00733#1#CM099638.1, 61960023 bases, strand +
+HG00733 hap2 -> collection: HG00733#2#CM099651.1, 61671403 bases, strand +
+HG00735: skipped
+HG00738 hap1 -> collection: HG00738#1#CM086654.1, 60877128 bases, strand +
+HG00738 hap2 -> collection: HG00738#2#CM086688.1, 62153136 bases, strand +
+HG00741: skipped
+HG01071 hap1 -> collection: HG01071#1#CM089124.1, 61474163 bases, strand +
+HG01071 hap2 -> collection: HG01071#2#CM089138.1, 61193487 bases, strand +
+HG01074 hap1 -> collection: HG01074#1#CM088794.1, 62109177 bases, strand +
+HG01074 hap2 -> collection: HG01074#2#CM088820.1, 62195315 bases, strand +
+HG01081 hap1 -> collection: HG01081#1#CM088577.1, 61089514 bases, strand +
+HG01081 hap2 -> collection: HG01081#2#CM088593.1, 60367573 bases, strand +
+HG01099 hap1 -> collection: HG01099#1#CM086268.1, 61451983 bases, strand +
+HG01099 hap2 -> collection: HG01099#2#CM086277.1, 61114526 bases, strand +
+HG01106: skipped
+HG01109 hap1 -> collection: HG01109#1#CM092095.1, 61422232 bases, strand +
+HG01109 hap2 -> collection: HG01109#2#CM092083.1, 61914030 bases, strand +
+HG01123 hap1 -> collection: HG01123#1#CM089091.1, 61184526 bases, strand +
+HG01123 hap2 -> collection: HG01123#2#CM089106.1, 60990893 bases, strand +
+HG01150 hap1 -> collection: HG01150#1#CM088608.1, 61482345 bases, strand +
+HG01150 hap2 -> collection: HG01150#2#CM088624.1, 61226752 bases, strand +
+HG01167 hap1 -> collection: HG01167#1#CM094536.1, 64067022 bases, strand +
+HG01167 hap2 -> collection: HG01167#2#CM094550.1, 61604043 bases, strand +
+HG01175 hap1 -> collection: HG01175#1#CM087933.1, 64163585 bases, strand +
+HG01175 hap2 -> collection: HG01175#2#CM087947.1, 61614614 bases, strand +
+HG01192 hap1 -> collection: HG01192#1#CM085937.1, 59746770 bases, strand +
+HG01192 hap2 -> collection: HG01192#2#CM085951.1, 60569984 bases, strand +
+HG01243 hap1 -> collection: HG01243#1#CM099611.1, 59740550 bases, strand +
+HG01243 hap2 -> collection: HG01243#2#CM099600.1, 61086202 bases, strand +
+HG01252 hap1 -> collection: HG01252#1#CM088833.1, 62423868 bases, strand +
+HG01252 hap2 -> collection: HG01252#2#CM088863.1, 61018220 bases, strand +
+HG01255 hap1 -> collection: HG01255#1#CM086715.1, 60957360 bases, strand +
+HG01255 hap2 -> collection: HG01255#2#CM086727.1, 60529650 bases, strand +
+HG01258 hap1 -> collection: HG01258#1#CM088122.1, 62031599 bases, strand +
+HG01258 hap2 -> collection: HG01258#2#CM088149.1, 62059894 bases, strand +
+HG01261: skipped
+HG01346 hap1 -> collection: HG01346#1#CM086594.1, 61813040 bases, strand +
+HG01346 hap2 -> collection: HG01346#2#CM086606.1, 62512286 bases, strand +
+HG01358 hap1 -> collection: HG01358#1#CM089063.1, 62103869 bases, strand +
+HG01358 hap2 -> collection: HG01358#2#CM089078.1, 61693570 bases, strand +
+HG01361: skipped
+HG01433 hap1 -> collection: HG01433#1#CM086489.1, 61517915 bases, strand +
+HG01433 hap2 -> collection: HG01433#2#CM086521.1, 63811495 bases, strand +
+HG01496 hap1 -> collection: HG01496#1#CM086382.1, 62254873 bases, strand +
+HG01496 hap2 -> collection: HG01496#2#CM086399.1, 60829680 bases, strand +
+HG01530: skipped
+HG01784 hap1 -> collection: HG01784#1#CM087578.1, 61992536 bases, strand +
+HG01784 hap2 -> collection: HG01784#2#CM087606.1, 60112923 bases, strand +
+HG01786 hap1 -> collection: HG01786#1#CM089511.1, 61310716 bases, strand +
+HG01786 hap2 -> collection: HG01786#2#CM089535.1, 60629913 bases, strand +
+HG01884 hap1 -> collection: HG01884#1#CM086414.1, 62148846 bases, strand +
+HG01884 hap2 -> collection: HG01884#2#CM086430.1, 62479697 bases, strand +
+HG01891 hap1 -> collection: HG01891#1#CM088190.1, 61012003 bases, strand +
+HG01891 hap2 -> collection: HG01891#2#CM088213.1, 61129125 bases, strand +
+HG01928 hap1 -> collection: HG01928#1#CM088998.1, 60438415 bases, strand +
+HG01928 hap2 -> collection: HG01928#2#CM089015.1, 62109857 bases, strand +
+HG01934 hap1 -> collection: HG01934#1#CM088850.1, 61582084 bases, strand +
+HG01934 hap2 -> collection: HG01934#2#CM088891.1, 60925520 bases, strand +
+HG01940 hap1 -> collection: HG01940#1#CM088641.1, 63143583 bases, strand +
+HG01940 hap2 -> collection: HG01940#2#CM088670.1, 63418873 bases, strand +
+HG01943 hap1 -> collection: HG01943#1#CM089359.1, 61542429 bases, strand +
+HG01943 hap2 -> collection: HG01943#2#CM089368.1, 63494197 bases, strand +
+HG01952: skipped
+HG01960 hap1 -> collection: HG01960#1#CM088654.1, 59274230 bases, strand +
+HG01960 hap2 -> collection: HG01960#2#CM088680.1, 61164158 bases, strand +
+HG01969: skipped
+HG01975: skipped
+HG01978: skipped
+HG01981 hap1 -> collection: HG01981#1#CM086330.1, 62296494 bases, strand +
+HG01981 hap2 -> collection: HG01981#2#CM086342.1, 61904096 bases, strand +
+HG01993 hap1 -> collection: HG01993#1#CM086503.1, 61962514 bases, strand +
+HG01993 hap2 -> collection: HG01993#2#CM086543.1, 61954750 bases, strand +
+HG02004: skipped
+HG02015 hap1 -> collection: HG02015#1#CM085896.1, 61217153 bases, strand +
+HG02015 hap2 -> collection: HG02015#2#CM085904.1, 61237629 bases, strand +
+HG02027: skipped
+HG02040 hap1 -> collection: HG02040#1#CM087382.1, 59662296 bases, strand +
+HG02040 hap2 -> collection: HG02040#2#CM087415.1, 63866339 bases, strand +
+HG02055: skipped
+HG02056: skipped
+HG02071 hap1 -> collection: HG02071#1#CM088267.1, 61299791 bases, strand +
+HG02071 hap2 -> collection: HG02071#2#CM088291.1, 61924450 bases, strand +
+HG02074 hap1 -> collection: HG02074#1#CM088278.1, 60397238 bases, strand +
+HG02074 hap2 -> collection: HG02074#2#CM088304.1, 62301436 bases, strand +
+HG02080 hap1 -> collection: HG02080#1#CM092070.1, 61033181 bases, strand +
+HG02080 hap2 -> collection: HG02080#2#CM092056.1, 62087392 bases, strand +
+HG02083: skipped
+HG02109: skipped
+HG02129 hap1 -> collection: HG02129#1#CM085857.1, 60858221 bases, strand +
+HG02129 hap2 -> collection: HG02129#2#CM085867.1, 61543377 bases, strand +
+HG02132: skipped
+HG02135: skipped
+  retrying https://s3-us-west-2.amazonaws.com/human-pangenomics/working/HPRC_PLUS/HG02145/assemblies/release2/HG02145_mat_hprc_r2_v1.0.1.fa.gz.fai: <urlopen error [Errno 104] Connection reset by peer>
+HG02145 hap1 -> collection: HG02145#1#CM099682.1, 59742753 bases, strand +
+HG02145 hap2 -> collection: HG02145#2#CM099667.1, 62245831 bases, strand +
+HG02148: skipped
+HG02155 hap1 -> collection: HG02155#1#CM091919.1, 60943729 bases, strand +
+HG02155 hap2 -> collection: HG02155#2#CM091930.1, 61912954 bases, strand +
+HG02165 hap1 -> collection: HG02165#1#CM087453.1, 63470591 bases, strand +
+HG02165 hap2 -> collection: HG02165#2#CM087468.1, 63631934 bases, strand +
+HG02178 hap1 -> collection: HG02178#1#CM089932.1, 61733309 bases, strand +
+HG02178 hap2 -> collection: HG02178#2#CM089946.1, 61497721 bases, strand +
+collection: the reference and 64 individuals
+role	sample	haplotype	sequence	length	N	strand
+reference	CHM13	0	CHM13#0#chr19	61707364	0	+
+collection	HG00097	1	HG00097#1#CM094070.1	61077493	0	+
+collection	HG00097	2	HG00097#2#CM094085.1	61125280	142121	+
+collection	HG00099	1	HG00099#1#CM087326.1	62336960	0	+
+collection	HG00099	2	HG00099#2#CM087370.1	62320705	0	+
+collection	HG00126	1	HG00126#1#CM090118.1	61924483	20782	+
+collection	HG00126	2	HG00126#2#CM090133.1	61592150	0	+
+collection	HG00128	1	HG00128#1#CM090090.1	60445756	18644	+
+collection	HG00128	2	HG00128#2#CM090105.1	61467610	0	+
+collection	HG00140	1	HG00140#1#CM087120.1	61951028	0	+
+collection	HG00140	2	HG00140#2#CM087145.1	59211742	20814	+
+collection	HG00232	1	HG00232#1#CM090000.1	60318481	0	+
+collection	HG00232	2	HG00232#2#CM090032.1	61648317	0	+
+collection	HG00235	1	HG00235#1#CM094378.1	61759272	102738	+
+collection	HG00235	2	HG00235#2#CM094405.1	61339476	0	+
+collection	HG00272	1	HG00272#1#CM094199.1	61221721	0	+
+collection	HG00272	2	HG00272#2#CM094225.1	63486065	100	+
+collection	HG00280	1	HG00280#1#CM087157.1	62168755	0	+
+collection	HG00280	2	HG00280#2#CM087169.1	59604861	0	+
+collection	HG00290	1	HG00290#1#CM089990.1	61006069	100	+
+collection	HG00290	2	HG00290#2#CM090011.1	61094987	0	+
+collection	HG00320	1	HG00320#1#CM089959.1	61987789	100	+
+collection	HG00320	2	HG00320#2#CM089975.1	61506238	260601	+
+collection	HG00321	1	HG00321#1#CM089551.1	60983011	0	+
+collection	HG00321	2	HG00321#2#CM089581.1	63745078	0	+
+collection	HG00329	1	HG00329#1#CM094236.1	60473049	0	+
+collection	HG00329	2	HG00329#2#CM094247.1	62456877	0	+
+collection	HG00344	1	HG00344#1#CM094509.1	62001390	419721	+
+collection	HG00344	2	HG00344#2#CM094520.1	60540825	0	+
+collection	HG00350	1	HG00350#1#CM094479.1	61981818	0	+
+collection	HG00350	2	HG00350#2#CM094499.1	64240453	34866	+
+collection	HG00408	1	HG00408#1#CM085963.1	61061584	0	+
+collection	HG00408	2	HG00408#2#CM085976.1	62956045	0	+
+collection	HG005	1	HG005#1#CM099993.1	60960980	0	+
+collection	HG005	2	HG005#2#CM099982.1	63280514	1158882	+
+collection	HG00544	1	HG00544#1#CM089379.1	61072110	4831	+
+collection	HG00544	2	HG00544#2#CM089394.1	62474007	200	+
+collection	HG00597	1	HG00597#1#CM085776.1	62199542	0	+
+collection	HG00597	2	HG00597#2#CM085790.1	63449984	0	+
+collection	HG00621	1	HG00621#1#CM087860.1	61553647	0	+
+collection	HG00621	2	HG00621#2#CM087873.1	61666653	0	+
+collection	HG00642	1	HG00642#1#CM086615.1	60360452	0	+
+collection	HG00642	2	HG00642#2#CM086631.1	61778322	22005	+
+collection	HG00658	1	HG00658#1#CM088784.1	60719003	3286	+
+collection	HG00658	2	HG00658#2#CM088807.1	61539013	0	+
+collection	HG00706	1	HG00706#1#CM100023.1	61215485	0	+
+collection	HG00706	2	HG00706#2#CM100068.1	61217943	0	+
+collection	HG00733	1	HG00733#1#CM099638.1	61960023	0	+
+collection	HG00733	2	HG00733#2#CM099651.1	61671403	4275	+
+collection	HG00738	1	HG00738#1#CM086654.1	60877128	0	+
+collection	HG00738	2	HG00738#2#CM086688.1	62153136	30107	+
+collection	HG01071	1	HG01071#1#CM089124.1	61474163	0	+
+collection	HG01071	2	HG01071#2#CM089138.1	61193487	0	+
+collection	HG01074	1	HG01074#1#CM088794.1	62109177	0	+
+collection	HG01074	2	HG01074#2#CM088820.1	62195315	100	+
+collection	HG01081	1	HG01081#1#CM088577.1	61089514	0	+
+collection	HG01081	2	HG01081#2#CM088593.1	60367573	0	+
+collection	HG01099	1	HG01099#1#CM086268.1	61451983	100	+
+collection	HG01099	2	HG01099#2#CM086277.1	61114526	0	+
+collection	HG01109	1	HG01109#1#CM092095.1	61422232	104283	+
+collection	HG01109	2	HG01109#2#CM092083.1	61914030	300	+
+collection	HG01123	1	HG01123#1#CM089091.1	61184526	0	+
+collection	HG01123	2	HG01123#2#CM089106.1	60990893	0	+
+collection	HG01150	1	HG01150#1#CM088608.1	61482345	0	+
+collection	HG01150	2	HG01150#2#CM088624.1	61226752	61192	+
+collection	HG01167	1	HG01167#1#CM094536.1	64067022	0	+
+collection	HG01167	2	HG01167#2#CM094550.1	61604043	11362	+
+collection	HG01175	1	HG01175#1#CM087933.1	64163585	0	+
+collection	HG01175	2	HG01175#2#CM087947.1	61614614	100	+
+collection	HG01192	1	HG01192#1#CM085937.1	59746770	100	+
+collection	HG01192	2	HG01192#2#CM085951.1	60569984	0	+
+collection	HG01243	1	HG01243#1#CM099611.1	59740550	0	+
+collection	HG01243	2	HG01243#2#CM099600.1	61086202	22187	+
+collection	HG01252	1	HG01252#1#CM088833.1	62423868	0	+
+collection	HG01252	2	HG01252#2#CM088863.1	61018220	0	+
+collection	HG01255	1	HG01255#1#CM086715.1	60957360	0	+
+collection	HG01255	2	HG01255#2#CM086727.1	60529650	0	+
+collection	HG01258	1	HG01258#1#CM088122.1	62031599	0	+
+collection	HG01258	2	HG01258#2#CM088149.1	62059894	0	+
+collection	HG01346	1	HG01346#1#CM086594.1	61813040	1178001	+
+collection	HG01346	2	HG01346#2#CM086606.1	62512286	19884	+
+collection	HG01358	1	HG01358#1#CM089063.1	62103869	0	+
+collection	HG01358	2	HG01358#2#CM089078.1	61693570	0	+
+collection	HG01433	1	HG01433#1#CM086489.1	61517915	0	+
+collection	HG01433	2	HG01433#2#CM086521.1	63811495	287297	+
+collection	HG01496	1	HG01496#1#CM086382.1	62254873	0	+
+collection	HG01496	2	HG01496#2#CM086399.1	60829680	0	+
+collection	HG01784	1	HG01784#1#CM087578.1	61992536	0	+
+collection	HG01784	2	HG01784#2#CM087606.1	60112923	100	+
+collection	HG01786	1	HG01786#1#CM089511.1	61310716	0	+
+collection	HG01786	2	HG01786#2#CM089535.1	60629913	0	+
+collection	HG01884	1	HG01884#1#CM086414.1	62148846	1159975	+
+collection	HG01884	2	HG01884#2#CM086430.1	62479697	19078	+
+collection	HG01891	1	HG01891#1#CM088190.1	61012003	0	+
+collection	HG01891	2	HG01891#2#CM088213.1	61129125	200	+
+collection	HG01928	1	HG01928#1#CM088998.1	60438415	0	+
+collection	HG01928	2	HG01928#2#CM089015.1	62109857	0	+
+collection	HG01934	1	HG01934#1#CM088850.1	61582084	18608	+
+collection	HG01934	2	HG01934#2#CM088891.1	60925520	0	+
+collection	HG01940	1	HG01940#1#CM088641.1	63143583	2137305	+
+collection	HG01940	2	HG01940#2#CM088670.1	63418873	0	+
+collection	HG01943	1	HG01943#1#CM089359.1	61542429	0	+
+collection	HG01943	2	HG01943#2#CM089368.1	63494197	23804	+
+collection	HG01960	1	HG01960#1#CM088654.1	59274230	0	+
+collection	HG01960	2	HG01960#2#CM088680.1	61164158	0	+
+collection	HG01981	1	HG01981#1#CM086330.1	62296494	23616	+
+collection	HG01981	2	HG01981#2#CM086342.1	61904096	0	+
+collection	HG01993	1	HG01993#1#CM086503.1	61962514	20558	+
+collection	HG01993	2	HG01993#2#CM086543.1	61954750	0	+
+collection	HG02015	1	HG02015#1#CM085896.1	61217153	0	+
+collection	HG02015	2	HG02015#2#CM085904.1	61237629	0	+
+collection	HG02040	1	HG02040#1#CM087382.1	59662296	0	+
+collection	HG02040	2	HG02040#2#CM087415.1	63866339	100	+
+collection	HG02071	1	HG02071#1#CM088267.1	61299791	1985	+
+collection	HG02071	2	HG02071#2#CM088291.1	61924450	0	+
+collection	HG02074	1	HG02074#1#CM088278.1	60397238	0	+
+collection	HG02074	2	HG02074#2#CM088304.1	62301436	0	+
+collection	HG02080	1	HG02080#1#CM092070.1	61033181	0	+
+collection	HG02080	2	HG02080#2#CM092056.1	62087392	0	+
+collection	HG02129	1	HG02129#1#CM085857.1	60858221	0	+
+collection	HG02129	2	HG02129#2#CM085867.1	61543377	0	+
+collection	HG02145	1	HG02145#1#CM099682.1	59742753	23186	+
+collection	HG02145	2	HG02145#2#CM099667.1	62245831	42565	+
+collection	HG02155	1	HG02155#1#CM091919.1	60943729	373884	+
+collection	HG02155	2	HG02155#2#CM091930.1	61912954	0	+
+collection	HG02165	1	HG02165#1#CM087453.1	63470591	100	+
+collection	HG02165	2	HG02165#2#CM087468.1	63631934	16712	+
+collection	HG02178	1	HG02178#1#CM089932.1	61733309	0	+
+collection	HG02178	2	HG02178#2#CM089946.1	61497721	0	+
+query	HG00423	1	HG00423#1#CM089409.1	61651182	163509	+
+query	HG00438	1	HG00438#1#CM089182.1	60966508	19557	+
+[2026-10-24 18:02:20] queries pinned to CPU 9
+[2026-10-24 18:02:21] === 16 individuals (148 GB free)
+[2026-10-24 18:02:23] Big-BWT, fwd
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection.txt -w 10 -p 100
+Elapsed time: 82.1725
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection.txt
+Elapsed time: 5.6060
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection.txt
+Elapsed time: 69.5441
+Total construction time: 157.3227
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection.txt"
+	User time (seconds): 154.09
+	System time (seconds): 3.31
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:37.42
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1285452
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 13
+	Minor (reclaiming a frame) page faults: 442935
+	Voluntary context switches: 45
+	Involuntary context switches: 1106
+	Swaps: 0
+	File system inputs: 3882424
+	File system outputs: 4968040
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-24 18:05:01] RLBWT and shortcuts, fwd, tau = 3
+RLBWT: n = 2032742766, r = 34769494, 164718484 bytes [10.6769 s]
+ell = 16: 2781967 entrances, 70321054 deaths [121.533 s]
+  theta = 0: 2781967 entrances, 154010336 bytes
+ell = 25: 2055337 entrances, 53813140 deaths [137.155 s]
+  theta = 0: 2055337 entrances, 118622728 bytes
+ell = 50: 1147630 entrances, 22144012 deaths [150.217 s]
+  theta = 0: 1147630 entrances, 69003488 bytes
+[2026-10-24 18:12:09] shortcuts, fwd, tau = 6
+RLBWT: n = 2032742766, r = 34769494, 164718484 bytes [0.116762 s]
+ell = 16: 2781967 entrances, 71521177 deaths [174.458 s]
+  theta = 0: 2781967 entrances, 155538448 bytes
+ell = 25: 2055337 entrances, 54902059 deaths [197.793 s]
+  theta = 0: 2055337 entrances, 119750352 bytes
+ell = 50: 1147630 entrances, 22820612 deaths [216.977 s]
+  theta = 0: 1147630 entrances, 69633264 bytes
+[2026-10-24 18:22:10] Big-BWT, rev
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection_rev.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection_rev.txt -w 10 -p 100
+Elapsed time: 81.0715
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection_rev.txt
+Elapsed time: 5.3165
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection_rev.txt
+Elapsed time: 69.9160
+Total construction time: 156.3041
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/collection_rev.txt"
+	User time (seconds): 153.06
+	System time (seconds): 3.23
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 2:36.40
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1308864
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 445900
+	Voluntary context switches: 19
+	Involuntary context switches: 1354
+	Swaps: 0
+	File system inputs: 3927840
+	File system outputs: 4954312
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-24 18:24:46] RLBWT and shortcuts, rev, tau = 3
+RLBWT: n = 2032742766, r = 34775335, 164742582 bytes [10.6547 s]
+ell = 16: 2781967 entrances, 70309201 deaths [120.941 s]
+  theta = 0: 2781967 entrances, 154004096 bytes
+ell = 25: 2055337 entrances, 53807425 deaths [137.205 s]
+  theta = 0: 2055337 entrances, 118624232 bytes
+ell = 50: 1147630 entrances, 22099320 deaths [150.125 s]
+  theta = 0: 1147630 entrances, 69001576 bytes
+[2026-10-24 18:31:53] shortcuts, rev, tau = 6
+RLBWT: n = 2032742766, r = 34775335, 164742582 bytes [0.122206 s]
+ell = 16: 2781967 entrances, 71503008 deaths [175.608 s]
+  theta = 0: 2781967 entrances, 155531984 bytes
+ell = 25: 2055337 entrances, 54889581 deaths [199.191 s]
+  theta = 0: 2055337 entrances, 119752464 bytes
+ell = 50: 1147630 entrances, 22780890 deaths [218.869 s]
+  theta = 0: 1147630 entrances, 69631168 bytes
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,2032742766,34769494,164718484,154010336,318728820,2781967,167959701,121.533,3.71225,3856709,0,1074742,0,173010176,70321054
+25,0,3,2032742766,34769494,164718484,118622728,283341212,2055337,126316947,137.155,2.70028,2468293,0,412956,0,190143900,53813140
+50,0,3,2032742766,34769494,164718484,69003488,233721972,1147630,62761212,150.217,1.42237,1234146,0,86516,0,205160200,22144012
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,2032742766,34769494,164718484,155538448,320256932,2781967,167959701,174.458,3.72619,3856709,0,1074742,0,239882496,71521177
+25,0,6,2032742766,34769494,164718484,119750352,284468836,2055337,126316947,197.793,2.7357,2468293,0,412956,0,267182900,54902059
+50,0,6,2032742766,34769494,164718484,69633264,234351748,1147630,62761212,216.977,1.43771,1234146,0,86516,0,291214200,22820612
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,2032742766,34775335,164742582,154004096,318746678,2781967,167959701,120.941,3.71004,3856709,0,1074742,0,172960016,70309201
+25,0,3,2032742766,34775335,164742582,118624232,283366814,2055337,126316544,137.205,2.70247,2468293,0,412956,0,190164500,53807425
+50,0,3,2032742766,34775335,164742582,69001576,233744158,1147630,62760921,150.125,1.42098,1234146,0,86516,0,205126750,22099320
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,2032742766,34775335,164742582,155531984,320274566,2781967,167959701,175.608,3.75132,3856709,0,1074742,0,239794704,71503008
+25,0,6,2032742766,34775335,164742582,119752464,284495046,2055337,126316544,199.191,2.71864,2468293,0,412956,0,267241300,54889581
+50,0,6,2032742766,34775335,164742582,69631168,234373750,1147630,62760921,218.869,1.43484,1234146,0,86516,0,291118350,22780890
+[2026-10-24 18:41:55] 16 individuals, t6_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 289725 ms plain, 40242.9 ms with shortcuts (speedup 7.19942)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 291534 ms plain, 37803.6 ms with shortcuts (speedup 7.71179)
+[2026-10-24 19:36:54] 16 individuals, t6_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 286365 ms plain, 39736.3 ms with shortcuts (speedup 7.20662)
+[2026-10-24 20:04:05] 16 individuals, t6_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 288052 ms plain, 50303.4 ms with shortcuts (speedup 5.7263)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 291582 ms plain, 48239.1 ms with shortcuts (speedup 6.04452)
+[2026-10-24 21:00:36] 16 individuals, t6_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 286944 ms plain, 50101 ms with shortcuts (speedup 5.72731)
+[2026-10-24 21:28:41] 16 individuals, t6_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 288100 ms plain, 45638.4 ms with shortcuts (speedup 6.31268)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 291732 ms plain, 43236.8 ms with shortcuts (speedup 6.74731)
+[2026-10-24 22:24:25] 16 individuals, t6_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 287416 ms plain, 44719.6 ms with shortcuts (speedup 6.42706)
+[2026-10-24 22:52:05] 16 individuals, t3_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 287865 ms plain, 43765.1 ms with shortcuts (speedup 6.57752)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 291518 ms plain, 41376.5 ms with shortcuts (speedup 7.04549)
+[2026-10-24 23:47:29] 16 individuals, t3_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 286544 ms plain, 43377.9 ms with shortcuts (speedup 6.60577)
+[2026-10-25 00:15:01] 16 individuals, t3_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 287626 ms plain, 64164.5 ms with shortcuts (speedup 4.48263)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 291303 ms plain, 62271.8 ms with shortcuts (speedup 4.67793)
+[2026-10-25 01:13:49] 16 individuals, t3_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 286863 ms plain, 64017.7 ms with shortcuts (speedup 4.481)
+[2026-10-25 01:43:03] 16 individuals, t3_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 287496 ms plain, 45905.7 ms with shortcuts (speedup 6.26275)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 291097 ms plain, 43395.5 ms with shortcuts (speedup 6.70801)
+[2026-10-25 02:38:43] 16 individuals, t3_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 287230 ms plain, 44877.6 ms with shortcuts (speedup 6.40028)
+config	algorithm	L	patterns	plain_s	shortcut_s	speedup	plain_steps_per_char	shortcut_steps_per_char	shortcuts_per_kchar	MEMs	mean_MEM_length
+t3_ell16_bml/ell16_theta0	bml	100	2	287.6	64.16	4.48	3.582	0.747	37.26	38896	4771
+t3_ell16_bml/ell16_theta0	bml	1000	2	291.3	62.27	4.68	3.667	0.722	38.51	22714	7882
+t3_ell16_fb/ell16_theta0	fb	1000	2	286.9	64.02	4.48	3.573	0.750	36.82	22714	7882
+t3_ell25_bml/ell25_theta0	bml	100	2	287.9	43.77	6.58	3.582	0.535	25.57	38896	4771
+t3_ell25_bml/ell25_theta0	bml	1000	2	291.5	41.38	7.05	3.667	0.499	26.47	22714	7882
+t3_ell25_fb/ell25_theta0	fb	1000	2	286.5	43.38	6.61	3.573	0.536	25.25	22714	7882
+t3_ell50_bml/ell50_theta0	bml	100	2	287.5	45.91	6.26	3.582	0.568	13.90	38896	4771
+t3_ell50_bml/ell50_theta0	bml	1000	2	291.1	43.40	6.71	3.667	0.526	14.64	22714	7882
+t3_ell50_fb/ell50_theta0	fb	1000	2	287.2	44.88	6.40	3.573	0.559	13.89	22714	7882
+t6_ell16_bml/ell16_theta0	bml	100	2	288.1	50.30	5.73	3.582	0.610	21.51	38896	4771
+t6_ell16_bml/ell16_theta0	bml	1000	2	291.6	48.24	6.04	3.667	0.581	22.32	22714	7882
+t6_ell16_fb/ell16_theta0	fb	1000	2	286.9	50.10	5.73	3.573	0.613	21.07	22714	7882
+t6_ell25_bml/ell25_theta0	bml	100	2	289.7	40.24	7.20	3.582	0.499	16.50	38896	4771
+t6_ell25_bml/ell25_theta0	bml	1000	2	291.5	37.80	7.71	3.667	0.462	17.20	22714	7882
+t6_ell25_fb/ell25_theta0	fb	1000	2	286.4	39.74	7.21	3.573	0.500	16.17	22714	7882
+t6_ell50_bml/ell50_theta0	bml	100	2	288.1	45.64	6.31	3.582	0.566	10.73	38896	4771
+t6_ell50_bml/ell50_theta0	bml	1000	2	291.7	43.24	6.75	3.667	0.524	11.46	22714	7882
+t6_ell50_fb/ell50_theta0	fb	1000	2	287.4	44.72	6.43	3.573	0.558	10.72	22714	7882
+483M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t3
+483M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t3
+487M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6
+487M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/rev_t6
+[2026-10-25 03:06:23] === 32 individuals (146 GB free)
+[2026-10-25 03:06:29] Big-BWT, fwd
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection.txt -w 10 -p 100
+Elapsed time: 161.6687
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection.txt
+Elapsed time: 12.7675
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection.txt
+Elapsed time: 97.8552
+Total construction time: 272.2915
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection.txt"
+	User time (seconds): 266.69
+	System time (seconds): 5.66
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:32.42
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1703440
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 611886
+	Voluntary context switches: 62
+	Involuntary context switches: 2089
+	Swaps: 0
+	File system inputs: 7817712
+	File system outputs: 9594928
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-25 03:11:01] RLBWT and shortcuts, fwd, tau = 3
+RLBWT: n = 4002108659, r = 37017420, 182869912 bytes [19.0283 s]
+ell = 16: 2781967 entrances, 138419231 deaths [125.349 s]
+  theta = 0: 2781967 entrances, 238811704 bytes
+ell = 25: 2055337 entrances, 105854070 deaths [140.513 s]
+  theta = 0: 2055337 entrances, 182374296 bytes
+ell = 50: 1147630 entrances, 43738749 deaths [152.247 s]
+  theta = 0: 1147630 entrances, 100951872 bytes
+[2026-10-25 03:18:34] shortcuts, fwd, tau = 6
+RLBWT: n = 4002108659, r = 37017420, 182869912 bytes [0.132948 s]
+ell = 16: 2781967 entrances, 140864863 deaths [179.418 s]
+  theta = 0: 2781967 entrances, 240377888 bytes
+ell = 25: 2055337 entrances, 108067794 deaths [202.196 s]
+  theta = 0: 2055337 entrances, 183530088 bytes
+ell = 50: 1147630 entrances, 45106980 deaths [220.348 s]
+  theta = 0: 1147630 entrances, 101597336 bytes
+[2026-10-25 03:29:14] Big-BWT, rev
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection_rev.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection_rev.txt -w 10 -p 100
+Elapsed time: 159.3060
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection_rev.txt
+Elapsed time: 12.3171
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection_rev.txt
+Elapsed time: 99.1535
+Total construction time: 270.7766
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/collection_rev.txt"
+	User time (seconds): 265.26
+	System time (seconds): 5.55
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 4:30.88
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 1742196
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 619090
+	Voluntary context switches: 39
+	Involuntary context switches: 2070
+	Swaps: 0
+	File system inputs: 7651304
+	File system outputs: 9565112
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-25 03:33:45] RLBWT and shortcuts, rev, tau = 3
+RLBWT: n = 4002108659, r = 37025279, 182904182 bytes [18.7033 s]
+ell = 16: 2781967 entrances, 138394511 deaths [125.098 s]
+  theta = 0: 2781967 entrances, 238805256 bytes
+ell = 25: 2055337 entrances, 105867428 deaths [140.453 s]
+  theta = 0: 2055337 entrances, 182375856 bytes
+ell = 50: 1147630 entrances, 43695773 deaths [152.704 s]
+  theta = 0: 1147630 entrances, 100950000 bytes
+[2026-10-25 03:41:18] shortcuts, rev, tau = 6
+RLBWT: n = 4002108659, r = 37025279, 182904182 bytes [0.221301 s]
+ell = 16: 2781967 entrances, 140829067 deaths [180.129 s]
+  theta = 0: 2781967 entrances, 240371208 bytes
+ell = 25: 2055337 entrances, 108069584 deaths [203.413 s]
+  theta = 0: 2055337 entrances, 183532288 bytes
+ell = 50: 1147630 entrances, 45074383 deaths [221.649 s]
+  theta = 0: 1147630 entrances, 101595272 bytes
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,4002108659,37017420,182869912,238811704,421681616,2781967,329829954,125.349,7.17299,3856709,0,1074742,0,173010176,138419231
+25,0,3,4002108659,37017420,182869912,182374296,365244208,2055337,248046560,140.513,5.18284,2468293,0,412956,0,190143900,105854070
+50,0,3,4002108659,37017420,182869912,100951872,283821784,1147630,123653863,152.247,2.70032,1234146,0,86516,0,205160200,43738749
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,4002108659,37017420,182869912,240377888,423247800,2781967,329829954,179.418,7.23324,3856709,0,1074742,0,239882496,140864863
+25,0,6,4002108659,37017420,182869912,183530088,366400000,2055337,248046560,202.196,5.22577,2468293,0,412956,0,267182900,108067794
+50,0,6,4002108659,37017420,182869912,101597336,284467248,1147630,123653863,220.348,2.72909,1234146,0,86516,0,291214200,45106980
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,4002108659,37025279,182904182,238805256,421709438,2781967,329829954,125.098,7.18598,3856709,0,1074742,0,172960016,138394511
+25,0,3,4002108659,37025279,182904182,182375856,365280038,2055337,248045899,140.453,5.17997,2468293,0,412956,0,190164500,105867428
+50,0,3,4002108659,37025279,182904182,100950000,283854182,1147630,123653363,152.704,2.69113,1234146,0,86516,0,205126750,43695773
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,4002108659,37025279,182904182,240371208,423275390,2781967,329829954,180.129,7.21308,3856709,0,1074742,0,239794704,140829067
+25,0,6,4002108659,37025279,182904182,183532288,366436470,2055337,248045899,203.413,5.24791,2468293,0,412956,0,267241300,108069584
+50,0,6,4002108659,37025279,182904182,101595272,284499454,1147630,123653363,221.649,2.71466,1234146,0,86516,0,291118350,45074383
+[2026-10-25 03:51:39] 32 individuals, t6_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 319228 ms plain, 42758.1 ms with shortcuts (speedup 7.46592)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 322690 ms plain, 40701.1 ms with shortcuts (speedup 7.92829)
+[2026-10-25 04:52:07] 32 individuals, t6_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 319027 ms plain, 41920.3 ms with shortcuts (speedup 7.61033)
+[2026-10-25 05:22:13] 32 individuals, t6_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 319415 ms plain, 53815.9 ms with shortcuts (speedup 5.93533)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 322793 ms plain, 52146.2 ms with shortcuts (speedup 6.19016)
+[2026-10-25 06:24:35] 32 individuals, t6_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 319166 ms plain, 53289.2 ms with shortcuts (speedup 5.98931)
+[2026-10-25 06:55:38] 32 individuals, t6_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 319070 ms plain, 48962.3 ms with shortcuts (speedup 6.51665)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 322374 ms plain, 47226.9 ms with shortcuts (speedup 6.82608)
+[2026-10-25 07:57:07] 32 individuals, t6_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 318479 ms plain, 48024 ms with shortcuts (speedup 6.63167)
+[2026-10-25 08:27:40] 32 individuals, t3_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 322152 ms plain, 47036.4 ms with shortcuts (speedup 6.84898)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 325553 ms plain, 45078.6 ms with shortcuts (speedup 7.22189)
+[2026-10-25 09:29:21] 32 individuals, t3_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 319650 ms plain, 46372.4 ms with shortcuts (speedup 6.89311)
+[2026-10-25 09:59:52] 32 individuals, t3_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 319916 ms plain, 69988.5 ms with shortcuts (speedup 4.57098)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 323207 ms plain, 68465.4 ms with shortcuts (speedup 4.72074)
+[2026-10-25 11:05:04] 32 individuals, t3_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 318930 ms plain, 69206.8 ms with shortcuts (speedup 4.60836)
+[2026-10-25 11:37:26] 32 individuals, t3_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 319921 ms plain, 49616.5 ms with shortcuts (speedup 6.44786)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 323182 ms plain, 47763 ms with shortcuts (speedup 6.76638)
+[2026-10-25 12:39:09] 32 individuals, t3_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 319114 ms plain, 48333.2 ms with shortcuts (speedup 6.60238)
+config	algorithm	L	patterns	plain_s	shortcut_s	speedup	plain_steps_per_char	shortcut_steps_per_char	shortcuts_per_kchar	MEMs	mean_MEM_length
+t3_ell16_bml/ell16_theta0	bml	100	2	319.9	69.99	4.57	3.935	0.790	41.10	30777	6512
+t3_ell16_bml/ell16_theta0	bml	1000	2	323.2	68.47	4.72	4.008	0.768	42.29	18484	10588
+t3_ell16_fb/ell16_theta0	fb	1000	2	318.9	69.21	4.61	3.921	0.784	40.80	18484	10588
+t3_ell25_bml/ell25_theta0	bml	100	2	322.2	47.04	6.85	3.935	0.557	28.12	30777	6512
+t3_ell25_bml/ell25_theta0	bml	1000	2	325.6	45.08	7.22	4.008	0.528	28.97	18484	10588
+t3_ell25_fb/ell25_theta0	fb	1000	2	319.7	46.37	6.89	3.921	0.551	27.89	18484	10588
+t3_ell50_bml/ell50_theta0	bml	100	2	319.9	49.62	6.45	3.935	0.594	15.29	30777	6512
+t3_ell50_bml/ell50_theta0	bml	1000	2	323.2	47.76	6.77	4.008	0.562	15.94	18484	10588
+t3_ell50_fb/ell50_theta0	fb	1000	2	319.1	48.33	6.60	3.921	0.581	15.28	18484	10588
+t6_ell16_bml/ell16_theta0	bml	100	2	319.4	53.82	5.94	3.935	0.638	23.57	30777	6512
+t6_ell16_bml/ell16_theta0	bml	1000	2	322.8	52.15	6.19	4.008	0.613	24.41	18484	10588
+t6_ell16_fb/ell16_theta0	fb	1000	2	319.2	53.29	5.99	3.921	0.633	23.28	18484	10588
+t6_ell25_bml/ell25_theta0	bml	100	2	319.2	42.76	7.47	3.935	0.517	18.01	30777	6512
+t6_ell25_bml/ell25_theta0	bml	1000	2	322.7	40.70	7.93	4.008	0.487	18.71	18484	10588
+t6_ell25_fb/ell25_theta0	fb	1000	2	319.0	41.92	7.61	3.921	0.511	17.78	18484	10588
+t6_ell50_bml/ell50_theta0	bml	100	2	319.1	48.96	6.52	3.935	0.593	11.76	30777	6512
+t6_ell50_bml/ell50_theta0	bml	1000	2	322.4	47.23	6.83	4.008	0.560	12.40	18484	10588
+t6_ell50_fb/ell50_theta0	fb	1000	2	318.5	48.02	6.63	3.921	0.580	11.76	18484	10588
+673M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t3
+673M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t3
+676M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6
+676M	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/rev_t6
+[2026-10-25 13:09:47] === 64 individuals (143 GB free)
+[2026-10-25 13:09:47] Big-BWT, fwd
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt -w 10 -p 100
+Elapsed time: 323.2727
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt
+Elapsed time: 28.5006
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt
+Elapsed time: 155.2355
+Total construction time: 507.0088
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt"
+	User time (seconds): 496.13
+	System time (seconds): 10.91
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:27.08
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2427888
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 905488
+	Voluntary context switches: 19
+	Involuntary context switches: 4069
+	Swaps: 0
+	File system inputs: 15525200
+	File system outputs: 18839288
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-25 13:18:14] RLBWT and shortcuts, fwd, tau = 3
+RLBWT: n = 7948893096, r = 41503067, 212651990 bytes [39.8811 s]
+ell = 16: 2781967 entrances, 274920619 deaths [134.415 s]
+  theta = 0: 2781967 entrances, 407390736 bytes
+ell = 25: 2055337 entrances, 210395456 deaths [148.067 s]
+  theta = 0: 2055337 entrances, 309268328 bytes
+ell = 50: 1147630 entrances, 87221495 deaths [157.562 s]
+  theta = 0: 1147630 entrances, 164503016 bytes
+[2026-10-25 13:26:44] shortcuts, fwd, tau = 6
+RLBWT: n = 7948893096, r = 41503067, 212651990 bytes [0.170361 s]
+ell = 16: 2781967 entrances, 279915220 deaths [189.65 s]
+  theta = 0: 2781967 entrances, 408994992 bytes
+ell = 25: 2055337 entrances, 214907410 deaths [211.822 s]
+  theta = 0: 2055337 entrances, 310452208 bytes
+ell = 50: 1147630 entrances, 89997751 deaths [227.623 s]
+  theta = 0: 1147630 entrances, 165164160 bytes
+[2026-10-25 13:38:31] Big-BWT, rev
+Sending logging messages to file: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/collection_rev.txt.log
+==== Parsing. Command: /home/travis/shortcuts_build/Big-BWT/newscanNT.x /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/collection_rev.txt -w 10 -p 100
+Elapsed time: 318.5393
+==== Computing BWT of parsing. Command: /home/travis/shortcuts_build/Big-BWT/bwtparse /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/collection_rev.txt
+Elapsed time: 26.8471
+==== Computing final BWT. Command: /home/travis/shortcuts_build/Big-BWT/pfbwtNT.x -w 10 /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/collection_rev.txt
+Elapsed time: 154.8404
+Total construction time: 500.2268
+==== Deleting temporary files.
+==== Done
+	Command being timed: "/home/travis/shortcuts_build/Big-BWT/bigbwt /home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/collection_rev.txt"
+	User time (seconds): 489.36
+	System time (seconds): 10.77
+	Percent of CPU this job got: 99%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 8:20.29
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 2486848
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 0
+	Minor (reclaiming a frame) page faults: 918344
+	Voluntary context switches: 173
+	Involuntary context switches: 3840
+	Swaps: 0
+	File system inputs: 16514448
+	File system outputs: 18776456
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0
+[2026-10-25 13:46:52] RLBWT and shortcuts, rev, tau = 3
+RLBWT: n = 7948893096, r = 41517159, 212716814 bytes [44.4019 s]
+ell = 16: 2781967 entrances, 274894086 deaths [133.841 s]
+  theta = 0: 2781967 entrances, 407384000 bytes
+ell = 25: 2055337 entrances, 210442338 deaths [154.23 s]
+  theta = 0: 2055337 entrances, 309269688 bytes
+ell = 50: 1147630 entrances, 87180894 deaths [164.484 s]
+  theta = 0: 1147630 entrances, 164500824 bytes
+[2026-10-25 13:55:43] shortcuts, rev, tau = 6
+RLBWT: n = 7948893096, r = 41517159, 212716814 bytes [0.364202 s]
+ell = 16: 2781967 entrances, 279863842 deaths [189.791 s]
+  theta = 0: 2781967 entrances, 408988008 bytes
+ell = 25: 2055337 entrances, 214931639 deaths [213.622 s]
+  theta = 0: 2055337 entrances, 310454224 bytes
+ell = 50: 1147630 entrances, 89982826 deaths [228.894 s]
+  theta = 0: 1147630 entrances, 165161688 bytes
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,7948893096,41503067,212651990,407390736,620042726,2781967,654166489,134.415,14.151,3856709,0,1074742,0,173010176,274920619
+25,0,3,7948893096,41503067,212651990,309268328,521920318,2055337,492222444,148.067,10.1527,2468293,0,412956,0,190143900,210395456
+50,0,3,7948893096,41503067,212651990,164503016,377155006,1147630,245830992,157.562,5.30716,1234146,0,86516,0,205160200,87221495
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,7948893096,41503067,212651990,408994992,621646982,2781967,654166489,189.65,14.0817,3856709,0,1074742,0,239882496,279915220
+25,0,6,7948893096,41503067,212651990,310452208,523104198,2055337,492222444,211.822,10.3039,2468293,0,412956,0,267182900,214907410
+50,0,6,7948893096,41503067,212651990,165164160,377816150,1147630,245830992,227.623,5.31801,1234146,0,86516,0,291214200,89997751
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,3,7948893096,41517159,212716814,407384000,620100814,2781967,654166489,133.841,17.5445,3856709,0,1074742,0,172960016,274894086
+25,0,3,7948893096,41517159,212716814,309269688,521986502,2055337,492221189,154.23,10.4335,2468293,0,412956,0,190164500,210442338
+50,0,3,7948893096,41517159,212716814,164500824,377217638,1147630,245830022,164.484,5.2963,1234146,0,86516,0,205126750,87180894
+ell,theta,max_tier,n,runs,rlbwt_bytes,shortcuts_bytes,total_bytes,entrances,entrance_rows,compute_seconds,prune_seconds,anchors,dropped_unusable,discarded_colliding,dropped_by_area,backward_steps,deaths
+16,0,6,7948893096,41517159,212716814,408988008,621704822,2781967,654166489,189.791,14.2242,3856709,0,1074742,0,239794704,279863842
+25,0,6,7948893096,41517159,212716814,310454224,523171038,2055337,492221189,213.622,10.3018,2468293,0,412956,0,267241300,214931639
+50,0,6,7948893096,41517159,212716814,165161688,377878502,1147630,245830022,228.894,5.35132,1234146,0,86516,0,291118350,89982826
+[2026-10-25 14:06:46] 64 individuals, t6_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 343570 ms plain, 45502.5 ms with shortcuts (speedup 7.55057)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 346673 ms plain, 43783.9 ms with shortcuts (speedup 7.91783)
+[2026-10-25 15:11:45] 64 individuals, t6_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 343839 ms plain, 44961.3 ms with shortcuts (speedup 7.64744)
+[2026-10-25 15:44:10] 64 individuals, t6_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 344520 ms plain, 57750 ms with shortcuts (speedup 5.96571)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 347649 ms plain, 56339.1 ms with shortcuts (speedup 6.17066)
+[2026-10-25 16:51:23] 64 individuals, t6_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 346452 ms plain, 57391.2 ms with shortcuts (speedup 6.03668)
+[2026-10-25 17:25:03] 64 individuals, t6_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 345858 ms plain, 52729.3 ms with shortcuts (speedup 6.55912)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 349070 ms plain, 51113.2 ms with shortcuts (speedup 6.82937)
+[2026-10-25 18:31:37] 64 individuals, t6_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 343662 ms plain, 51657.6 ms with shortcuts (speedup 6.6527)
+[2026-10-25 19:04:34] 64 individuals, t3_ell25: BML
+ell25_theta0, bml, L = 100: 2 patterns; total of median times 345619 ms plain, 50266.7 ms with shortcuts (speedup 6.87571)
+ell25_theta0, bml, L = 1000: 2 patterns; total of median times 350720 ms plain, 48721.9 ms with shortcuts (speedup 7.19842)
+[2026-10-25 20:10:50] 64 individuals, t3_ell25: forward-backward
+ell25_theta0, fb, L = 1000: 2 patterns; total of median times 344238 ms plain, 49649 ms with shortcuts (speedup 6.93342)
+[2026-10-25 20:43:40] 64 individuals, t3_ell16: BML
+ell16_theta0, bml, L = 100: 2 patterns; total of median times 345633 ms plain, 75490.8 ms with shortcuts (speedup 4.57848)
+ell16_theta0, bml, L = 1000: 2 patterns; total of median times 348812 ms plain, 74066.7 ms with shortcuts (speedup 4.70943)
+[2026-10-25 21:54:02] 64 individuals, t3_ell16: forward-backward
+ell16_theta0, fb, L = 1000: 2 patterns; total of median times 344949 ms plain, 74520.7 ms with shortcuts (speedup 4.6289)
+[2026-10-25 22:29:00] 64 individuals, t3_ell50: BML
+ell50_theta0, bml, L = 100: 2 patterns; total of median times 346196 ms plain, 53141.1 ms with shortcuts (speedup 6.51466)
+ell50_theta0, bml, L = 1000: 2 patterns; total of median times 349251 ms plain, 51524 ms with shortcuts (speedup 6.7784)
+[2026-10-25 23:35:43] 64 individuals, t3_ell50: forward-backward
+ell50_theta0, fb, L = 1000: 2 patterns; total of median times 346420 ms plain, 51946.1 ms with shortcuts (speedup 6.66883)
+config	algorithm	L	patterns	plain_s	shortcut_s	speedup	plain_steps_per_char	shortcut_steps_per_char	shortcuts_per_kchar	MEMs	mean_MEM_length
+t3_ell16_bml/ell16_theta0	bml	100	2	345.6	75.49	4.58	4.181	0.823	43.80	27131	7765
+t3_ell16_bml/ell16_theta0	bml	1000	2	348.8	74.07	4.71	4.250	0.807	44.90	16809	12295
+t3_ell16_fb/ell16_theta0	fb	1000	2	344.9	74.52	4.63	4.167	0.817	43.55	16809	12295
+t3_ell25_bml/ell25_theta0	bml	100	2	345.6	50.27	6.88	4.181	0.577	29.96	27131	7765
+t3_ell25_bml/ell25_theta0	bml	1000	2	350.7	48.72	7.20	4.250	0.553	30.76	16809	12295
+t3_ell25_fb/ell25_theta0	fb	1000	2	344.2	49.65	6.93	4.167	0.570	29.77	16809	12295
+t3_ell50_bml/ell50_theta0	bml	100	2	346.2	53.14	6.51	4.181	0.618	16.31	27131	7765
+t3_ell50_bml/ell50_theta0	bml	1000	2	349.3	51.52	6.78	4.250	0.592	16.91	16809	12295
+t3_ell50_fb/ell50_theta0	fb	1000	2	346.4	51.95	6.67	4.167	0.605	16.31	16809	12295
+t6_ell16_bml/ell16_theta0	bml	100	2	344.5	57.75	5.97	4.181	0.662	25.12	27131	7765
+t6_ell16_bml/ell16_theta0	bml	1000	2	347.6	56.34	6.17	4.250	0.642	25.91	16809	12295
+t6_ell16_fb/ell16_theta0	fb	1000	2	346.5	57.39	6.04	4.167	0.655	24.87	16809	12295
+t6_ell25_bml/ell25_theta0	bml	100	2	343.6	45.50	7.55	4.181	0.535	19.20	27131	7765
+t6_ell25_bml/ell25_theta0	bml	1000	2	346.7	43.78	7.92	4.250	0.510	19.87	16809	12295
+t6_ell25_fb/ell25_theta0	fb	1000	2	343.8	44.96	7.65	4.167	0.527	19.01	16809	12295
+t6_ell50_bml/ell50_theta0	bml	100	2	345.9	52.73	6.56	4.181	0.617	12.57	27131	7765
+t6_ell50_bml/ell50_theta0	bml	1000	2	349.1	51.11	6.83	4.250	0.590	13.15	16809	12295
+t6_ell50_fb/ell50_theta0	fb	1000	2	343.7	51.66	6.65	4.167	0.603	12.56	16809	12295
+1.1G	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t3
+1.1G	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t3
+1.1G	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6
+1.1G	/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/rev_t6
+[2026-10-26 00:08:54] all done (139 GB free); results in /home/travis/shortcuts/chr19_scaling/hprc_chr19/summary_scaling.tsv and /home/travis/shortcuts/chr19_scaling/hprc_chr19/n*/

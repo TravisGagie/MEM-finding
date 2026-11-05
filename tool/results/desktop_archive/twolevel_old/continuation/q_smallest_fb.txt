@@ -1,0 +1,3 @@
+fb, L = 1000, plain: 286.955 s (speedup 1); steps: char 437047858, parse 0, block 0, shortcuts 0; parsing the patterns 5.71e-07 s
+fb, L = 1000, 2L: 13.8381 s (speedup 20.7366); steps: char 12195281, parse 22554013, block 0, shortcuts 0; parsing the patterns 1.09689 s
+fb, L = 1000, 2LJ: 9.63626 s (speedup 29.7786); steps: char 12195281, parse 2627593, block 2565925, shortcuts 0; parsing the patterns 1.09797 s

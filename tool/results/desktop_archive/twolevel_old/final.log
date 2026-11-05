@@ -1,0 +1,100 @@
+[2026-10-27 18:05:20] compiling
+[2026-10-27 18:05:27] fetching and compiling KeBaB
+queries: 4 patterns over {A,C,G,T}, 122434624 characters (from /home/travis/shortcuts/chr19_scaling/hprc_chr19/queries.txt, split at N runs)
+machine: travis-gagie-desktop, queries pinned to CPU 9, 5 rounds, medians
+[2026-10-27 18:05:35] ===== n16
+[2026-10-27 18:05:35] n16: plain, shortcuts, two-level (BML)
+[2026-10-27 19:03:56] n16: plain, shortcuts, two-level (forward-backward)
+
+== n16 (n16.collection.txt, 33 sequences)
+extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 139.571 MiB
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 228.408 MiB on disk (both directions)
+bml, L = 100, plain: 287.314 s (speedup 1); steps: char 438174042, parse 0, block 0, shortcuts 0; parsing the patterns 4.16e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 39.5126 s (speedup 7.27146); steps: char 60157192, parse 0, block 0, shortcuts 2022720; parsing the patterns 1.025e-06 s
+bml, L = 100, 2L: 14.4829 s (speedup 19.8382); steps: char 12511630, parse 22636357, block 0, shortcuts 0; parsing the patterns 1.21181 s
+bml, L = 100, 2LJ: 10.2742 s (speedup 27.9645); steps: char 12511630, parse 2707075, block 2570737, shortcuts 0; parsing the patterns 1.09601 s
+bml, L = 1000, plain: 290.538 s (speedup 1); steps: char 448653968, parse 0, block 0, shortcuts 0; parsing the patterns 3.95e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 37.2004 s (speedup 7.81007); steps: char 55652443, parse 0, block 0, shortcuts 2108896; parsing the patterns 7.55e-07 s
+bml, L = 1000, 2L: 12.2858 s (speedup 23.6483); steps: char 7774759, parse 23302569, block 0, shortcuts 0; parsing the patterns 1.09665 s
+bml, L = 1000, 2LJ: 8.04757 s (speedup 36.1025); steps: char 7774759, parse 3110685, block 2492720, shortcuts 0; parsing the patterns 1.09723 s
+fb, L = 1000, plain: 287.192 s (speedup 1); steps: char 437047858, parse 0, block 0, shortcuts 0; parsing the patterns 6.19e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/fwd_t6: 39.348 s (speedup 7.29878); steps: char 60307933, parse 0, block 0, shortcuts 1982917; parsing the patterns 9.69e-07 s
+fb, L = 1000, 2L: 13.8099 s (speedup 20.7962); steps: char 12195281, parse 22554013, block 0, shortcuts 0; parsing the patterns 1.09875 s
+fb, L = 1000, 2LJ: 9.65452 s (speedup 29.7469); steps: char 12195281, parse 2627593, block 2566152, shortcuts 0; parsing the patterns 1.09897 s
+mismatches against plain search: 0
+[2026-10-27 19:33:07] n16: KeBaB index (forward strand, k = 20)
+KeBaB filters (k = 20): forward 16 MiB, canonical 16 MiB
+KeBaB scan (fwd, L = 100): 2.589 s; 6227 fragments, 122425214 characters kept
+KeBaB scan (can, L = 100): 2.634 s; 6062 fragments, 122430004 characters kept
+[2026-10-27 19:34:28] n16: plain and two-level with jumps on KeBaB fragments, L = 100
+KeBaB + bml, L = 100, plain: 286.849 s (speedup 1); steps: char 437841048, parse 0, block 0, shortcuts 0; parsing the patterns 0.000281683 s
+KeBaB + bml, L = 100, 2LJ: 10.3129 s (speedup 27.8145); steps: char 12183099, parse 2705651, block 2570740, shortcuts 0; parsing the patterns 1.4344 s
+  check, KeBaB + bml, L = 100: 38890 MEMs from the fragments, 38890 from the full patterns: identical (positions and counts)
+KeBaB scan (fwd, L = 1000): 2.573 s; 4908 fragments, 121857100 characters kept
+KeBaB scan (can, L = 1000): 2.626 s; 4813 fragments, 121878253 characters kept
+[2026-10-27 19:59:57] n16: plain and two-level with jumps on KeBaB fragments, L = 1000
+KeBaB + bml, L = 1000, plain: 290.113 s (speedup 1); steps: char 446601874, parse 0, block 0, shortcuts 0; parsing the patterns 0.00023179 s
+KeBaB + bml, L = 1000, 2LJ: 8.26966 s (speedup 35.0816); steps: char 7488022, parse 3040757, block 2488849, shortcuts 0; parsing the patterns 1.42781 s
+KeBaB + fb, L = 1000, plain: 285.923 s (speedup 1); steps: char 433834038, parse 0, block 0, shortcuts 0; parsing the patterns 0.000242824 s
+KeBaB + fb, L = 1000, 2LJ: 9.04851 s (speedup 31.5989); steps: char 9959779, parse 2583127, block 2557129, shortcuts 0; parsing the patterns 1.42481 s
+  check, KeBaB + bml, L = 1000: 22708 MEMs from the fragments, 22708 from the full patterns: identical (positions and counts)
+  check, KeBaB + fb, L = 1000: 22708 MEMs from the fragments, 22708 from the full patterns: identical (positions and counts)
+ropebwt3 index (both strands): 157 MiB
+[2026-10-27 20:49:56] n16: ropebwt3
+ropebwt3 BML, L = 100: 65.515 s
+ropebwt3 BML, L = 1000: 64.332 s
+ropebwt3 forward-backward (--old-mem), L = 1000: 63.108 s
+ropebwt3 all SMEMs (-l 1): 66.149 s
+KeBaB + ropebwt3 BML, L = 100: 65.215 s (plus the canonical scan above)
+KeBaB + ropebwt3 BML, L = 1000: 63.890 s (plus the canonical scan above)
+check, ropebwt3 against ours (differences must be reverse-strand matches):
+bml_L100 vs bml100: only theirs 234, of which 234 occur only on the reverse strand; only ours 140, of which 140 lie inside a MEM only they report
+bml_L1000 vs bml1000: only theirs 5, of which 5 occur only on the reverse strand; only ours 2, of which 2 lie inside a MEM only they report
+fb_L1000 vs fb1000: only theirs 5, of which 5 occur only on the reverse strand; only ours 2, of which 2 lie inside a MEM only they report
+fb_L1000 vs fball: only theirs 5, of which 5 occur only on the reverse strand; only ours 2, of which 2 lie inside a MEM only they report
+[2026-10-27 21:22:21] fetching and compiling Movi 2
+fatal: unable to access 'https://github.com/mohsenzakeri/Movi/': Could not resolve host: github.com
+Movi 2 did not compile (see /home/travis/twolevel_runs/twolevel/../Movi/build/make.log)
+[2026-10-27 21:22:21] ===== n32
+[2026-10-27 21:22:21] n32: plain, shortcuts, two-level (BML)
+[2026-10-27 22:26:02] n32: plain, shortcuts, two-level (forward-backward)
+
+== n32 (n32.collection.txt, 65 sequences)
+extra space over the two RLBWTs: 2L 126.316 MiB, 2LJ 177.194 MiB
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 350.058 MiB on disk (both directions)
+bml, L = 100, plain: 318.185 s (speedup 1); steps: char 481531803, parse 0, block 0, shortcuts 0; parsing the patterns 5.69e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 42.2302 s (speedup 7.53455); steps: char 62518153, parse 0, block 0, shortcuts 2208153; parsing the patterns 4.16e-07 s
+bml, L = 100, 2L: 13.655 s (speedup 23.3017); steps: char 9825626, parse 25038099, block 0, shortcuts 0; parsing the patterns 1.09812 s
+bml, L = 100, 2LJ: 8.7419 s (speedup 36.3977); steps: char 9825626, parse 1645937, block 3090240, shortcuts 0; parsing the patterns 1.09955 s
+bml, L = 1000, plain: 321.541 s (speedup 1); steps: char 490580056, parse 0, block 0, shortcuts 0; parsing the patterns 4.53e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 40.2658 s (speedup 7.98547); steps: char 58789706, parse 0, block 0, shortcuts 2294348; parsing the patterns 4.66e-07 s
+bml, L = 1000, 2L: 12.0779 s (speedup 26.6222); steps: char 6239472, parse 25600897, block 0, shortcuts 0; parsing the patterns 1.09935 s
+bml, L = 1000, 2LJ: 7.08079 s (speedup 45.4103); steps: char 6239472, parse 1936230, block 3015132, shortcuts 0; parsing the patterns 1.09935 s
+fb, L = 1000, plain: 318.638 s (speedup 1); steps: char 479889443, parse 0, block 0, shortcuts 0; parsing the patterns 1.013e-06 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n32/fwd_t6: 41.5143 s (speedup 7.67538); steps: char 61757518, parse 0, block 0, shortcuts 2180541; parsing the patterns 5.68e-07 s
+fb, L = 1000, 2L: 12.8012 s (speedup 24.8912); steps: char 8815588, parse 24969492, block 0, shortcuts 0; parsing the patterns 1.09312 s
+fb, L = 1000, 2LJ: 7.90173 s (speedup 40.325); steps: char 8815588, parse 1583663, block 3082387, shortcuts 0; parsing the patterns 1.09252 s
+mismatches against plain search: 0
+[2026-10-27 22:57:50] ===== n64
+[2026-10-27 22:57:50] n64: plain, shortcuts, two-level (BML)
+[2026-10-28 00:06:39] n64: plain, shortcuts, two-level (forward-backward)
+
+== n64 (collection.txt, 129 sequences)
+extra space over the two RLBWTs: 2L 163.272 MiB, 2LJ 236.827 MiB
+shortcuts ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 592.143 MiB on disk (both directions)
+bml, L = 100, plain: 345.485 s (speedup 1); steps: char 511647535, parse 0, block 0, shortcuts 0; parsing the patterns 5.75e-07 s
+bml, L = 100, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 44.796 s (speedup 7.7124); steps: char 64575985, parse 0, block 0, shortcuts 2354384; parsing the patterns 5.02e-07 s
+bml, L = 100, 2L: 14.289 s (speedup 24.1784); steps: char 8631944, parse 26690765, block 0, shortcuts 0; parsing the patterns 1.13332 s
+bml, L = 100, 2LJ: 8.5503 s (speedup 40.4061); steps: char 8631944, parse 1157868, block 3740644, shortcuts 0; parsing the patterns 1.13311 s
+bml, L = 1000, plain: 348.701 s (speedup 1); steps: char 520120782, parse 0, block 0, shortcuts 0; parsing the patterns 5.32e-07 s
+bml, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 43.0701 s (speedup 8.09613); steps: char 61529557, parse 0, block 0, shortcuts 2435997; parsing the patterns 1.334e-06 s
+bml, L = 1000, 2L: 12.8964 s (speedup 27.0387); steps: char 5630164, parse 27211648, block 0, shortcuts 0; parsing the patterns 1.13558 s
+bml, L = 1000, 2LJ: 7.10172 s (speedup 49.1009); steps: char 5630164, parse 1363964, block 3694522, shortcuts 0; parsing the patterns 1.13268 s
+fb, L = 1000, plain: 344.256 s (speedup 1); steps: char 510006157, parse 0, block 0, shortcuts 0; parsing the patterns 3.93e-07 s
+fb, L = 1000, ell25_theta0@/home/travis/shortcuts/chr19_scaling/hprc_chr19/n64/fwd_t6: 44.1919 s (speedup 7.79002); steps: char 63681682, parse 0, block 0, shortcuts 2330910; parsing the patterns 6.69e-07 s
+fb, L = 1000, 2L: 13.4275 s (speedup 25.6382); steps: char 7548896, parse 26627851, block 0, shortcuts 0; parsing the patterns 1.13489 s
+fb, L = 1000, 2LJ: 7.71354 s (speedup 44.6301); steps: char 7548896, parse 1102798, block 3731082, shortcuts 0; parsing the patterns 1.13435 s
+mismatches against plain search: 0
+[2026-10-28 00:40:55] done
+
+finished 2026-10-28 00:40:55

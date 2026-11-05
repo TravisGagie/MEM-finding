@@ -1,0 +1,29 @@
+text: 7948893096 characters; 417683930 phrases, 5567336 distinct (403.763 MB) (154.796 s)
+block stats: 417683930 phrases, 5567336 distinct, 6412372 distinct adjacent pairs; 5051785 phrases with a single successor
+  smallest successor: 58426017 blocks (7.14894 phrases each), 1265686 symbols
+  largest successor: 60367018 blocks (6.91908 phrases each), 1261000 symbols
+  smaller or larger, more frequent: 38535234 blocks (10.839 phrases each), 1273701 symbols
+  most frequent successor: 13715233 blocks (30.454 phrases each), 1460334 symbols
+	Command being timed: "/home/travis/Hybrid-FM-CSA/twolevel/build/build_twolevel --text /home/travis/shortcuts/chr19_scaling/hprc_chr19/collection.txt --block-stats"
+	User time (seconds): 202.26
+	System time (seconds): 5.21
+	Percent of CPU this job got: 97%
+	Elapsed (wall clock) time (h:mm:ss or m:ss): 3:32.59
+	Average shared text size (kbytes): 0
+	Average unshared data size (kbytes): 0
+	Average stack size (kbytes): 0
+	Average total size (kbytes): 0
+	Maximum resident set size (kbytes): 5597176
+	Average resident set size (kbytes): 0
+	Major (requiring I/O) page faults: 1
+	Minor (reclaiming a frame) page faults: 2884880
+	Voluntary context switches: 10372
+	Involuntary context switches: 2332
+	Swaps: 0
+	File system inputs: 15525280
+	File system outputs: 16
+	Socket messages sent: 0
+	Socket messages received: 0
+	Signals delivered: 0
+	Page size (bytes): 4096
+	Exit status: 0

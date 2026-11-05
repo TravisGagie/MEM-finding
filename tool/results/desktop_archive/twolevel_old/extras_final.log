@@ -1,0 +1,39 @@
+
+== n32
+[2026-10-28 15:10:59] n32: KeBaB index (forward strand, k = 20)
+KeBaB scan (fwd, L = 100): 2.612 s; 3432 fragments, 122438882 characters kept
+KeBaB scan (fwd, L = 1000): 2.546 s; 3087 fragments, 122287521 characters kept
+[2026-10-28 15:12:01] n32: ropebwt3 index
+  build: 	Elapsed (wall clock) time (h:mm:ss or m:ss): 20:20.77
+  build: 	Maximum resident set size (kbytes): 10096036
+ropebwt3 index (both strands): 178 MiB
+[2026-10-28 15:32:22] n32: ropebwt3
+ropebwt3 BML, L = 100: 73.852 s
+ropebwt3 BML, L = 1000: 72.773 s
+ropebwt3 forward-backward (--old-mem), L = 1000: 68.978 s
+ropebwt3 all SMEMs (-l 1): 74.106 s
+check, ropebwt3 against ours (differences must be reverse-strand matches):
+bml_L100 vs bml100: only theirs 159, of which 159 occur only on the reverse strand; only ours 121, of which 121 lie inside a MEM only they report
+bml_L1000 vs bml1000: only theirs 8, of which 8 occur only on the reverse strand; only ours 8, of which 8 lie inside a MEM only they report
+fb_L1000 vs fb1000: only theirs 8, of which 8 occur only on the reverse strand; only ours 8, of which 8 lie inside a MEM only they report
+fb_L1000 vs fball: only theirs 8, of which 8 occur only on the reverse strand; only ours 8, of which 8 lie inside a MEM only they report
+
+== n64
+[2026-10-28 15:56:33] n64: KeBaB index (forward strand, k = 20)
+KeBaB scan (fwd, L = 100): 2.639 s; 2578 fragments, 122435550 characters kept
+KeBaB scan (fwd, L = 1000): 2.547 s; 2405 fragments, 122363530 characters kept
+[2026-10-28 15:59:14] n64: ropebwt3 index
+  build: 	Elapsed (wall clock) time (h:mm:ss or m:ss): 42:55.98
+  build: 	Maximum resident set size (kbytes): 10116608
+ropebwt3 index (both strands): 212 MiB
+[2026-10-28 16:42:10] n64: ropebwt3
+ropebwt3 BML, L = 100: 80.232 s
+ropebwt3 BML, L = 1000: 79.461 s
+ropebwt3 forward-backward (--old-mem), L = 1000: 76.757 s
+ropebwt3 all SMEMs (-l 1): 80.653 s
+check, ropebwt3 against ours (differences must be reverse-strand matches):
+bml_L100 vs bml100: only theirs 139, of which 139 occur only on the reverse strand; only ours 127, of which 127 lie inside a MEM only they report
+bml_L1000 vs bml1000: only theirs 11, of which 11 occur only on the reverse strand; only ours 9, of which 9 lie inside a MEM only they report
+fb_L1000 vs fb1000: only theirs 11, of which 11 occur only on the reverse strand; only ours 9, of which 9 lie inside a MEM only they report
+fb_L1000 vs fball: only theirs 11, of which 11 occur only on the reverse strand; only ours 9, of which 9 lie inside a MEM only they report
+[2026-10-28 17:08:39] done

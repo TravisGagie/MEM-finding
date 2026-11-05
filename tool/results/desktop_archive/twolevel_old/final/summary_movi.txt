@@ -1,0 +1,27 @@
+Movi 2 index (regular, both strands): 607 MiB, plus ftab (k = 10) 32 MiB
+Movi 2 MEMs, L = 100: 40.847 s
+Movi 2 MEMs, L = 1000: 35.453 s
+Movi 2 MEMs, L = 1: 85.095 s
+check, Movi 2 against ours (differences must be reverse-strand matches, or N in the collection read as A):
+bml_L100 vs movi100: only theirs 436, of which 155 occur only on the reverse strand; only ours 155, of which 139 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (0, 391, 620) length 229
+   their MEM not explained by the reverse strand: (0, 1581, 1705) length 124
+   their MEM not explained by the reverse strand: (0, 1582, 1948) length 366
+   their MEM not explained by the reverse strand: (0, 1583, 2008) length 425
+   their MEM not explained by the reverse strand: (0, 2595, 2773) length 178
+   our MEM not explained: (0, 1582, 2008) length 426
+   our MEM not explained: (0, 3885, 4057) length 172
+   our MEM not explained: (0, 10261, 10449) length 188
+   our MEM not explained: (0, 13429, 13569) length 140
+   our MEM not explained: (0, 13752, 13880) length 128
+bml_L1000 vs movi1000: only theirs 106, of which 17 occur only on the reverse strand; only ours 11, of which 11 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (0, 5767, 6885) length 1118
+   their MEM not explained by the reverse strand: (0, 11790, 13109) length 1319
+   their MEM not explained by the reverse strand: (0, 11791, 13109) length 1318
+   their MEM not explained by the reverse strand: (0, 11792, 13109) length 1317
+   their MEM not explained by the reverse strand: (0, 11793, 13109) length 1316
+fb_L1000 vs movi1: only theirs 14, of which 10 occur only on the reverse strand; only ours 12, of which 12 lie inside a MEM only they report
+   their MEM not explained by the reverse strand: (0, 5767, 6921) length 1154
+   their MEM not explained by the reverse strand: (0, 10447, 13123) length 2676
+   their MEM not explained by the reverse strand: (2, 723, 1840) length 1117
+   their MEM not explained by the reverse strand: (3, 15552063, 15553136) length 1073

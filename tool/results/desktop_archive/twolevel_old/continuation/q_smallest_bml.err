@@ -1,0 +1,4 @@
+text level: m = 106862424, sigma = 4172042, blocks = 11235462; MiB: B 6.1764, parse BWT 21.9296, phrase table 46.2639, succ 11.439, BS 0.862, block BWT 4.71458, symbols 1.49081
+reversed level: m = 106862424, sigma = 4172042, blocks = 11218382; MiB: B 6.21642, parse BWT 21.962, phrase table 3.43323e-05, succ 11.439, BS 0.867027, block BWT 4.72126, symbols 1.48899
+extra space over the two RLBWTs: 2L 102.548 MiB, 2LJ 139.571 MiB
+loaded in 0.334957 s

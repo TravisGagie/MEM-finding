@@ -1,0 +1,3 @@
+config,algorithm,min_length,pattern,length,mems,mem_chars,plain_ns,shortcut_ns,plain_steps,shortcut_steps,searches,shortcuts,chars_crossed,repeats,plain_min_ns,plain_max_ns,shortcut_min_ns,shortcut_max_ns
+ell25_theta0,fb,1000,0,61651182,8536,103429212,1.71448e+11,2.60153e+10,255538870,36863645,70403,1813199,218675225,5,1.71338e+11,1.71476e+11,2.59037e+10,2.60211e+10
+ell25_theta0,fb,1000,1,60966508,8273,103233562,1.7279e+11,2.36337e+10,255445331,32989906,70832,1837073,222455425,5,1.72629e+11,1.72889e+11,2.36267e+10,2.36391e+10

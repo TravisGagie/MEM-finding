@@ -1,0 +1,62 @@
+ropebwt3: 3.10-r285-dirty (/home/travis/twolevel_runs/twolevel/../ropebwt3/ropebwt3)
+collection: /home/travis/twolevel_runs/twolevel/data/n16.collection.txt
+queries: /home/travis/shortcuts/chr19_scaling/hprc_chr19/n16/../queries.txt
+index: 164830744 bytes = 157 MiB
+pinned to CPU 9 (and 10 for 2 threads); rounds: 5
+[2026-10-27 12:24:07] round 1, 1 thread(s), bml100: 65.600 s (peak RSS 0.332 GB)
+[2026-10-27 12:25:11] round 1, 1 thread(s), bml1000: 64.538 s (peak RSS 0.330 GB)
+[2026-10-27 12:26:15] round 1, 1 thread(s), fb1000: 63.266 s (peak RSS 0.341 GB)
+[2026-10-27 12:27:21] round 1, 1 thread(s), fball: 66.500 s (peak RSS 0.336 GB)
+[2026-10-27 12:27:57] round 1, 2 thread(s), bml100: 35.372 s (peak RSS 0.334 GB)
+[2026-10-27 12:28:31] round 1, 2 thread(s), bml1000: 34.531 s (peak RSS 0.332 GB)
+[2026-10-27 12:29:05] round 1, 2 thread(s), fb1000: 33.751 s (peak RSS 0.343 GB)
+[2026-10-27 12:29:41] round 1, 2 thread(s), fball: 35.645 s (peak RSS 0.341 GB)
+[2026-10-27 12:30:47] round 2, 1 thread(s), bml100: 65.549 s (peak RSS 0.332 GB)
+[2026-10-27 12:31:51] round 2, 1 thread(s), bml1000: 64.536 s (peak RSS 0.330 GB)
+[2026-10-27 12:32:55] round 2, 1 thread(s), fb1000: 64.024 s (peak RSS 0.341 GB)
+[2026-10-27 12:34:02] round 2, 1 thread(s), fball: 66.307 s (peak RSS 0.336 GB)
+[2026-10-27 12:34:37] round 2, 2 thread(s), bml100: 34.943 s (peak RSS 0.334 GB)
+[2026-10-27 12:35:11] round 2, 2 thread(s), bml1000: 34.543 s (peak RSS 0.331 GB)
+[2026-10-27 12:35:45] round 2, 2 thread(s), fb1000: 33.896 s (peak RSS 0.343 GB)
+[2026-10-27 12:36:21] round 2, 2 thread(s), fball: 35.451 s (peak RSS 0.341 GB)
+[2026-10-27 12:37:27] round 3, 1 thread(s), bml100: 65.628 s (peak RSS 0.332 GB)
+[2026-10-27 12:38:31] round 3, 1 thread(s), bml1000: 64.491 s (peak RSS 0.330 GB)
+[2026-10-27 12:39:35] round 3, 1 thread(s), fb1000: 63.237 s (peak RSS 0.341 GB)
+[2026-10-27 12:40:41] round 3, 1 thread(s), fball: 66.361 s (peak RSS 0.336 GB)
+[2026-10-27 12:41:16] round 3, 2 thread(s), bml100: 34.902 s (peak RSS 0.334 GB)
+[2026-10-27 12:41:51] round 3, 2 thread(s), bml1000: 34.634 s (peak RSS 0.331 GB)
+[2026-10-27 12:42:25] round 3, 2 thread(s), fb1000: 33.859 s (peak RSS 0.343 GB)
+[2026-10-27 12:43:00] round 3, 2 thread(s), fball: 35.460 s (peak RSS 0.341 GB)
+[2026-10-27 12:44:06] round 4, 1 thread(s), bml100: 65.475 s (peak RSS 0.332 GB)
+[2026-10-27 12:45:10] round 4, 1 thread(s), bml1000: 64.470 s (peak RSS 0.330 GB)
+[2026-10-27 12:46:14] round 4, 1 thread(s), fb1000: 63.269 s (peak RSS 0.341 GB)
+[2026-10-27 12:47:20] round 4, 1 thread(s), fball: 66.266 s (peak RSS 0.337 GB)
+[2026-10-27 12:47:55] round 4, 2 thread(s), bml100: 34.964 s (peak RSS 0.334 GB)
+[2026-10-27 12:48:30] round 4, 2 thread(s), bml1000: 34.548 s (peak RSS 0.331 GB)
+[2026-10-27 12:49:03] round 4, 2 thread(s), fb1000: 33.736 s (peak RSS 0.343 GB)
+[2026-10-27 12:49:39] round 4, 2 thread(s), fball: 35.422 s (peak RSS 0.341 GB)
+[2026-10-27 12:50:44] round 5, 1 thread(s), bml100: 65.488 s (peak RSS 0.332 GB)
+[2026-10-27 12:51:49] round 5, 1 thread(s), bml1000: 64.685 s (peak RSS 0.330 GB)
+[2026-10-27 12:52:53] round 5, 1 thread(s), fb1000: 63.253 s (peak RSS 0.341 GB)
+[2026-10-27 12:53:59] round 5, 1 thread(s), fball: 66.287 s (peak RSS 0.336 GB)
+[2026-10-27 12:54:34] round 5, 2 thread(s), bml100: 34.983 s (peak RSS 0.334 GB)
+[2026-10-27 12:55:09] round 5, 2 thread(s), bml1000: 34.730 s (peak RSS 0.332 GB)
+[2026-10-27 12:55:43] round 5, 2 thread(s), fb1000: 33.962 s (peak RSS 0.343 GB)
+[2026-10-27 12:56:18] round 5, 2 thread(s), fball: 35.379 s (peak RSS 0.341 GB)
+
+medians (s):
+  bml100   1 thread(s):     65.55  (min 65.47, max 65.63, 5 rounds)
+  bml100   2 thread(s):     34.96  (min 34.90, max 35.37, 5 rounds)
+  bml1000  1 thread(s):     64.54  (min 64.47, max 64.69, 5 rounds)
+  bml1000  2 thread(s):     34.55  (min 34.53, max 34.73, 5 rounds)
+  fb1000   1 thread(s):     63.27  (min 63.24, max 64.02, 5 rounds)
+  fb1000   2 thread(s):     33.86  (min 33.74, max 33.96, 5 rounds)
+  fball    1 thread(s):     66.31  (min 66.27, max 66.50, 5 rounds)
+  fball    2 thread(s):     35.45  (min 35.38, max 35.65, 5 rounds)
+[2026-10-27 12:56:18] comparing with our MEMs
+  bml_L100 vs mems_bml100.txt: ours 38896, ropebwt3 38990, common 38753
+  bml_L1000 vs mems_bml1000.txt: ours 22714, ropebwt3 22717, common 22709
+  fb_L1000 vs mems_fb1000.txt: ours 22714, ropebwt3 22717, common 22709
+  fb_L1000 vs mems_fball.txt: ours 22714, ropebwt3 22717, common 22709
+  (ropebwt3 also matches the reverse-complement strand, so it can find MEMs we do not, or longer ones)
+[2026-10-27 12:56:57] done
