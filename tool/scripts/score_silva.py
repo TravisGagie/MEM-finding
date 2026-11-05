@@ -33,7 +33,7 @@
 # --mode lca: a feature {l,r} spreads its length over documents l..r (method0); --mode list: a feature
 # {d1..dk} gives length/k to each listed document (the method2 weighting, |M|/|L|); in list mode a feature
 # <l,r> (hybrid: answered by its LCA) is weighted as in lca mode.
-import sys, os, argparse, importlib.util, random
+import sys, os, argparse, importlib.util, math, random
 import multiprocessing
 # fork, so workers share the loaded read set (Python 3.14 defaults to forkserver on Linux)
 Pool = multiprocessing.get_context("fork").Pool
@@ -54,6 +54,8 @@ p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e
                help="--mode bayesauto: the values of epsilon searched")
 p.add_argument("--calls", default=None, help="--mode bayes: also write each read's top documents (0-based, comma-separated; - if none), "
                "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
+p.add_argument("--exclude-out", default=None, help="write the 0-based documents outside the scored genera, one per line, for "
+               "find --classify bayes --exclude-docs (needs --nseq)")
 p.add_argument("--em-iters", default="5,20", help="--mode em: the numbers of EM iterations to report (comma-separated)")
 p.add_argument("--seed", type=int, default=1)
 p.add_argument("--levels", default="genus,family,order,class,phylum,domain", help="the levels to score (comma-separated)")
@@ -80,13 +82,34 @@ if a.mode in ("norm", "prior", "em", "bayes", "bayesauto") and NSEQ is None:
 NTOT, NGEN = (sum(NSEQ), len(NSEQ)) if NSEQ else (0, 0)
 PI0 = [n / NTOT for n in NSEQ] if NSEQ else None      # the database prior, EM's start
 if a.mode == "bayesauto":
-    import math
     GRID = [float(x) for x in a.eps_grid.split(",")]
 if a.mode == "bayes":
-    import math
     if a.prior == "sample" and a.alpha is None: sys.exit("--mode bayes --prior sample needs --alpha")
     PA = {"sample": a.alpha, "flat": 0.0, "db": 1.0}[a.prior]   # the prior is N_g^PA: flat = N_g^0, db = N_g^1 (/ N)
     LOGPRIOR = [PA * math.log(n) for n in NSEQ]                # (its normalisation cancels)
+
+def bayes_scores(r, logeps, keys, d2c):
+    """the read's naive-Bayes score per scored document (logeps = None: the limit epsilon -> 0); find --classify bayes
+    does the same, over both mates with --mate2, and over the scored documents with --exclude-docs"""
+    feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
+    ll = {}; hits = {}
+    for L, d, _, cnt in feats:
+        for doc, c in zip(d, cnt):
+            ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
+    nf = len(feats)
+    # only the scored clades: an unscored top ("uncultured") could underflow the others' posteriors to 0
+    ll = {doc: v for doc, v in ll.items() if d2c.get(doc) in keys}
+    if logeps is None:                       # epsilon -> 0: only the genera with the most matches can win
+        most = max((hits[doc] for doc in ll), default=0)
+        return {doc: LOGPRIOR[doc] + v for doc, v in ll.items() if hits[doc] == most}
+    return {doc: LOGPRIOR[doc] + v + (nf - hits[doc]) * logeps for doc, v in ll.items()}
+
+def level_tables(level):
+    """the node count of each clade, the scored clades, and each document's clade at a level"""
+    labels = {}
+    for x in rs.silva_nodes_at_each_level[level]:
+        c = x.get_certain_level(level); labels[c] = labels.get(c, 0) + 1
+    return labels, {c for c in labels if c != "uncultured"}, {i: x.get_certain_level(level) for i, x in rs.doc_id_to_full_traversal.items()}
 
 G = {}
 def work(rng):
@@ -107,19 +130,7 @@ def work(rng):
             # so ties and the accuracy rule are as for the other schemes)
             # in one pass over the listings, as proportional credit: S_g = log prior_g + sum over the matches with g of
             # log p_g + (the number of matches without g) * log epsilon
-            feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
-            ll = {}; hits = {}
-            for L, d, _, cnt in feats:
-                for doc, c in zip(d, cnt):
-                    ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
-            nf = len(feats)
-            # only the scored clades: an unscored top ("uncultured") could underflow the others' posteriors to 0
-            ll = {doc: v for doc, v in ll.items() if d2c.get(doc) in keys}
-            if G["logeps"] is None:                  # epsilon -> 0: only the genera with the most matches can win
-                most = max((hits[doc] for doc in ll), default=0)
-                sc = {doc: LOGPRIOR[doc] + v for doc, v in ll.items() if hits[doc] == most}
-            else:
-                sc = {doc: LOGPRIOR[doc] + v + (nf - hits[doc]) * G["logeps"] for doc, v in ll.items()}
+            sc = bayes_scores(r, G["logeps"], keys, d2c)
             if sc:
                 top = max(sc.values())
                 for doc, v in sc.items():
@@ -279,11 +290,8 @@ with open(a.output, "w") as out:
   for label, settings in variants:
     G.update(settings)
     for level in a.levels.split(","):
-        labels = {}
-        for x in rs.silva_nodes_at_each_level[level]:
-            c = x.get_certain_level(level); labels[c] = labels.get(c, 0) + 1
-        G.update(mode=a.mode, level=level, labels=labels, keys={c for c in labels if c != "uncultured"},
-                 d2c={i: x.get_certain_level(level) for i, x in rs.doc_id_to_full_traversal.items()})
+        labels, keys, d2c = level_tables(level)
+        G.update(mode=a.mode, level=level, labels=labels, keys=keys, d2c=d2c)
         with Pool(a.threads) as pool:           # forked workers see G and rs without pickling them
             res = pool.map(work, chunks)
         tp, uncl, uth, amb, st = (sum(x[i] for x in res) for i in range(5))
@@ -291,18 +299,17 @@ with open(a.output, "w") as out:
         line = (f"katka,{label},{level},{round(tp / N, 4)},correct={tp},unclassified={uncl},wrong={N - tp - uncl},"
                 f"reads={N},ambiguous_truth={amb},theirs={round((tp + uth) / N, 4)},strict={round(st / N, 4)},strict_correct={st}")
         print(line, flush=True); out.write(line + "\n")
+if a.exclude_out:
+    _, keys, d2c = level_tables("genus")
+    with open(a.exclude_out, "w") as o:
+        for doc in range(NGEN):
+            if d2c.get(doc) not in keys: o.write("%d\n" % doc)
 if a.calls and a.mode == "bayes":
     le = variants[0][1]["logeps"]
-    if le is None: sys.exit("--calls needs a positive --epsilon")
+    _, keys, d2c = level_tables("genus")
     with open(a.calls, "w") as o:
         for r in rs.read_list:
-            feats = [f for listing in (r.mate1_listings, r.mate2_listings) for f in parse(listing) if not f[2]]
-            ll = {}; hits = {}
-            for L, d, _, cnt in feats:
-                for doc, c in zip(d, cnt):
-                    ll[doc] = ll.get(doc, 0.0) + math.log(c / (2 * NSEQ[doc])); hits[doc] = hits.get(doc, 0) + 1
-            sc = {doc: LOGPRIOR[doc] + v + (len(feats) - hits[doc]) * le for doc, v in ll.items()}
+            sc = bayes_scores(r, le, keys, d2c)
             top = max(sc.values()) if sc else None
             best = sorted(doc for doc, v in sc.items() if v == top)
             o.write("%s\t%s\n" % (r.name, ",".join(map(str, best)) or "-"))
-

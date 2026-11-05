@@ -45,16 +45,17 @@ check("alpha = -1: normalised beats proportional", acc("-1", "norm", "norm") > a
 check("alpha = -1: EM (20) beats proportional", acc("-1", "em", "em20") > acc("-1", "freq", "freq"))
 sys.exit(1 if fails else 0)
 PY
-# find --classify bayes gives the scorer's naive-Bayes calls (flat prior), read by read (mate 1, the other mate empty)
+# find --classify bayes gives the scorer's naive-Bayes calls (flat prior), read by read, over both mates and the scored
+# documents.  The scorer's --exclude-out gives the documents; a toy from a real SILVA list has an "uncultured" genus
 for al in 1 0 -1; do for e in 1e-6 1e-3; do
   A=$W/q/dial/a$al; r=V4_V4
-  $K find --preset silva -j 4 --classify bayes --nseq "$W/q/nseq.txt" --epsilon $e "$W/bac" "$A/work/$r/${r}_mate_1.fq" "$W/calls.tsv" 2> /dev/null
-  awk '/^>/ { h = $0; sub(/mate1$/, "mate2", h); print h; print "" }' "$A/out/${r}_1.out" > "$W/empty2.out"
   python3 "$HERE/scripts/score_silva.py" --mode bayes --prior flat --epsilon $e --levels genus --mate1-listings "$A/out/${r}_1.out" \
-      --mate2-listings "$W/empty2.out" --doc-id-to-traversal "$S/work/ref/rna/doc_to_traversal.txt" --silva-tax-ranks "$S/exp1_data/tax_slv_ssu_138.1.txt" \
+      --mate2-listings "$A/out/${r}_2.out" --doc-id-to-traversal "$S/work/ref/rna/doc_to_traversal.txt" --silva-tax-ranks "$S/exp1_data/tax_slv_ssu_138.1.txt" \
       --readset-truthset "$A/$r.seqtax.txt" --trav-to-length "$S/work/ref/trav_to_length.txt" --exp-src "$EXP" --nseq "$W/q/nseq.txt" \
-      --output "$W/s.csv" --calls "$W/scorer_calls.tsv" --threads ${THREADS:-4} > /dev/null 2>&1
+      --output "$W/s.csv" --calls "$W/scorer_calls.tsv" --exclude-out "$W/excluded.txt" --threads ${THREADS:-4} > /dev/null 2>&1
+  $K find --preset silva -j 4 --classify bayes --nseq "$W/q/nseq.txt" --epsilon $e --mate2 "$A/work/$r/${r}_mate_2.fq" --exclude-docs "$W/excluded.txt" \
+      "$W/bac" "$A/work/$r/${r}_mate_1.fq" "$W/calls.tsv" 2> /dev/null
   cmp -s "$W/calls.tsv" "$W/scorer_calls.tsv" || { echo "FAIL: find --classify bayes differs from the scorer (alpha = $al, epsilon = $e)"; exit 1; }
-  echo "find --classify bayes = the scorer's calls: alpha = $al, epsilon = $e, $(wc -l < "$W/calls.tsv") reads"
+  echo "find --classify bayes = the scorer's calls: alpha = $al, epsilon = $e, $(wc -l < "$W/calls.tsv") read pairs, $(wc -l < "$W/excluded.txt") excluded documents"
 done; done
 echo "dial toy: ok ($W)"

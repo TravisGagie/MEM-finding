@@ -46,7 +46,8 @@ To avoid the confusion of three sessions on one paper:
   with each `--continuation` and `--max-block`. `experiments/block_scaling.sh` also checks that every variant gives
   identical MEMs.
 
-All four passed on 2026-11-05, the last two after the desktop's `4f68295` change to `score_silva.py`.
+All four passed on 2026-11-05. `test_score_schemes.py` now uses only the reference's uniquely named genera for its
+reference checks, so it also passes on a toy made from the first genera of the real list, which has an "uncultured" genus.
 
 ## The papers
 
@@ -110,17 +111,14 @@ Posted. Superseded by `tool/`'s `zymo` and `silva` presets. Each repository's RE
     94–96%). Its ε matters: the held-out choice at α = 0 (10⁻⁴) falls to 84.49% at α = 1.
   - **The best genus lacks about 5–6 of a read pair's MEMs** on SILVA (from `bayesauto`'s likelihood), probably
     because of MicrobeMixer's 2% mutation and ART's errors.
-  - **Space:** the default index is 1.87 GB with its RMQ (0.31 GB, unused by counting), 1.56 GB without; the paper says
-    1.44.
+  - **Space:** the default index is 1.87 GB with its RMQ (0.31 GB, unused by counting), 1.56 GB without; the paper's
+    1.44 is the RLCSA, tags and lookup table, with no RLBWT (`results/silva/README.md`, "Index size").
   - **Accuracy definition:** strict, ties wrong. Reads of genera with ambiguous names count as correct (Cliffy's rule),
     which matters only for simulated reads.
 - **Open:**
   - Gonzalo's run of Cliffy's approximate listing on our reads (`scripts/score_cliffy_listing.sh`, one command).
   - Whether Cliffy's `tab:others` numbers are on 5,000 or 200,000 pairs per region (`results/silva/README.md:14–25`).
   - Cliffy's index sizes on the server (`scripts/cliffy_index_size.sh`).
-  - `find --classify bayes` (`edb28a0`) has no clade filter, unlike the scorer since `4f68295`. On SILVA the two can
-    differ on reads whose top genus is "uncultured". They are still equal on the toy, which has none. `find` also
-    classifies each mate alone, while the scorer combines mates.
   - Methods text: the dial section of `NOTES.md` has an exact description (simulation, every scheme as a formula, EM,
     `bayesauto`, the accuracy definition). It doesn't yet mention the ε → 0 limit or the scored-clades restriction.
 
@@ -139,8 +137,8 @@ Posted. Superseded by `tool/`'s `zymo` and `silva` presets. Each repository's RE
 - **Big-BWT's multithreaded parser** (`-t`) failed an internal assertion on the synthetic pangenomes; use it
   single-threaded.
 - **bigrepair:** use `-m 0` (plain RePair). Its memory-bounded RePair stalled on 64 M tag runs.
-- **Timing noise:** one configuration timed at 52.3, 45.9 and 43.0 µs per read in single runs. Use repeats
-  (`timing_repeats.txt`) for anything finer than about 20%.
+- **Timing:** read files differ by up to 22% (42.48 to 51.94 µs), so compare over all the reads. The 43.0 µs was one
+  file, V1_V2 mate 1, and 52.3 µs was a slow run. Over all the reads, 5 repeats vary by under 1% (`timing_repeats.txt`).
 - **c129 on the external drive:** `~/tool/chr19/c129.S` and `c129.bwt` are symlinks to it, so the drive must be
   plugged in to rebuild anything for 64 individuals.
 - **`silva_queue.sh collect`** now copies only small text files (`fb7c06c`); committed results stay a few MB.

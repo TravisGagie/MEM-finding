@@ -25,12 +25,20 @@ BETAS = [0, 0.1, 0.25, 0.5, 0.75, 1]
 EXP, TAX, D2T, T2L = sys.argv[1:5]
 W = sys.argv[5] if len(sys.argv) > 5 else tempfile.mkdtemp()
 os.makedirs(W, exist_ok=True)
-genera = [l.split(None, 1)[1].strip() for l in open(D2T) if l.strip()]
+# the reference checks below assume every genus is scored and uniquely named, so they use only such genera; a read
+# from any other counts as correct, and credit to "uncultured" is dropped (checked by hand at the end)
+RAW = [l.split(None, 1)[1].strip() for l in open(D2T) if l.strip()]
+def genus_name(path): return path.rstrip(";").split(";")[-1]
+_names = [genus_name(g) for g in RAW]
+genera = [g for g in RAW if genus_name(g) != "uncultured" and _names.count(genus_name(g)) == 1]
 G = len(genera)
-assert G >= 4, "need at least 4 genera"
+assert G >= 4, "need at least 4 uniquely named genera"
+D2T_RAW = D2T
+D2T = os.path.join(W, "unique_doc_to_traversal.txt")
+open(D2T, "w").write("".join("%d %s\n" % (i + 1, g) for i, g in enumerate(genera)))
 
 
-def write_set(name, reads, nseq):
+def write_set(name, reads, nseq, genera=genera):
     """reads: (truth doc, mate-1 features, mate-2 features), a feature being (length, {doc: count})"""
     d = os.path.join(W, name); os.makedirs(d, exist_ok=True)
     with open(d + "/seqtax.txt", "w") as o:
@@ -46,10 +54,10 @@ def write_set(name, reads, nseq):
     return d
 
 
-def score(d, mode, extra=()):
+def score(d, mode, extra=(), d2t=None):
     out = "%s/%s.csv" % (d, mode)
     cmd = [sys.executable, SCORE, "--mode", mode, "--mate1-listings", d + "/m1", "--mate2-listings", d + "/m2",
-           "--doc-id-to-traversal", D2T, "--silva-tax-ranks", TAX, "--readset-truthset", d + "/seqtax.txt",
+           "--doc-id-to-traversal", d2t or D2T, "--silva-tax-ranks", TAX, "--readset-truthset", d + "/seqtax.txt",
            "--trav-to-length", T2L, "--exp-src", EXP, "--output", out, "--nseq", d + "/nseq.txt", "--threads", "2"] + list(extra)
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode:
@@ -248,5 +256,26 @@ lls = [mix_ll(BAYES_READS, BAYES_NSEQ, e) for e in GRID]
 check("bayesauto: the epsilon of largest likelihood (%g)" % chosen, chosen == GRID[max(range(len(GRID)), key=lambda k: lls[k])])
 got = next(l.strip().split(",") for l in open(out) if ",genus," in l)
 check("reference: bayesauto's calls with its epsilon", counts(got[3:]) == mix_ref(BAYES_READS, BAYES_NSEQ, chosen))
+# the limit epsilon -> 0: fewest missing matches first (B has all three of hand4's, so B beats A at every epsilon of
+# the limit), then the product of c_g / N_g (two genera with both matches: the larger product wins), and epsilon = 1e-300 agrees
+L4 = score(os.path.join(W, "hand4"), "bayes", ["--prior", "flat", "--epsilon", "1e-300,0"])
+check("hand: the limit picks the genus missing fewest matches", counts(L4["bayesflat0"]["genus"])[2] == 0 and L4["bayesflat0"]["genus"][3:] == L4["bayesflat1e-300"]["genus"][3:])
+nseq = [1, 10] + [1] * (G - 2)
+reads = [(0, [(60, {0: 1, 1: 1, 2: 1})], [(60, {0: 1, 1: 1})])]
+d = write_set("hand5", reads, nseq)
+check("hand: the limit breaks ties by the product of c_g / N_g", counts(score(d, "bayes", ["--prior", "flat", "--epsilon", "0"])["bayesflat0"]["genus"])[2] == 1)
+# "uncultured" can't be called: it has both matches and the truth A only one, and A still wins, at every epsilon and in
+# the limit; its calls say the same, and --exclude-out lists it
+if "uncultured" in _names:
+    u = _names.index("uncultured"); A = next(i for i, g in enumerate(RAW) if g in genera)
+    nseq = [1] * len(RAW)
+    reads = [(A, [(60, {u: 2, A: 1})], [(60, {u: 2})])]
+    d = write_set("hand6", reads, nseq, RAW)
+    X = score(d, "bayes", ["--prior", "flat", "--epsilon", "1e-2,1e-300,0", "--calls", d + "/calls.tsv", "--exclude-out", d + "/excl.txt"], D2T_RAW)
+    check("hand: an uncultured genus can't win", all(counts(X[l]["genus"])[2] == 1 for l in ("bayesflat0.01", "bayesflat1e-300", "bayesflat0")))
+    check("hand: the calls leave out an uncultured genus", open(d + "/calls.tsv").read().split()[1] == str(A))
+    check("hand: --exclude-out lists the unscored documents", [int(x) for x in open(d + "/excl.txt")] == [i for i, n in enumerate(_names) if n == "uncultured"])
+else:
+    print("no uncultured genus in this reference: its three checks were skipped")
 print("%d failures" % fails)
 sys.exit(1 if fails else 0)

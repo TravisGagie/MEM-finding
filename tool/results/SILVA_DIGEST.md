@@ -136,13 +136,15 @@ scoring of the same outputs (the grammar and digest outputs are scored separatel
 | grammar tags, bigrepair | 1.23 | 56.0 | 57.1 | 137,200 | 93.77% | 93.79% | `tables.txt:19`, `sizes.txt:3` |
 | minimizer digests, L = 30 | 0.59 | 31.5 | 33.1 | 217,600 | 92.48% | 92.51% | `tables.txt:20`, `sizes.txt:4` |
 
-- **Space:** the default's 1.87 GB includes the tag array's RMQ, 0.31 GB (313,893,632 bytes,
-  `results/silva_queue/grammar/summary.txt:6`), which counting does not use. Without it the default is 1.56 GB. The
-  paper's 1.44 GB did not have the RMQ as a separate file (`results/silva/README.md:108–109`).
-- **Timing noise:** the same default configuration took 52.3 µs per read in the timing step, 45.9 µs in the digests
-  step (`tables.txt:31`, `undigested.L30`), and 42.98 µs over V1_V2 alone in the grammar step
-  (`grammar/summary.txt:8`). The outputs are identical. So differences of 10–20% between single idle-machine runs are
-  noise (`results/silva/README.md:111–113`); repeats are needed for finer comparisons.
+- **Space** (`results/silva/README.md`, "Index size"): 1.87 GB is `.rlbwt` 0.155 + `.csa` 0.565 + `.tag` 0.836 + `.tag.rmq`
+  0.314. Without the RMQ, which counting doesn't use, it is 1.56 GB. The paper's 1.44 GB (`silva.tex:249`) is the RLCSA 0.57 +
+  tags 0.86 + the lookup table 0.018, so it never counted the RMQ, and it leaves out the RLBWT.
+- **Timing, superseding the row above** (`results/silva/timing_repeats.txt`, 5 repeats over all the reads): one thread
+  45.57 µs per read (45.46–45.87), 46.88 µs total / reads, 21,332 reads/s; 12 threads 167,224 reads/s (164,575–167,504).
+  The earlier 52.3 µs was a slow run, 45.9 µs agrees with the repeats, and 43.0 µs was V1_V2 mate 1 alone: read files
+  run from 42.48 to 51.94 µs.
+- **Newer results, in `results/silva/README.md`:** smaller ε and the ε → 0 limit, accuracy excluding ambiguous genera,
+  `bayesauto`'s peak, and naive Bayes on the aquatic and uniform reads.
 
 ## 7. The digested index (`tab:digest`)
 
@@ -246,7 +248,6 @@ accuracy, mean of the four regions.
 | item | what it gives | where it will be | status |
 |---|---|---|---|
 | `bayesauto` rescored with the grid to 0.99 | the mixture's real fitted ε on SILVA, and its accuracy | `silva_queue.sh dial` after deleting `dial/a*/credit/bayesauto.*` (scoring only) | not yet run |
-| repeated timings | the timing noise (52.3, 45.9, 43.0 µs for one configuration) | the timing step, repeated | optional |
 | Cliffy's approximate listing on our reads | its accuracy under the paper's scoring | `scripts/score_cliffy_listing.sh` | needs Gonzalo's run of Cliffy |
 | which reads Cliffy's `tab:others` numbers are on | 5,000 or 200,000 pairs per region | `results/silva/README.md:14–25` | to be settled with Gonzalo |
 | Cliffy index sizes on the server | the three counts for its SILVA indexes | `scripts/cliffy_index_size.sh` | not yet run |

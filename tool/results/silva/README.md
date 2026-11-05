@@ -258,3 +258,19 @@ The digest's three figures for "the same configuration" are not three samples of
 - **The RLBWT:** `find` always loads it (`main.cpp` line 872), but with `--csa` the search steps use the RLCSA (`search.hpp` line 27), and the tags use it only when sampled. So it appears unused in the default configuration. This comes from reading the code, not from a run without it.
 - **The lookup table:** the new tool builds it at load time (`main.cpp` line 962), so it's in memory but in no file. `sizes.txt` misses it. Peak memory is 1.58 GB.
 - **The tag array:** both have 359,351,512 runs and 14-bit tags (628.9 MB). The paper's 0.86 is `PLAN.md`'s 0.228 + 0.629 GB. The old file on the desktop, `bac.s1.tag` (2026-10-05), is 970,965,362 bytes, which with the RLCSA gives the 1.54 GB in `compare/katka-travis-gagie-desktop/summary.txt`. That file doesn't match 0.86 GB, and this wasn't explained.
+
+## MicrobeMixer and ART: what Cliffy's paper says and what its code runs (2026-11-05)
+
+**MicrobeMixer's version.** No source pins one.
+- **Papers:** the Genome Research paper (Ahmed, Boucher and Langmead, 2025, section "Simulating realistic 16S rRNA data sets") and the bioRxiv preprint (10.1101/2024.05.25.595899, posted 2024-05-30) name the tool and link the repository, with no version or commit.
+- **`cliffy-experiments`:** `config/config.yaml` runs a private path, `/home/oahmed6/Sim_16S_Reads/src/sim_16s_reads.py`, with no commit. A public repository of that name doesn't exist.
+- **Public history** (`oma219/MicrobeMixer`, 10 commits, no tags or releases): the behaviour changed once after the first days, in the last commit, 6409f5d (2024-04-25). It adds `--num-reads` and `--output-name`, and sets ART's fold coverage per genus, instead of `-f 2000`.
+- **What Cliffy must have run:** `cliffy-experiments` (3b7df02, 2024-05-01) passes `--num-reads 10000000` and `--output-name`, which only 6409f5d accepts, unless the private copy differed. Our reads use 6409f5d too, so on the public record the commit is the same.
+- **One loose end:** the preprint's Appendix A.4 shows `simulate` without `--num-reads`, which 6409f5d requires, but `-f {coverage}`, which only 6409f5d has. So the appendix is abbreviated, or describes neither commit exactly.
+
+**ART's error profile. These differ, and this is the mismatch.**
+- **Paper:** Figure 2's caption, "simulated with art_illumina using MiSeq v3 error model", in both the preprint and the journal.
+- **Code:** every commit of MicrobeMixer runs `art_illumina -ss MSv1`, and the preprint's own Appendix A.4 prints that command. `MSv1` is ART's MiSeq v1 profile; MiSeq v3 is `MSv3`. Both are 250 bp in ART 2.5.8.
+- **Not available here:** the journal's Supplemental Section 4, which holds the journal version's commands.
+
+So the reads were most likely made with MSv1, as ours were, and the caption is wrong; this can't be settled from the paper alone. The table below compares the two profiles.

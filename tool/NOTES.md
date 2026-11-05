@@ -1,5 +1,10 @@
 # Notes on the tool
 
+**For the chat session (2026-11-05).** The desktop now owns `tool/` (`HANDOVER.md`).
+- `results/SILVA_DIGEST.md` now has the 5-repeat timing and what each index size counts. Its table row for the default (52.3 µs, 145,500 reads/s) is superseded by the bullets under it.
+- `find --classify bayes` now matches the scorer call for call on real SILVA: both mates (`--mate2`) and scored genera only (`--exclude-docs`).
+- MicrobeMixer and ART: `results/silva/README.md`, last section. The mismatch is ART's profile, MiSeq v3 in Cliffy's Figure 2 caption against `-ss MSv1` in the code. The table by profile is still running.
+
 Written 2026-11-01 for Travis, by the session that built `tool/` from `BRIEF_tool.md`.
 
 ## Status
@@ -622,7 +627,10 @@ The code computes each in a form that gives these endpoints bit for bit. The exi
 
 *Naive Bayes in the tool.* `find --classify bayes --nseq FILE [--epsilon E]` writes, per read, the name and the top documents (0-based tags, comma-separated if tied; `-` without MEMs), with a flat prior.
 - It accumulates in the same order and with the same arithmetic as `score_silva.py --mode bayes --prior flat`, so the calls are the same read by read: 28,800 calls on the toy (three values of α, two regions, two values of ε), checked by `tests/dial_toy.sh`.
-- It classifies each read on its own. For read pairs, the scorer combines both mates; `find` would need both mates of a pair in one run to do the same.
+- **Pairs:** `--mate2 FILE` classifies a pair over both mates' MEMs, mate 1's first, as the scorer does.
+- **Scored genera:** `--exclude-docs FILE` keeps the listed documents from being called; a MEM still counts as missing for a genus that lacks it. `score_silva.py --exclude-out` writes the list, 373 documents on SILVA, so "scored" has one definition.
+- **Checked on real SILVA** (2026-11-05): call for call the same as the scorer's `--calls` on all four aquatic regions at ε = 10⁻⁶ and 10⁻³, and on the dial's V4_V4 at α = 1 and −1, 200,000 pairs each. The exclusion changed 2,239 to 17,709 calls per set, so the check exercises it.
+- `--epsilon 0`, the scorer's limit, isn't in `find`; it refuses a non-positive ε.
 
 *Accuracy.* Strict genus accuracy of a scheme on a region is A/R, where A is the number of read pairs whose true genus alone has the largest W_g. In detail:
 - a tie for the largest weight counts as wrong;
