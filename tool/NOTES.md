@@ -665,6 +665,23 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
   - **`bayesauto`'s fit fails on SILVA.** ε = 0.5, the top of the grid, in all 12 runs, with the log-likelihood still rising there; the toy fitted 0.03 to 0.2. The accuracy above is for ε = 0.5, so don't describe it as fitted.
   - **`scripts/simulate_dial.py` has no `__main__` guard.** Python 3.14's default start method, forkserver, re-imports the script, reruns `art(jobs)` at line 114, and the `Pool` at line 96 raises multiprocessing's bootstrapping `RuntimeError`. The first dial stopped there at α = 1, V1_V2, with nothing simulated. The rerun set the start method to `fork` from outside (`PYTHONPATH` with a `sitecustomize.py`), without changing the script. The script needs a guard or `multiprocessing.get_context("fork")`.
   - **`silva_queue.sh collect` copies 3.5 GB** (grammar binaries, `out.*`, tags) into `results/silva_queue`, and those can't be committed. The desktop deletes files over 1 MB after each collect. That also removes `dial/a*/<region>.seqtax.txt`, so `dial_tables.py tool/results/silva_queue`, as in the steps above, reports them missing and exits 1. It was run on `~/tool/silva/queue` instead.
+- **The cloud session's answers (2026-11-05, fb7c06c and before):**
+  - **`simulate_dial.py`:** its `Pool` now comes from `multiprocessing.get_context("fork")`, as `score_silva.py`'s does. Checked with the start method set to forkserver.
+  - **`bayesauto`:** the fit isn't broken. The likelihood really is still rising at 0.5.
+    - Near ε = 0, the log-likelihood falls by m · ln 10 per decade per read, where m is how many of a read's MEMs its most likely genus lacks. The SILVA logs give m = 4.6 to 6.5 per read pair, at every α and region; the toy gives 0.2 to 0.8.
+    - So a large share of a read's MEMs are absent from its best genus. This probably comes from MicrobeMixer's 2% mutation of each region and ART's errors: a segment around a changed base can match another genus exactly over 30 or more bases, while the true genus lacks it.
+    - The maximum-likelihood ε is therefore probably above 0.5. The grid now goes to 0.99, and the scoring log says when the fit is at its edge.
+  - **`collect`:** it now copies only `.csv`, `.log`, `.txt` and `.tsv` files under 5 MB, and not the grammar step's `out.*`. The seqtax files (1.1 MB each) are kept, so `dial_tables.py tool/results/silva_queue` works.
+  - **For the desktop, scoring only:**
+
+    ```
+    cd ~/MEM-finding && git pull origin tool
+    rm -f ~/tool/silva/queue/dial/a*/credit/bayesauto.*
+    tool/experiments/silva_queue.sh dial collect
+    python3 tool/scripts/dial_tables.py tool/results/silva_queue
+    ```
+
+    The simulations and searches are done, so `dial` skips them and only rescores `bayesauto`: about 24 grid points × 12 read sets of likelihood passes, in the order of an hour with 12 threads. The ε fitted per region and α, and whether it is at the edge, are in `dial_tables.py`'s output.
 - **The α fit doesn't place the real reads on the dial.** Its slope is 0.056 with Spearman about −0.04 (`results/silva/alpha_fit.txt`): abundance is unrelated to N_g. That is not the dial's α = 0, where every genus gets the same reads: the real sets are skewed, and proportional gets 93.77 on them against 88.19 at α = 0.
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
