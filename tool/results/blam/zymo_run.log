@@ -1,0 +1,35 @@
+== B_lambda 11:56:35
+exit 0
+RLBWT: n=39277433153 r=338097187, 1024.495 MB (1971.9 s)
+tag runs: 448723822 runs (27263.5 s)
+B_l: fingerprints for 1 values of l (29817.1 s)
+B_l: fingerprints for 1 values of l (32459.6 s)
+B_l: fingerprints for 1 values of l (35180.0 s)
+B_l: fingerprints for 1 values of l (37974.8 s)
+B_l: fingerprints for 1 values of l (43331.8 s)
+tag runs rho = 448723822; r = 338097187, sigma = 6, d = 7 segments
+  lambda = 0: B_lambda = 448723813, bound 786821021
+  lambda = 10: B_lambda = 448430416, bound 4167499694
+  lambda = 30: B_lambda = 107938468, bound 10588951886
+  lambda = 100: B_lambda = 97171998, bound 34244989906
+  lambda = 1000: B_lambda = 65409566, bound 338500713774
+tag array: n=39277433153, 448723822 tag runs, 687.420 MB (43598.4 s; peak memory so far 11.03 GB)
+index built in 45570.8 s (peak memory 11.03 GB)
+blam: 45570.87 s wall, 30966.62 s user, peak 10771576 KB
+total 82974128
+-rw-rw-r--+ 1 travis travis 39277433146 Nov  4 11:13 zy.S
+-rw-rw-r--+ 1 travis travis 39277433153 Nov  4 11:50 zy.bwt
+-rw-rw-r--+ 1 travis travis          63 Nov  4 11:13 zy.datasets
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds0.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds1.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds2.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds3.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds4.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds5.S -> /dev/null
+lrwxrwxrwx  1 travis travis           9 Nov  4 10:59 zy.ds6.S -> /dev/null
+-rw-rw-r--+ 1 travis travis          17 Nov  4 11:13 zy.info
+-rw-rw-r--+ 1 travis travis  1024495060 Nov  4 12:29 zy.rlbwt
+-rw-rw-r--+ 1 travis travis  5384685896 Nov  5 00:36 zy.sp.tagruns
+-rw-rw-r--+ 1 travis travis     1446431 Nov  4 11:13 zy.tbl
+tag runs: byte-identical to the index's zy.sp.tagruns
+== done 00:37:26
