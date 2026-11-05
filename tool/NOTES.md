@@ -779,6 +779,18 @@ Every variant gave the same MEMs.
   - Steps of every kind account for well under half of each search's time. The rest is presumably parsing the patterns into phrases (closed syncmers, hashing, dictionary lookups over 40 million characters), which was not timed separately.
   - So on these data, the choice of continuation rule moves search time by a few percent at most, and the smallest successor takes the fewest steps.
 
+**Entry against match-end parse steps, and a range start (2026-11-05; analysed, not implemented).**
+- **The split** (2 Mb data, per pattern character; inside steps are negligible):
+  - N = 64, smallest successor: 0.0038 entry against 0.0028 end; most frequent successor: 0.0162 against 0.0118;
+  - N = 1024, smallest: 0.0006 against 0.0005; most frequent: 0.0058 against 0.0048.
+
+  Entry steps are 55–58% of the steps at match ends, under both rules.
+- **The proposal.** Start the search in Δ at the first block boundary i reached from the right. The pattern's phrases from i on are δ followed by x continuations, and their block-start occurrences are the Δ rows of the symbols (δ, j) with j ≥ x: under the ω order, the tail of the ω = 0 group plus the head of the ω = 1 group.
+- **Why it is not exact as stated.** A search is for X[begin..end) with any end, and it starts with character steps for the partial last piece X[S[idx]..end). That piece runs past the last complete phrase by a tail X[S[idx]+K..end) of up to one phrase step. The parse interval at i is therefore for "δ, x continuations, tail", and the Δ range is a superset of it.
+  - Blocks with at least x + 2 phrases continue with succ(last phrase). Whether the tail matches that phrase is one string comparison, so these are exact.
+  - Blocks with exactly x + 1 phrases are followed by some other phrase y, and only those whose y starts with the syncmer and the tail match. Phrase ids are in lexicographic order, so within each symbol (δ, x, ω) these rows are probably one contiguous sub-range, ordered by y. Finding it needs y for a Δ row: a forward step (Ψ) on the block BWT, which is not stored, or a binary search over each symbol's rows.
+- **So an exact range start needs more than a C-array lookup.** Either store enough to find that sub-range, or use the range only when no block with exactly x + 1 phrases can match: for example, when the tail is empty, or when the dictionary shows that no phrase other than succ starts with the syncmer and the tail. Not implemented: an inexact start would break the rule that every configuration gives exactly plain search's MEMs and intervals.
+
 **For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
 
 ```
