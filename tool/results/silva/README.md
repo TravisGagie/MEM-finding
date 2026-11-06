@@ -545,7 +545,7 @@ Movi 2 (v2.0.0 + 12 commits, 9bc0acc), `regular` mode, with the prototype in `mo
 2. `query_mem_bml` has no alphabet check before `initialize_backward_search` at the end of a MEM, so a read with an ambiguity code at that point indexes `first_runs` with `alphamap` = 256 and crashes. 1% of these reads have such codes, copied from SILVA. `query_backward_search` has the check. Worked around here by splitting reads at non-ACGT, as `find` does; not patched.
 3. At query time `-l` doesn't set the MEM length; `--min-mem-length` does.
 
-**Bidirectional extension costs too much on SILVA.** Unmodified `--mem`, with the fix in (1), takes about 72 s per file. `extend_left` walks 466 runs per step on V3_V4_1 and 1,204 on V4_V5_2, 14.5 and 44.3 billion loop steps; `count()` walks only 1.8 and 2.3 million. So BML here uses Movi 2's backward steps alone: the window on the forward strand, then a fresh search of the reverse complement only when the window matches, as `find` does. That takes about 6.7 s per file, with the same MEMs. How this compares on narrow intervals was not measured. 
+**Bidirectional extension costs too much on SILVA.** Unmodified `--mem`, with the fix in (1), takes about 70 s per file. `extend_left` walks 466 runs per step on V3_V4_1 and 1,204 on V4_V5_2, 14.5 and 44.3 billion loop steps; `count()` walks only 1.8 and 2.3 million. So BML here uses Movi 2's backward steps alone: the window on the forward strand, then a fresh search of the reverse complement only when the window matches, as `find` does. That takes about 6.7 s per file, with the same MEMs. How this compares on narrow intervals was not measured. 
 
 **Search, 5 repeats, µs per read** (total processing time over the reads, one thread, pinned, without loading):
 
