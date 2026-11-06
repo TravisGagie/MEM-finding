@@ -440,3 +440,22 @@ Excluding reads from genera with ambiguous names, on the dense dial (the other s
 - **Convergence:** 5 iterations are within 0.05 points of 20.
 - **The prior learned doesn't go to zero outside the sample:** on V1–V2 about 3,700 genera keep a prior above 0, against about 100 in the sample. Whether a sparser estimate would help wasn't tested.
 - This prior is learned from the reads being classified, like plain EM's, so it needs the whole read set before calling any read, unlike `find --classify bayes`.
+
+## RLBWT with sampled tags (2026-11-06)
+
+The default undigested index at L = 30, `find -L 30 -c -F 10`, with backward steps on the run-length BWT and no RLCSA, against the explicit RLCSA with full tags (`experiments/tag_sampling.sh`, `tag_sampling.txt`). The protocol is that of the timing repeats: 5 repeats, one thread on CPU 9, all 1.6 million reads, with the configurations taking turns. All 160 outputs are byte-identical to the RLCSA's.
+
+| configuration | tags (MB) | whole index, files loaded (MB) | mean per read (µs), median (range) | total / reads (µs) | peak (GB) |
+|---|---:|---:|---:|---:|---:|
+| RLCSA, full tags (default) | 836.4 | 1,556.9 | 45.78 (45.60–46.27) | 47.20 | 1.58 |
+| RLBWT, full tags | 836.4 | 991.7 | 178.58 (178.22–179.03) | 179.89 | 1.02 |
+| RLBWT, s = 2 | 588.2 | 743.5 | 186.50 (186.09–187.09) | 187.84 | 0.77 |
+| RLBWT, s = 4 | 430.3 | 585.5 | 202.16 (202.03–202.35) | 203.49 | 0.61 |
+| RLBWT, s = 8 | 351.2 | 506.5 | 235.26 (234.65–235.88) | 236.62 | 0.53 |
+
+- **Files loaded:** the RLCSA row counts `.rlbwt`, `.csa` and `.tag`, as `find` loaded all three in this build; the others `.rlbwt` and the tags.
+- **The RLCSA is 3.9 times faster** than the RLBWT with the same tags, at 1.6 times the space.
+- **Sampling is cheap at first:** s = 2 costs 4% over full tags and saves 25% of the index; s = 4, 13% and 41%; s = 8, 32% and 49%. The tags' size flattens because the run boundaries stay.
+- **Repeats vary by under 1%,** and the RLCSA row agrees with the 45.57 µs of the earlier repeats.
+- **Code path:** with s = 1, `tag_array::tag()` reads the label directly; with s > 1 it follows LF through the RLBWT until it reaches a sampled run. The rest of the search is the same.
+- `bac.rlbwt`, rewritten by `index` when s = 2 and 8 were built, kept its SHA-256.
