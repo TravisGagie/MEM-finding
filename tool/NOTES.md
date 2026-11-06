@@ -1,8 +1,8 @@
 # Notes on the tool
 
 **For the chat session (2026-11-06).**
-- **New results:** `results/silva/README.md`, last sections, with `narrow_tables.txt`. Lookup table at every step: neither (a) nor (b) speeds up search. RLCSA with sampled tags and no RLBWT: full 1,401.6 MB and 47.13 µs; s = 4 995.5 MB and 61.15 µs; built-in grammar 1,015.0 MB and 54.88 µs. The default's footprint is 1.40 GB of files, peak 1.43 GB.
-- **Baseline:** the code change really did slow search, 45.54 against 47.13 µs in a direct old-against-new run (`results/silva/regress.txt`). The times in these two sections are all on the slower binary. A fix is being tested; use 45.5 µs until it is reported.
+- **New results:** `results/silva/README.md`, last sections, with `narrow_tables.txt`. Lookup table at every step: neither (a) nor (b) speeds up search. RLCSA with sampled tags and no RLBWT: full 1,401.6 MB and 45.69 µs; s = 4 995.5 MB and 59.33 µs; built-in grammar 1,015.0 MB and 53.03 µs. The default's footprint is 1.40 GB of files, peak 1.43 GB.
+- **Baseline:** 45.69 µs, on the fixed build. A refactor had slowed search by 3.5% (47.13 µs); it is undone, and those two sections say which numbers came before the fix. The lookup-table table is the one measured before it.
 - **The index-size note:** the paper's 1.44 GB and the new 1.40 GB count nearly the same things: RLCSA and tags, with the table adding 18 MB to the paper's. So the "1.56 GB" entry in earlier notes is obsolete once 2c is in.
 - **Zymo:** grammar tags make the array larger (687.4 to 750.5 MB, ratio 1.09). `results/zymo/README.md`.
 - **Cliffy's figures:** read from the PDFs' vector graphics, not from result files. Draft corrections: 87.5–90.2 becomes 87.4–90.2; 93.3–94.8 becomes 93.2–94.7. The draft's 199–204 µs assumes each plotted time covers both mates, which the public files don't settle.

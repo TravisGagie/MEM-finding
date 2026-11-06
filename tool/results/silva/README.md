@@ -505,7 +505,7 @@ This is why (b) doesn't pay: the jump table already leaves about 4 probes per bi
 
 **Elias-Fano RLCSA** (`index --efcsa`; one run each, µs per read): current search 220.1, 202.3, 194.7, 188.8 at k = 8, 10, 11, 12, and compact with (a) and (b) 376.1, 296.5, 276.2, 265.1. All 1,120 outputs across the timing, Elias-Fano and probe runs are byte-identical. Here (b) is 40 to 71% slower: narrowing replaces Elias-Fano's own bucket search with binary search by `access`.
 
-**Baseline: this code change slowed the current search by 3.5%.** `find --preset silva` with old (0a66fa9) and new binaries in turn, 5 repeats: 45.54 µs against 47.13 µs (`regress.txt`). All the times in this section and the next are on the new binary, so they are comparable with each other but about 3.5% above earlier sections.
+**Baseline: this code change slowed the current search by 3.5%.** `find --preset silva` with old (0a66fa9) and new binaries in turn, 5 repeats: 45.54 µs against 47.13 µs (`regress.txt`). The cause was refactoring `run_lists::rank` through two helper functions; undoing just that gave 47.01 against the old binary's 46.92 on one file, and forcing the helpers inline made it worse (48.16), while keeping the RLBWT loaded made no difference. With `rank` written out again the default is 45.69 µs (next section), and the self-test, `dial_toy.sh`, `test_score_schemes.py` and the block checks all pass. **The table above was measured before the fix,** so its times are about 3.5% high; comparisons within the table still hold, since every configuration ran on that binary.
 
 ## RLCSA with sampled tags, no RLBWT (2026-11-06)
 
@@ -513,14 +513,15 @@ This is why (b) doesn't pay: the jump table already leaves about 4 probes per bi
 
 | tags | boundaries (MB) | labels (MB) | tags (MB) | whole index (MB) | mean per read (µs), median (range) | peak (GB) |
 |---|---:|---:|---:|---:|---:|---:|
-| full (default) | 207.6 | 628.9 | 836.4 | **1,401.6** | 47.13 (47.09–47.18) | 1.43 |
-| s = 2 | 207.6 | 380.7 | 588.2 | 1,153.4 | 52.28 (52.11–52.57) | 1.18 |
-| s = 4 | 207.6 | 222.7 | 430.3 | 995.5 | 61.15 (60.88–61.34) | 1.02 |
-| s = 8 | 207.6 | 143.7 | 351.2 | 916.5 | 80.34 (80.22–80.94) | 0.94 |
-| grammar, built-in RePair | 207.6 | 242.2 | 449.7 | 1,015.0 | 54.88 (54.32–55.01) | 1.04 |
-| grammar, bigrepair | 207.6 | 302.0 | 509.5 | 1,074.8 | 57.30 (57.09–57.43) | 1.10 |
+| full (default) | 207.6 | 628.9 | 836.4 | **1,401.6** | 45.69 (45.35–46.08) | 1.43 |
+| s = 2 | 207.6 | 380.7 | 588.2 | 1,153.4 | 50.79 (50.60–51.07) | 1.18 |
+| s = 4 | 207.6 | 222.7 | 430.3 | 995.5 | 59.33 (59.16–59.40) | 1.02 |
+| s = 8 | 207.6 | 143.7 | 351.2 | 916.5 | 78.13 (77.97–78.39) | 0.94 |
+| grammar, built-in RePair | 207.6 | 242.2 | 449.7 | 1,015.0 | 53.03 (52.89–53.46) | 1.04 |
+| grammar, bigrepair | 207.6 | 302.0 | 509.5 | 1,074.8 | 55.83 (55.56–56.13) | 1.10 |
 
 - **The default's footprint:** 1.40 GB of files and a 1.43 GB peak, down from 1.56 and 1.58 GB.
-- **Grammar tags beat sampling here:** the built-in RePair's array is about as small as s = 4 (449.7 against 430.3 MB) and 10% faster than it, at 54.88 µs against 61.15.
-- **An index with these tags takes** 1.40 GB at 47 µs, 1.02 GB at 55 µs, and 0.92 GB at 80 µs.
+- **Grammar tags beat sampling here:** the built-in RePair's array is about as small as s = 4 (449.7 against 430.3 MB) and 11% faster than it, at 53.03 µs against 59.33.
+- **An index with these tags takes** 1.40 GB at 46 µs, 1.02 GB at 53 µs, and 0.92 GB at 78 µs.
+- These times are on the fixed build (below), rerun after the slowdown was found.
 - **Boundaries are the same** in every row; only the labels change.

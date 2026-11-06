@@ -71,10 +71,26 @@ template <class W> struct run_lists {
         }
         return find_run(r, i, lo, hi);
     }
-    // number of c's in BWT[0, i)
+    // number of c's in BWT[0, i) (written out in full: going through first_run and rank_from costs 3.5% on the default search)
     uint64_t rank(uint32_t c, uint64_t i) const {
-        if (i == 0 || off[c + 1] - off[c] == 1) return 0;
-        return rank_from(runs.data() + off[c], first_run(c, i), i);
+        if (i == 0) return 0;
+        const Run *r = runs.data() + off[c];
+        uint64_t R = off[c + 1] - off[c] - 1, lo = 0, hi = R;
+        if (R == 0) return 0;
+        if (joff[c + 1] != joff[c]) {
+            const uint32_t *J = jumps.data() + joff[c];
+            uint64_t b = i >> shift[c];
+            lo = J[b]; hi = J[b + 1];
+        }
+        while (lo < hi) {                              // first run starting at or after i
+            KATKA_PROBE();
+            uint64_t mid = (lo + hi) >> 1;
+            if (r[mid].start < i) lo = mid + 1; else hi = mid;
+        }
+        if (lo == 0) return 0;
+        const Run &a = r[lo - 1];
+        uint64_t len = r[lo].cum - a.cum, d = i - a.start;
+        return a.cum + (d < len ? d : len);
     }
     // the same, knowing that the first of c's runs at or after i is one of runs rl..rh; the jump table narrows it further
     // when that range is wider than the 8 or so runs of a jump-table entry

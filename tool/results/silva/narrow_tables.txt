@@ -28,9 +28,9 @@ k = 12
   compact, (a) and (b)             87.37 (86.72-87.52)  peak 2.33  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 54.057 MB (compact: occurring bitvector 3.146, starts 15.941, ends 15.941, absent lengths 1.452, run bounds 17.577 MB)
 
 == explicit RLCSA, no RLBWT loaded: tags
-  full       tags   836.4 MB (boundaries 207.554, labels 628.865)  index  1401.6 MB    47.13 (47.09-47.18) us  total/reads 48.26  peak 1.43 GB  n=5
-  s2         tags   588.2 MB (boundaries 207.554, labels 380.664)  index  1153.4 MB    52.28 (52.11-52.57) us  total/reads 53.42  peak 1.18 GB  n=5
-  s4         tags   430.3 MB (boundaries 207.554, labels 222.707)  index   995.5 MB    61.15 (60.88-61.34) us  total/reads 62.29  peak 1.02 GB  n=5
-  s8         tags   351.2 MB (boundaries 207.554, labels 143.687)  index   916.5 MB    80.34 (80.22-80.94) us  total/reads 81.53  peak 0.94 GB  n=5
-  grammar    tags   449.7 MB (boundaries 207.554, labels 242.181)  index  1015.0 MB    54.88 (54.32-55.01) us  total/reads 56.09  peak 1.04 GB  n=5
-  bigrepair  tags   509.5 MB (boundaries 207.554, labels 301.995)  index  1074.8 MB    57.30 (57.09-57.43) us  total/reads 58.48  peak 1.10 GB  n=5
+  full       tags   836.4 MB (boundaries 207.554, labels 628.865)  index  1401.6 MB    45.69 (45.35-46.08) us  total/reads 46.81  peak 1.43 GB  n=5
+  s2         tags   588.2 MB (boundaries 207.554, labels 380.664)  index  1153.4 MB    50.79 (50.60-51.07) us  total/reads 51.95  peak 1.18 GB  n=5
+  s4         tags   430.3 MB (boundaries 207.554, labels 222.707)  index   995.5 MB    59.33 (59.16-59.40) us  total/reads 60.55  peak 1.02 GB  n=5
+  s8         tags   351.2 MB (boundaries 207.554, labels 143.687)  index   916.5 MB    78.13 (77.97-78.39) us  total/reads 79.32  peak 0.94 GB  n=5
+  grammar    tags   449.7 MB (boundaries 207.554, labels 242.181)  index  1015.0 MB    53.03 (52.89-53.46) us  total/reads 54.17  peak 1.04 GB  n=5
+  bigrepair  tags   509.5 MB (boundaries 207.554, labels 301.995)  index  1074.8 MB    55.83 (55.56-56.13) us  total/reads 57.01  peak 1.10 GB  n=5
