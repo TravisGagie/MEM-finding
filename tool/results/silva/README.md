@@ -492,7 +492,20 @@ Mean per read (µs), median of 5; ranges are in `narrow_tables.txt` and are unde
 - **A larger k helps the current search,** from 52.13 to 43.98 µs, at the plain table's cost in space; compact at k = 12 is 36 MB and 47.68 µs.
 - **Peak memory** with the compact table counts the plain table, which is built first and then converted. That is a build cost of this implementation.
 
-**Still to come:** the Elias-Fano RLCSA and probes per step.
+**Probes per backward step, explicit RLCSA** (a build with `-DKATKA_COUNT_PROBES`; steps in millions, over all 1.6 million reads):
+
+| k | current | (a) | (b) | both | steps, current | steps, both |
+|---:|---:|---:|---:|---:|---:|---:|
+| 8 | 8.64 | 8.64 | 8.59 | 8.59 | 814.6 | 814.6 |
+| 10 | 8.46 | 8.46 | 7.95 | 7.95 | 753.1 | 753.1 |
+| 11 | 8.37 | 8.37 | 7.18 | 7.17 | 722.4 | 722.3 |
+| 12 | 8.32 | 8.30 | 6.45 | 6.42 | 696.7 | 690.6 |
+
+This is why (b) doesn't pay: the jump table already leaves about 4 probes per binary search, two searches per step, and narrowing saves at most 1.9 of the 8.3, against an added table access on every step.
+
+**Elias-Fano RLCSA** (`index --efcsa`; one run each, µs per read): current search 220.1, 202.3, 194.7, 188.8 at k = 8, 10, 11, 12, and compact with (a) and (b) 376.1, 296.5, 276.2, 265.1. All 1,120 outputs across the timing, Elias-Fano and probe runs are byte-identical. Here (b) is 40 to 71% slower: narrowing replaces Elias-Fano's own bucket search with binary search by `access`.
+
+**Baseline: this code change slowed the current search by 3.5%.** `find --preset silva` with old (0a66fa9) and new binaries in turn, 5 repeats: 45.54 µs against 47.13 µs (`regress.txt`). All the times in this section and the next are on the new binary, so they are comparable with each other but about 3.5% above earlier sections.
 
 ## RLCSA with sampled tags, no RLBWT (2026-11-06)
 

@@ -1,0 +1,2 @@
+old  mean per read 45.54 us (45.47-45.77), total/reads 46.60, peak 1.58 GB, n=5; repeats 45.52 45.54 45.47 45.77 45.77
+new  mean per read 47.13 us (47.05-47.23), total/reads 48.22, peak 1.43 GB, n=5; repeats 47.23 47.13 47.13 47.05 47.22
