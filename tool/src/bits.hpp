@@ -316,6 +316,21 @@ struct EFRank {
         r1 = a1 == b ? 0 : rank_from(b, a1, c, i1);
         r2 = a2 == b ? 0 : rank_from(b, a2, c, i2);
     }
+    // rank2, knowing that both positions' runs lie among runs rl..rh (positions in KS): binary search over KS within them
+    inline uint64_t count_less_in(uint64_t x, uint64_t lo, uint64_t hi) const {
+        while (lo < hi) {
+            uint64_t mid = (lo + hi) >> 1;
+            if (KS.access(mid) < x) lo = mid + 1; else hi = mid;
+        }
+        return lo;
+    }
+    inline void rank2_in(uint32_t c, uint64_t i1, uint64_t i2, uint64_t rl, uint64_t rh, uint64_t &r1, uint64_t &r2) const {
+        if (c >= sigma) { r1 = r2 = 0; return; }
+        uint64_t base = (uint64_t)c * n, b = KS.count_less(base);
+        uint64_t a1 = i1 ? count_less_in(base + i1, rl, rh) : b, a2 = i2 ? count_less_in(base + i2, rl, rh) : b;
+        r1 = a1 == b ? 0 : rank_from(b, a1, c, i1);
+        r2 = a2 == b ? 0 : rank_from(b, a2, c, i2);
+    }
     // LF without a C array: C[c] + rank_c(i)
     inline uint64_t lf_one(uint64_t base, uint64_t b, uint64_t i) const {
         uint64_t a = i ? KS.count_less(base + (i > n ? n : i)) : b;

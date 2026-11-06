@@ -546,6 +546,11 @@ static const char *FIND_USAGE =
     "    --classify bayes  per read, the genus by naive Bayes over its MEMs (flat prior): name, then the top documents\n"
     "                      (0-based tags, comma-separated if tied; - without MEMs); needs --nseq FILE (sequences per\n"
     "                      document, one per line) and counting tags; --epsilon E for a missing MEM (default 1e-6)\n"
+    "    --narrow          with -F and an RLCSA: each binary search starts within the runs given by the t-mer ending the\n"
+    "                      match, stored in the table (8 more bytes per entry); the answers are the same\n"
+    "    --absent          with -F: when BML (t < L) finds its window's last t-mer absent, the failure point comes from the table,\n"
+    "                      with no backward steps; the answers are the same\n"
+    "    --compact         with -F: the table as a bitvector and Elias-Fano lists, not arrays; the answers are the same\n"
     "    --mate2 FILE      --classify bayes: FILE holds each read's mate; a pair is classified over both mates' MEMs,\n"
     "                      under the first mate's name\n"
     "    --exclude-docs FILE  --classify bayes: 0-based documents that can't be called (score_silva.py --exclude-out)\n"
@@ -800,13 +805,14 @@ static int cmd_find(int argc, char **argv) {
     bool fixed_L = false;
     double epsilon = 1e-6;
     string mate2file, excludefile;
+    bool narrow = false, absent = false, compact = false;
     int mode = -1;
     static option longopts[] = {
         {"adaptive", 0, 0, 'X'}, {"top", 1, 0, 1}, {"longest", 1, 0, 18}, {"kebab-top", 1, 0, 19}, {"kebab-batch", 1, 0, 20},
         {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"classify", 1, 0, 29}, {"nseq", 1, 0, 30}, {"epsilon", 1, 0, 31}, {"mate2", 1, 0, 32}, {"exclude-docs", 1, 0, 33}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"classify", 1, 0, 29}, {"nseq", 1, 0, 30}, {"epsilon", 1, 0, 31}, {"mate2", 1, 0, 32}, {"exclude-docs", 1, 0, 33}, {"narrow", 0, 0, 34}, {"absent", 0, 0, 35}, {"compact", 0, 0, 36}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -851,6 +857,9 @@ static int cmd_find(int argc, char **argv) {
             case 31: epsilon = std::stod(optarg); break;
             case 32: mate2file = optarg; break;
             case 33: excludefile = optarg; break;
+            case 34: narrow = true; break;
+            case 35: absent = true; break;
+            case 36: compact = true; break;
             case 13: mode = NONE; break;
             case 14: use_stpd = true; break;
             case 17: poracle = true; break;
@@ -897,7 +906,9 @@ static int cmd_find(int argc, char **argv) {
     if (!readstats.empty() && !((K.opt.longest || K.opt.fixed_top) && K.opt.pseudo)) die("--read-stats needs --longest, --kebab-top or --kebab-batch, with -K");
 
     double t0 = now();
-    rlbwt B; load_rlbwt(B, prefix + ".rlbwt");
+    // the RLBWT: for backward steps without an RLCSA, and for two-level search, STPD and locating
+    rlbwt B;
+    if (!csa || twolevel || use_stpd || K.locate) load_rlbwt(B, prefix + ".rlbwt");
     rlcsa X;
     if (csa) X.load(prefix + (csa == 1 ? ".csa" : ".efcsa"));
     K.S.bwt = &B; K.S.csa = csa ? &X : nullptr;
@@ -906,7 +917,12 @@ static int cmd_find(int argc, char **argv) {
     else {
         if (tagfile.empty()) tagfile = prefix + ".tag";
         if (mode == -1) mode = file_exists(tagfile) ? RANGE : NONE;
-        if (mode != NONE) { T.load(tagfile, mode != COUNT); T.bwt = &B; K.tags = &T; }
+        if (mode != NONE) {
+            T.load(tagfile, mode != COUNT); T.bwt = &B; K.tags = &T;
+            if (csa) T.csa = &X;
+            fprintf(stderr, "tag array: %s, %lu runs: boundaries %.3f MB, labels %.3f MB\n", tagfile.c_str(), T.rho, T.RB.bytes() / 1e6,
+                    ((T.s > 1 ? T.SB.bytes() : 0) + (T.G ? T.G->bytes() : T.L.bytes())) / 1e6);
+        }
     }
     K.mode = (answer_mode)mode;
     kmer_filter KF;
@@ -991,13 +1007,22 @@ static int cmd_find(int argc, char **argv) {
     if (ft) {
         if (digested) {          // the table over the digest symbols
             std::vector<unsigned char> a;
-            for (int c = 3; c < 256; ++c) if (c != 'X' && B.C[c + 1] > B.C[c]) a.push_back((unsigned char)c);
+            const u64 *CC = csa ? X.C : B.C;
+            for (int c = 3; c < 256; ++c) if (c != 'X' && CC[c + 1] > CC[c]) a.push_back((unsigned char)c);
             LT.set_alphabet(a);
         }
+        LT.narrow = narrow; LT.absent = absent; LT.compact = compact;
         LT.build(K.S, ft); K.table = &LT;
+        fprintf(stderr, "lookup table: t = %d, %lu of %.0f t-mers occur, %.3f MB (%s)\n", ft, LT.nocc, pow((double)LT.alpha.size(), ft), LT.bytes() / 1e6, LT.describe().c_str());
+#ifdef KATKA_COUNT_PROBES
+        g_probes = g_steps = 0;
+#endif
     }
     fprintf(stderr, "index loaded in %.1f s\n", now() - t0);
 
+    if (narrow && (!ft || !csa)) die("--narrow needs -F and an RLCSA (--csa or --efcsa)");
+    if (absent && !ft) die("--absent needs -F");
+    if (compact && !ft) die("--compact needs -F");
     if (!mate2file.empty() && K.hpc) die("--mate2 is for texts without homopolymer compression");
     read_parser P(readfile);
     std::unique_ptr<read_parser> P2;
@@ -1009,6 +1034,9 @@ static int cmd_find(int argc, char **argv) {
     if (!locate_out.empty() && !K.locate) die("--locate-out needs --locate");
     FILE *lout = locate_out.empty() ? nullptr : open_or_die(locate_out, "w");
     run_stats st = find_all(K, P, out, nthreads, sout, lout, P2.get());
+#ifdef KATKA_COUNT_PROBES
+    fprintf(stderr, "probes %lu over %lu steps: %.3f per step\n", g_probes, g_steps, (double)g_probes / (g_steps ? g_steps : 1));
+#endif
     if (sout) fclose(sout);
     if (lout) fclose(lout);
     double wall = now() - t1;

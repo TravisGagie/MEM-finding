@@ -103,7 +103,8 @@ struct segment_search {
         if (TL) parse_pattern(*TL, R, n, pi, qi);
     }
     // the longest suffix of X[lo..end), X = R (dir 0) or rc(R) (dir 1); returns its start j and interval I
-    u64 back(int dir, u64 lo, u64 end, interval &I) {
+    // (window: BML's search of a window, which needs the interval only if the whole window occurs)
+    u64 back(int dir, u64 lo, u64 end, interval &I, bool window = false) {
         const char *X = dir ? rc.data() : R;
         if (PS) return ps_back(dir, lo, end);
         if (SP) {
@@ -115,16 +116,32 @@ struct segment_search {
             return st.j;
         }
         if (TL) return search2(*S, *TL, dir ? qi : pi, X, (int64_t)lo, (int64_t)end, jumps, I, cnt);
-        return plain_back(dir, lo, end, I);
+        return plain_back(dir, lo, end, I, window);
     }
-    u64 plain_back(int dir, u64 lo, u64 end, interval &I) {
+    u64 plain_back(int dir, u64 lo, u64 end, interval &I, bool window = false) {
         const char *X = dir ? rc.data() : R;
         ++cnt.searches;
         I = S->full();
         u64 j = end;
         if (T && T->t && end - lo >= (u64)T->t) {
             interval J;
-            if (T->get((const unsigned char *)X + end - T->t, J)) { I = J; j = end - T->t; }
+            u64 miss = 0;
+            const int f = T->find((const unsigned char *)X + end - T->t, J, miss);
+            if (f > 0) { I = J; j = end - T->t; }
+            else if (f == 0 && window && T->absent && end - lo > (u64)T->t) return end - miss;
+        }
+        return steps_left(X, lo, j, end, I);
+    }
+    u64 steps_left(const char *X, u64 lo, u64 j, u64 end, interval &I) {
+        if (T && T->narrow) {
+            table_key K;
+            T->key_of(X, j, end, K);
+            while (j > lo) {
+                ++cnt.char_steps;
+                if (!T->step(*S, I, (unsigned char)X[j - 1], K)) break;
+                --j;
+            }
+            return j;
         }
         while (j > lo) {
             ++cnt.char_steps;
@@ -148,13 +165,7 @@ struct segment_search {
             return st.j;
         }
         if (TL) return back(dir, lo, end, I);
-        const char *X = dir ? rc.data() : R;
-        while (j > lo) {
-            ++cnt.char_steps;
-            if (!S->step(I, (unsigned char)X[j - 1])) break;
-            --j;
-        }
-        return j;
+        return steps_left(dir ? rc.data() : R, lo, j, end, I);
     }
     // the largest e <= n such that R[a..e) occurs, with the interval of rc(R[a..e))
     // (with STPD, J is computed only by rc_interval, for the MEMs reported)
@@ -454,7 +465,7 @@ void bml_segment(segment_search &Q, u64 r0, const mem_options &opt, read_state &
             if (fail >= 0) { x = (u64)fail + 1; continue; }
         }
         interval I;
-        u64 j = Q.back(0, x, x + L, I);
+        u64 j = Q.back(0, x, x + L, I, true);
         if (j > x) { x = j; continue; }                     // R[j-1..x+L) does not occur
         u64 a = Q.extend_left(0, 0, x, x + L, I);
         interval J;

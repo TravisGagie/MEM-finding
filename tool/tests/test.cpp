@@ -196,6 +196,10 @@ static int mems_test(int argc, char **argv) {
     }
     rlcsa X, Y;
     X.load(prefix + ".csa"); Y.load(prefix + ".efcsa");
+    for (u64 i = 0; i < B.n; ++i) {                 // LF from each RLCSA alone (for sampled tags, without the RLBWT)
+        const u64 l = B.LF(i);
+        if (X.LF(i) != l || Y.LF(i) != l) die("rlcsa::LF differs from the RLBWT's at row " + std::to_string(i));
+    }
     stepper base; base.bwt = &B;
     lookup_table LT;
     digest_map DM;
@@ -208,6 +212,26 @@ static int mems_test(int argc, char **argv) {
     } else LT.build(base, 6);
     two_level L2;
     vector<config> cfgs = {{"rlbwt"}, {"csa", &X}, {"efcsa", &Y}, {"rlbwt+F6", nullptr, &LT}, {"csa+F6", &X, &LT}};
+    // binary searches narrowed by the table, on both RLCSAs (--narrow): t = 1 is the smallest table, where a match of any length qualifies
+    lookup_table NX[3], NY[3], NA[3], NB[3], NC[3], ND[3];
+    if (!digest) {
+        const int nt[3] = {1, 6, 8};
+        for (int i = 0; i < 3; ++i) {
+            stepper sx, sy; sx.bwt = sy.bwt = &B; sx.csa = &X; sy.csa = &Y;
+            NX[i].narrow = NY[i].narrow = true;
+            NX[i].build(sx, nt[i]); NY[i].build(sy, nt[i]);
+            cfgs.push_back({"csa+narrow" + std::to_string(nt[i]), &X, &NX[i]});
+            cfgs.push_back({"efcsa+narrow" + std::to_string(nt[i]), &Y, &NY[i]});
+            NA[i].absent = NB[i].absent = true; NB[i].narrow = true;
+            NA[i].build(base, nt[i]); NB[i].build(sx, nt[i]);
+            cfgs.push_back({"rlbwt+absent" + std::to_string(nt[i]), nullptr, &NA[i]});
+            cfgs.push_back({"csa+absent+narrow" + std::to_string(nt[i]), &X, &NB[i]});
+            NC[i].absent = NC[i].narrow = NC[i].compact = true; ND[i].absent = ND[i].narrow = ND[i].compact = true;
+            NC[i].build(sx, nt[i]); ND[i].build(sy, nt[i]);
+            cfgs.push_back({"csa+compact" + std::to_string(nt[i]), &X, &NC[i]});
+            cfgs.push_back({"efcsa+compact" + std::to_string(nt[i]), &Y, &ND[i]});
+        }
+    }
     twolevel_locate TLC;
     if (tl) {
         L2.load(prefix + ".lvl");

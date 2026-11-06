@@ -88,6 +88,35 @@ quiet $K find -L 20 -c --csa --twolevel --no-jumps -T t.g.tag t "$D/reads.fq" b.
 same a.out b.out "two-level search without jumps, grammar-compressed tags"
 quiet $K find -L 20 -c --efcsa -F 8 -T t.s4.tag t "$D/reads.fa" b.out
 same a.out b.out "Elias-Fano RLCSA, lookup table, sampled tags, FASTA"
+quiet $K find -L 20 -c --csa -T t.s4.tag t "$D/reads.fq" b.out
+same a.out b.out "explicit RLCSA, sampled tags, LF from the RLCSA"
+quiet $K find -L 20 -c -T t.s4.tag t "$D/reads.fq" b.out
+same a.out b.out "RLBWT, sampled tags"
+mkdir -p norl; for f in t.*; do case $f in *.rlbwt|*.bwt|*.S) ;; *) ln -sf "../$f" "norl/$f";; esac; done
+quiet $K find -L 20 -c --csa norl/t "$D/reads.fq" b.out
+same a.out b.out "no RLBWT file: --csa"
+quiet $K find -L 20 -c --csa -T t.s4.tag norl/t "$D/reads.fq" b.out
+same a.out b.out "no RLBWT file: --csa with sampled tags"
+quiet $K find -L 20 -c --efcsa -F 8 -T t.s4.tag norl/t "$D/reads.fq" b.out
+same a.out b.out "no RLBWT file: --efcsa with sampled tags and a lookup table"
+rm -rf norl
+quiet $K find -L 20 -c --csa -F 8 --narrow t "$D/reads.fq" b.out
+same a.out b.out "binary searches narrowed by the lookup table"
+quiet $K find -L 20 -c --efcsa -F 8 --narrow -j 4 t "$D/reads.fq" b.out
+same a.out b.out "binary searches narrowed by the lookup table, Elias-Fano RLCSA, 4 threads"
+quiet $K find -L 20 -c --csa -F 8 --absent t "$D/reads.fq" b.out
+same a.out b.out "absent k-mers answered by the lookup table"
+quiet $K find -L 20 -c --csa -F 8 --absent --narrow t "$D/reads.fq" b.out
+same a.out b.out "absent k-mers and narrowed binary searches"
+quiet $K find -L 20 -c --csa -F 8 --compact t "$D/reads.fq" b.out
+same a.out b.out "the compact lookup table"
+quiet $K find -L 20 -c --csa -F 8 --absent --narrow --compact t "$D/reads.fq" b.out
+same a.out b.out "absent k-mers and narrowed searches, compact table"
+quiet $K find -L 20 -c --efcsa -F 8 --absent --narrow --compact t "$D/reads.fq" b.out
+same a.out b.out "absent k-mers and narrowed searches, compact table, Elias-Fano RLCSA"
+quiet $K find -L 8 -c --csa -F 8 t "$D/reads.fq" n8.out
+quiet $K find -L 8 -c --csa -F 8 --absent --narrow --compact t "$D/reads.fq" b.out
+same n8.out b.out "absent k-mers and narrowed searches with k = L (base by base)"
 gzip -c "$D/reads.fq" > reads.fq.gz
 quiet $K find -L 20 -c --csa t reads.fq.gz b.out
 same a.out b.out "gzipped reads"
