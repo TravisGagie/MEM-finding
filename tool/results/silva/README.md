@@ -531,3 +531,46 @@ This is why (b) doesn't pay: the jump table already leaves about 4 probes per bi
 Naive Bayes with an EM prior as a classification mode of `find`, ε = 10⁻⁶ by default and 20 iterations, with `--mate2` and `--exclude-docs`. It keeps each read's log-likelihoods, runs EM in the scorer's chunks and order, and writes the calls at the end.
 
 **Calls are identical to `score_silva.py --mode bayesem --calls`** on the four aquatic regions and on the dial's V4_V4 at α = 1 and −1, 200,000 pairs each, and on the toy at α = 1, 0, −1 (`tests/dial_toy.sh`). Each real set takes 3.4 to 5.4 s with 12 threads, in 1.5 to 1.8 GB. The match on exact ties assumes the same `-j` as the scorer's `--threads`, because the sum order depends on it.
+
+## Movi 2 for MEM-finding, and sampled tags with its LF (2026-11-06)
+
+Movi 2 (v2.0.0 + 12 commits, 9bc0acc), `regular` mode, with the prototype in `movi2/` (`prototype.patch`, scripts, `sweep.txt`). Nothing here changes `find`.
+
+**A shared BWT.** Our text with `X` replaced by `%`, Movi 2's separator, which must sort first; only the rows change. Big-BWT's BWT, with byte 1 turned into Movi 2's terminator, byte 0, goes to both tools. Tag runs: 359,322,005 against 359,351,512. Movi 2 builds its index from it in 22 s: 68,329,725 rows, 546.6 MB. Movi 2's own text builder isn't used: it turns non-ACGT into `A`, and orders strands per record.
+
+**Identical answers.** Over all 8 read files, 200,000 reads each, all 8,532,597 MEMs, their intervals as rows, and their tag answers with full tags are identical to `find`'s; so are the tag answers at every s and both grammars (first repeat of each).
+
+**What it took:**
+1. `complement()` (`src/utils.cpp`) tests for `#`, while the separator is `%` (`SEPARATOR`, `commons.hpp`), so `%` gets complement `A`, and `extend_bidirectional` misplaces the reverse complement's interval when separator rows fall in the interval. MEMs then end early: one read gave (0, 38) where the text check confirms (0, 49). A one-line fix: `movi2/separator.patch`. This affects indexes built with `--separators`.
+2. `query_mem_bml` has no alphabet check before `initialize_backward_search` at the end of a MEM, so a read with an ambiguity code at that point indexes `first_runs` with `alphamap` = 256 and crashes. 1% of these reads have such codes, copied from SILVA. `query_backward_search` has the check. Worked around here by splitting reads at non-ACGT, as `find` does; not patched.
+3. At query time `-l` doesn't set the MEM length; `--min-mem-length` does.
+
+**Bidirectional extension costs too much on SILVA.** Unmodified `--mem`, with the fix in (1), takes about 72 s per file. `extend_left` walks 466 runs per step on V3_V4_1 and 1,204 on V4_V5_2, 14.5 and 44.3 billion loop steps; `count()` walks only 1.8 and 2.3 million. So BML here uses Movi 2's backward steps alone: the window on the forward strand, then a fresh search of the reverse complement only when the window matches, as `find` does. That takes about 6.7 s per file, with the same MEMs. How this compares on narrow intervals was not measured. 
+
+**Search, 5 repeats, µs per read** (total processing time over the reads, one thread, pinned, without loading):
+
+| | median (range) |
+|---|---:|
+| Movi 2, MEMs with counts | 33.45 (32.92–34.50) |
+| Movi 2, intervals as rows, one line per MEM | 39.82 (39.62–40.25) |
+| ours, RLCSA, one line per MEM | 41.14 (41.08–41.20) |
+
+So with the same output the two are within 3%. The first row doesn't convert to rows.
+
+**With tags, 5 repeats, in rotation with the RLCSA.** Index size is Movi 2's index, 33.6 MB ftab, 58.5 MB Elias-Fano row starts and tags; for the RLCSA, `.csa` and tags, with its table built at load. Boundaries are 207.5 MB throughout.
+
+| configuration | labels (MB) | tags (MB) | whole index (MB) | µs per read, median (range) |
+|---|---:|---:|---:|---:|
+| RLCSA, full tags | 628.8 | 836.4 | 1,401.5 | 46.43 (46.30–46.84) |
+| Movi 2, full tags | 628.8 | 836.4 | 1,475.1 | 51.87 (51.83–53.29) |
+| Movi 2, s = 2 | 380.6 | 588.2 | 1,226.9 | 66.90 (66.63–68.54) |
+| Movi 2, s = 4 | 222.7 | 430.2 | 1,068.9 | 96.99 (96.58–98.29) |
+| Movi 2, s = 8 | 143.7 | 351.2 | 989.9 | 161.04 (160.62–161.76) |
+| Movi 2, s = 16 | 104.2 | 311.8 | 950.5 | 308.42 (302.96–315.16) |
+| Movi 2, built-in grammar | 242.0 | 449.6 | 1,088.3 | 59.58 (59.01–59.71) |
+| Movi 2, bigrepair | 302.0 | 509.5 | 1,148.2 | 62.15 (61.90–62.24) |
+
+- **The RLCSA stays ahead with tags,** in space and time. Beside the section above (on the other BWT, at 45.69 µs): s = 4 is 59.33 µs on the RLCSA against 96.99, and s = 8 78.13 against 161.04.
+- **Sampling is costlier on Movi 2** because each LF step adds a rank and an access on the row list, around Movi 2's own step. Doubling s nearly doubles the time past s = 4.
+- **Tags cost more on Movi 2 than on the RLCSA:** 12.1 µs over the row output, against 5.3. That the prototype prints each tag through `fprintf` may be part of it; this wasn't separated.
+- **Peak memory** in `sweep.txt` includes a temporary 547 MB array in the prototype's loader, so it isn't the index's real footprint.

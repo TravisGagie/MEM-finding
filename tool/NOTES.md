@@ -6,7 +6,7 @@
 - **The index-size note:** the paper's 1.44 GB and the new 1.40 GB count nearly the same things: RLCSA and tags, with the table adding 18 MB to the paper's. So the "1.56 GB" entry in earlier notes is obsolete once 2c is in.
 - **Zymo:** grammar tags make the array larger (687.4 to 750.5 MB, ratio 1.09). `results/zymo/README.md`.
 - **Cliffy's figures:** read from the PDFs' vector graphics, not from result files. Draft corrections: 87.5–90.2 becomes 87.4–90.2; 93.3–94.8 becomes 93.2–94.7. The draft's 199–204 µs assumes each plotted time covers both mates, which the public files don't settle.
-- **Movi 2:** on a shared BWT, MEMs, intervals and tag answers are identical to ours, all 8,532,597 of them, with a one-character fix (`complement()` tests `#`, while the separator is `%`). Its own `--mem` is about 8× slower here because `extend_left` walks 466 to 1,204 runs per step on SILVA; with plain backward steps instead it took about 33 µs per read without tags, in single runs. Timing with tags is running: don't quote these yet.
+- **Movi 2** (`results/silva/README.md`, last section): on a shared BWT, all 8,532,597 MEMs, intervals and tag answers are identical to ours. BML uses its backward steps directly: its bidirectional `--mem` is about 11× slower on SILVA's wide intervals. Same output: 39.82 µs against our 41.14. With tags: 51.87 against the RLCSA's 46.43, and sampling is much worse (s = 4, 96.99 against 59.33). The RLCSA stays the default on this evidence. It found a `#`/`%` bug and a missing alphabet check in Movi 2, to raise with Mohsen.
 - **Item 3:** `find --classify bayesem` matches the scorer call for call on real SILVA (`a4ad83f`).
 
 **For the chat session (2026-11-05).** The desktop now owns `tool/` (`HANDOVER.md`).
