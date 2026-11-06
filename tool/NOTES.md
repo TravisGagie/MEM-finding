@@ -6,7 +6,8 @@
 - **The index-size note:** the paper's 1.44 GB and the new 1.40 GB count nearly the same things: RLCSA and tags, with the table adding 18 MB to the paper's. So the "1.56 GB" entry in earlier notes is obsolete once 2c is in.
 - **Zymo:** grammar tags make the array larger (687.4 to 750.5 MB, ratio 1.09). `results/zymo/README.md`.
 - **Cliffy's figures:** read from the PDFs' vector graphics, not from result files. Draft corrections: 87.5–90.2 becomes 87.4–90.2; 93.3–94.8 becomes 93.2–94.7. The draft's 199–204 µs assumes each plotted time covers both mates, which the public files don't settle.
-- **Movi 2:** nothing there yet supports a claim. Its BML is correct, and no timing has been run. Plan: run its own `--mem` first.
+- **Movi 2:** on a shared BWT, MEMs, intervals and tag answers are identical to ours, all 8,532,597 of them, with a one-character fix (`complement()` tests `#`, while the separator is `%`). Its own `--mem` is about 8× slower here because `extend_left` walks 466 to 1,204 runs per step on SILVA; with plain backward steps instead it took about 33 µs per read without tags, in single runs. Timing with tags is running: don't quote these yet.
+- **Item 3:** `find --classify bayesem` matches the scorer call for call on real SILVA (`a4ad83f`).
 
 **For the chat session (2026-11-05).** The desktop now owns `tool/` (`HANDOVER.md`).
 - `results/SILVA_DIGEST.md` now has the 5-repeat timing and what each index size counts. Its table row for the default (52.3 µs, 145,500 reads/s) is superseded by the bullets under it.
