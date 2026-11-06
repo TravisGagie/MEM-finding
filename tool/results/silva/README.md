@@ -459,3 +459,55 @@ The default undigested index at L = 30, `find -L 30 -c -F 10`, with backward ste
 - **Repeats vary by under 1%,** and the RLCSA row agrees with the 45.57 µs of the earlier repeats.
 - **Code path:** with s = 1, `tag_array::tag()` reads the label directly; with s > 1 it follows LF through the RLBWT until it reaches a sampled run. The rest of the search is the same.
 - `bac.rlbwt`, rewritten by `index` when s = 2 and 8 were built, kept its SHA-256.
+
+## The lookup table at every step (2026-11-06)
+
+`find --absent` (a), `--narrow` (b) and `--compact`, on the default undigested index at L = 30 (`experiments/narrow_timing.sh`, `narrow_tables.txt`). 5 repeats, one thread on CPU 9, all 1.6 million reads, configurations taking turns. All 920 outputs are byte-identical to `find --preset silva`, and the self-test passes on every mode.
+
+- **(a)** A t-mer that doesn't occur gives the length of its longest occurring suffix, so BML with k < L gets its failure point from one lookup. It costs no space in the plain table, whose entry is unused.
+- **(b)** Our binary searches run over c's runs, not its rows, so (b) needs each k-mer's run bounds as well as its interval.
+- **`--compact`:** a bitvector over the k-mers with rank; Elias-Fano lists of starts and ends; 4 bits per absent k-mer; and, for (b), two Elias-Fano lists of the run bounds, which increase in k-mer order once each first base is offset by where its runs begin.
+
+Mean per read (µs), median of 5; ranges are in `narrow_tables.txt` and are under 2%.
+
+| | k = 8 | k = 10 | k = 11 | k = 12 |
+|---|---:|---:|---:|---:|
+| k-mers occurring | 65,536 (100%) | 1,048,575 (100%) | 4,175,610 (99.6%) | 13,872,668 (82.7%) |
+| plain table (MB), without (b) | 1.11 | 17.83 | 71.30 | 285.21 |
+| plain table, with (b) | | 26.21 | | |
+| compact table (MB), without (b) | 0.29 | 3.57 | 12.16 | 36.48 |
+| compact table, with (b) | 0.50 | 5.87 | 19.24 | 54.06 |
+| **current search, plain table** | **52.13** | **47.13** | **45.16** | **43.98** |
+| plain, (a) | | 47.10 | | |
+| plain, (b) | | 52.16 | | |
+| plain, (a) and (b) | | 52.16 | | |
+| compact table | 53.24 | 49.20 | 48.12 | 47.68 |
+| compact, (a) | 53.20 | 49.48 | 48.28 | 47.09 |
+| compact, (b) | 77.26 | 82.11 | 83.81 | 87.88 |
+| compact, (a) and (b) | 77.47 | 82.04 | 83.95 | 87.37 |
+
+- **(b) makes search slower:** by 11% with the plain table at k = 10, and by 48% to 100% with the compact one. The jump table already leaves about 8 runs per search.
+- **(a) changes little:** nearly every k-mer occurs up to k = 11. At k = 12, with 17% absent, it saves 0.6 µs.
+- **The compact table is 4 to 8 times smaller,** and costs 1 to 4 µs per read on the first lookup alone.
+- **A larger k helps the current search,** from 52.13 to 43.98 µs, at the plain table's cost in space; compact at k = 12 is 36 MB and 47.68 µs.
+- **Peak memory** with the compact table counts the plain table, which is built first and then converted. That is a build cost of this implementation.
+
+**Still to come:** the Elias-Fano RLCSA and probes per step.
+
+## RLCSA with sampled tags, no RLBWT (2026-11-06)
+
+`find --preset silva -T ...` (`experiments/csa_sampled_tags.sh`, `narrow_tables.txt`), 5 repeats, one thread, pinned. Unsampled tags are recovered by LF from the RLCSA alone: the character whose runs hold the row, tried by decreasing frequency, then C[c] + rank_c. `find` no longer loads the RLBWT with an RLCSA, except for two-level search, STPD and locating. All 232 outputs are byte-identical to the default's. Index size is `.csa` + tags.
+
+| tags | boundaries (MB) | labels (MB) | tags (MB) | whole index (MB) | mean per read (µs), median (range) | peak (GB) |
+|---|---:|---:|---:|---:|---:|---:|
+| full (default) | 207.6 | 628.9 | 836.4 | **1,401.6** | 47.13 (47.09–47.18) | 1.43 |
+| s = 2 | 207.6 | 380.7 | 588.2 | 1,153.4 | 52.28 (52.11–52.57) | 1.18 |
+| s = 4 | 207.6 | 222.7 | 430.3 | 995.5 | 61.15 (60.88–61.34) | 1.02 |
+| s = 8 | 207.6 | 143.7 | 351.2 | 916.5 | 80.34 (80.22–80.94) | 0.94 |
+| grammar, built-in RePair | 207.6 | 242.2 | 449.7 | 1,015.0 | 54.88 (54.32–55.01) | 1.04 |
+| grammar, bigrepair | 207.6 | 302.0 | 509.5 | 1,074.8 | 57.30 (57.09–57.43) | 1.10 |
+
+- **The default's footprint:** 1.40 GB of files and a 1.43 GB peak, down from 1.56 and 1.58 GB.
+- **Grammar tags beat sampling here:** the built-in RePair's array is about as small as s = 4 (449.7 against 430.3 MB) and 10% faster than it, at 54.88 µs against 61.15.
+- **An index with these tags takes** 1.40 GB at 47 µs, 1.02 GB at 55 µs, and 0.92 GB at 80 µs.
+- **Boundaries are the same** in every row; only the labels change.

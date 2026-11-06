@@ -1,0 +1,36 @@
+== the lookup table at every step: mean per read (us), median (range) of 5 repeats; peak GB
+k = 8
+  current search, plain table      52.13 (51.89-52.49)  peak 1.41  n=5  table: t = 8, 65536 of 65536 t-mers occur, 1.114 MB (plain: intervals 1.049, occurs 0.066, run bounds 0.000 MB)
+  compact table                    53.24 (53.16-53.53)  peak 1.41  n=5  table: t = 8, 65536 of 65536 t-mers occur, 0.289 MB (compact: occurring bitvector 0.012, starts 0.138, ends 0.138, absent lengths 0.000, run bounds 0.000 MB)
+  compact, (a)                     53.20 (53.01-54.31)  peak 1.41  n=5  table: t = 8, 65536 of 65536 t-mers occur, 0.289 MB (compact: occurring bitvector 0.012, starts 0.138, ends 0.138, absent lengths 0.000, run bounds 0.000 MB)
+  compact, (b)                     77.26 (77.06-78.01)  peak 1.41  n=5  table: t = 8, 65536 of 65536 t-mers occur, 0.498 MB (compact: occurring bitvector 0.012, starts 0.138, ends 0.138, absent lengths 0.000, run bounds 0.209 MB)
+  compact, (a) and (b)             77.47 (77.01-79.56)  peak 1.41  n=5  table: t = 8, 65536 of 65536 t-mers occur, 0.498 MB (compact: occurring bitvector 0.012, starts 0.138, ends 0.138, absent lengths 0.000, run bounds 0.209 MB)
+k = 10
+  current search, plain table      47.13 (46.93-47.35)  peak 1.43  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 17.826 MB (plain: intervals 16.777, occurs 1.049, run bounds 0.000 MB)
+  compact table                    49.20 (49.16-49.27)  peak 1.44  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 3.573 MB (compact: occurring bitvector 0.197, starts 1.688, ends 1.688, absent lengths 0.000, run bounds 0.000 MB)
+  compact, (a)                     49.48 (49.21-49.93)  peak 1.44  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 3.573 MB (compact: occurring bitvector 0.197, starts 1.688, ends 1.688, absent lengths 0.000, run bounds 0.000 MB)
+  compact, (b)                     82.11 (81.83-82.38)  peak 1.47  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 5.873 MB (compact: occurring bitvector 0.197, starts 1.688, ends 1.688, absent lengths 0.000, run bounds 2.300 MB)
+  compact, (a) and (b)             82.04 (81.90-82.54)  peak 1.47  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 5.873 MB (compact: occurring bitvector 0.197, starts 1.688, ends 1.688, absent lengths 0.000, run bounds 2.300 MB)
+  plain, (a)                       47.10 (46.95-47.25)  peak 1.43  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 17.826 MB (plain: intervals 16.777, occurs 1.049, run bounds 0.000 MB)
+  plain, (b)                       52.16 (51.82-52.65)  peak 1.44  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 26.214 MB (plain: intervals 16.777, occurs 1.049, run bounds 8.389 MB)
+  plain, (a) and (b)               52.16 (51.93-53.03)  peak 1.44  n=5  table: t = 10, 1048575 of 1048576 t-mers occur, 26.214 MB (plain: intervals 16.777, occurs 1.049, run bounds 8.389 MB)
+k = 11
+  current search, plain table      45.16 (44.82-45.30)  peak 1.50  n=5  table: t = 11, 4175610 of 4194304 t-mers occur, 71.303 MB (plain: intervals 67.109, occurs 4.194, run bounds 0.000 MB)
+  compact table                    48.12 (47.95-48.27)  peak 1.56  n=5  table: t = 11, 4175610 of 4194304 t-mers occur, 12.159 MB (compact: occurring bitvector 0.786, starts 5.681, ends 5.681, absent lengths 0.009, run bounds 0.000 MB)
+  compact, (a)                     48.28 (47.70-48.42)  peak 1.56  n=5  table: t = 11, 4175610 of 4194304 t-mers occur, 12.159 MB (compact: occurring bitvector 0.786, starts 5.681, ends 5.681, absent lengths 0.009, run bounds 0.000 MB)
+  compact, (b)                     83.81 (83.64-84.57)  peak 1.66  n=5  table: t = 11, 4175610 of 4194304 t-mers occur, 19.238 MB (compact: occurring bitvector 0.786, starts 5.681, ends 5.681, absent lengths 0.009, run bounds 7.079 MB)
+  compact, (a) and (b)             83.95 (83.53-84.47)  peak 1.66  n=5  table: t = 11, 4175610 of 4194304 t-mers occur, 19.238 MB (compact: occurring bitvector 0.786, starts 5.681, ends 5.681, absent lengths 0.009, run bounds 7.079 MB)
+k = 12
+  current search, plain table      43.98 (43.78-44.30)  peak 1.76  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 285.213 MB (plain: intervals 268.435, occurs 16.777, run bounds 0.000 MB)
+  compact table                    47.68 (47.60-48.05)  peak 1.95  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 36.481 MB (compact: occurring bitvector 3.146, starts 15.941, ends 15.941, absent lengths 1.452, run bounds 0.000 MB)
+  compact, (a)                     47.09 (46.71-47.38)  peak 1.95  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 36.481 MB (compact: occurring bitvector 3.146, starts 15.941, ends 15.941, absent lengths 1.452, run bounds 0.000 MB)
+  compact, (b)                     87.88 (87.50-88.44)  peak 2.33  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 54.057 MB (compact: occurring bitvector 3.146, starts 15.941, ends 15.941, absent lengths 1.452, run bounds 17.577 MB)
+  compact, (a) and (b)             87.37 (86.72-87.52)  peak 2.33  n=5  table: t = 12, 13872668 of 16777216 t-mers occur, 54.057 MB (compact: occurring bitvector 3.146, starts 15.941, ends 15.941, absent lengths 1.452, run bounds 17.577 MB)
+
+== explicit RLCSA, no RLBWT loaded: tags
+  full       tags   836.4 MB (boundaries 207.554, labels 628.865)  index  1401.6 MB    47.13 (47.09-47.18) us  total/reads 48.26  peak 1.43 GB  n=5
+  s2         tags   588.2 MB (boundaries 207.554, labels 380.664)  index  1153.4 MB    52.28 (52.11-52.57) us  total/reads 53.42  peak 1.18 GB  n=5
+  s4         tags   430.3 MB (boundaries 207.554, labels 222.707)  index   995.5 MB    61.15 (60.88-61.34) us  total/reads 62.29  peak 1.02 GB  n=5
+  s8         tags   351.2 MB (boundaries 207.554, labels 143.687)  index   916.5 MB    80.34 (80.22-80.94) us  total/reads 81.53  peak 0.94 GB  n=5
+  grammar    tags   449.7 MB (boundaries 207.554, labels 242.181)  index  1015.0 MB    54.88 (54.32-55.01) us  total/reads 56.09  peak 1.04 GB  n=5
+  bigrepair  tags   509.5 MB (boundaries 207.554, labels 301.995)  index  1074.8 MB    57.30 (57.09-57.43) us  total/reads 58.48  peak 1.10 GB  n=5
