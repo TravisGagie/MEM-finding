@@ -122,6 +122,8 @@ runs is a measure of the noise. Compare times here only with care; repeats would
 The built-in RePair's tag array is smaller, at about four times the build time; bigrepair's grammar is .R 456.7 MB and
 .C 9.2 MB.
 
+**On Zymo the grammar doesn't pay:** bigrepair makes the tag array larger, 687.4 to 750.5 MB, a ratio of 1.09 against 0.61 here. It has 1.33 tag runs per BWT run against SILVA's 5.3, and with 7 tags the sequence is only 3 bits per run, 24% of the array (`../zymo/README.md`, "Grammar-compressed tags").
+
 **The digested index (item 5):** build: `prep` 37 s, Big-BWT 128 s (2.11 GB), `index --csa --efcsa --tags` 81 s (1.43 GB),
 sampled tags 84 s (2.26 GB). Strict accuracy, then the mean µs per read with one thread:
 

@@ -70,3 +70,20 @@ KATKA is katka-readable's `katka-classify` on KATKA's own laptop index files (`z
 
 Wall times include loading the index (about 9 s for the new tool). The read file (23 GB) does not fit in the page cache,
 so the order of the runs was alternated.
+
+## Grammar-compressed tags (2026-11-05)
+
+`grammar_run.sh`: the per-species tag runs B_λ verified (`zy.sp.tagruns`, 448,723,822 runs), `bigrepair -i -r -m 0`, then `index --tags --by-tag --no-rmq --bigrepair`. The built-in RePair wasn't run: it needs about 25 bytes per run, about 11.4 GB here, over the 11 GB cap.
+
+| | run-length tags | grammar tags |
+|---|---:|---:|
+| tag array | 687,420,273 bytes | 750,537,217 bytes |
+| tag sequence | 168.3 MB (3 bits per run) | 231.4 MB (46,052,325 rules, top level 3,539,044 symbols) |
+| run starts, unchanged | about 519 MB | about 519 MB |
+| time per read (one run, 100,000 reads, 12 threads) | 200.8 µs | 202.9 µs |
+
+- **Ratio 1.09: the grammar makes the tag array 9% larger.** The prediction of little gain holds, and goes further: there is a loss. On SILVA bigrepair gives 0.61 (836.4 to 509.5 MB) and the built-in RePair 0.54 (449.7 MB).
+- **Why:** two limits apply. Tag runs per BWT run are 1.33, against SILVA's 5.3. And only the tag sequence can shrink, which is 24% of Zymo's array, because 7 tags need 3 bits; on SILVA, with 9,118 tags at 14 bits, it is 75%. bigrepair did compress the sequence: 1,795 MB of 32-bit integers became 383 MB, or 173 MB as it reports its own compressed size. But 3 bits per run is already below the 4.1 bits per run the grammar costs here.
+- **The built-in RePair** gave a 12% smaller array than bigrepair on SILVA. To gain here its grammar would have to fall below 168 MB from 231 MB, a 27% cut. That is not measured.
+- **Build:** `tagruns_to_int32.py` 10 s, 0.11 GB; bigrepair 197 s, peak 5.56 GB; `index` 2,057 s, peak 8.18 GB. Of the `index` time, 2,013 s is rebuilding the RLBWT from `zy.bwt` on the external drive, and the tag step takes 44 s. All within the cap.
+- **Check:** on the first 100,000 reads of `all.fq`, `find -U -X -L 20 -D 14 -c --csa` gives byte-identical outputs, 14,099,474 bytes. `zy.rlbwt`, rewritten by `index`, kept its SHA-256.
