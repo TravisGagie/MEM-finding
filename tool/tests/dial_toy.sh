@@ -111,4 +111,16 @@ print("bayesem = an independent implementation, call for call: %d reads, %d disa
 sys.exit(1 if bad else 0)
 PY
 done; done
+# find --classify bayesem gives the scorer's calls, read by read, with the prior learned over both mates (same thread count)
+for al in 1 0 -1; do
+  A=$W/q/dial/a$al; r=V4_V4
+  python3 "$HERE/scripts/score_silva.py" --mode bayesem --em-iters 20 --levels genus --mate1-listings "$A/out/${r}_1.out" --mate2-listings "$A/out/${r}_2.out" \
+      --doc-id-to-traversal "$S/work/ref/rna/doc_to_traversal.txt" --silva-tax-ranks "$S/exp1_data/tax_slv_ssu_138.1.txt" --readset-truthset "$A/$r.seqtax.txt" \
+      --trav-to-length "$S/work/ref/trav_to_length.txt" --exp-src "$EXP" --nseq "$W/q/nseq.txt" --output "$W/s.csv" --calls "$W/scorer_calls.tsv" \
+      --exclude-out "$W/excluded.txt" --threads ${THREADS:-4} > /dev/null 2>&1
+  $K find --preset silva -j ${THREADS:-4} --classify bayesem --nseq "$W/q/nseq.txt" --mate2 "$A/work/$r/${r}_mate_2.fq" --exclude-docs "$W/excluded.txt" \
+      "$W/bac" "$A/work/$r/${r}_mate_1.fq" "$W/calls.tsv" 2> /dev/null
+  cmp -s "$W/calls.tsv" "$W/scorer_calls.tsv" || { echo "FAIL: find --classify bayesem differs from the scorer (alpha = $al)"; exit 1; }
+  echo "find --classify bayesem = the scorer's calls: alpha = $al, $(wc -l < "$W/calls.tsv") read pairs"
+done
 echo "dial toy: ok ($W)"

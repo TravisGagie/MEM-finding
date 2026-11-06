@@ -525,3 +525,9 @@ This is why (b) doesn't pay: the jump table already leaves about 4 probes per bi
 - **An index with these tags takes** 1.40 GB at 46 µs, 1.02 GB at 53 µs, and 0.92 GB at 78 µs.
 - These times are on the fixed build (below), rerun after the slowdown was found.
 - **Boundaries are the same** in every row; only the labels change.
+
+## `find --classify bayesem` (2026-11-06)
+
+Naive Bayes with an EM prior as a classification mode of `find`, ε = 10⁻⁶ by default and 20 iterations, with `--mate2` and `--exclude-docs`. It keeps each read's log-likelihoods, runs EM in the scorer's chunks and order, and writes the calls at the end.
+
+**Calls are identical to `score_silva.py --mode bayesem --calls`** on the four aquatic regions and on the dial's V4_V4 at α = 1 and −1, 200,000 pairs each, and on the toy at α = 1, 0, −1 (`tests/dial_toy.sh`). Each real set takes 3.4 to 5.4 s with 12 threads, in 1.5 to 1.8 GB. The match on exact ties assumes the same `-j` as the scorer's `--threads`, because the sum order depends on it.

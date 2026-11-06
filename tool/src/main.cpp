@@ -551,6 +551,8 @@ static const char *FIND_USAGE =
     "    --absent          with -F: when BML (t < L) finds its window's last t-mer absent, the failure point comes from the table,\n"
     "                      with no backward steps; the answers are the same\n"
     "    --compact         with -F: the table as a bitvector and Elias-Fano lists, not arrays; the answers are the same\n"
+    "    --classify bayesem  the same with a prior learned by EM over the whole read set, flat at first, for --em-iters I (20)\n"
+    "                      iterations: the calls are written at the end, and memory grows with the reads\n"
     "    --mate2 FILE      --classify bayes: FILE holds each read's mate; a pair is classified over both mates' MEMs,\n"
     "                      under the first mate's name\n"
     "    --exclude-docs FILE  --classify bayes: 0-based documents that can't be called (score_silva.py --exclude-out)\n"
@@ -572,7 +574,10 @@ struct finder {
     // over the MEMs of log(c_g / (2 N_g)), or log epsilon where g lacks the MEM (as scripts/score_silva.py --mode
     // bayes --prior flat, in the same order of operations, so ties come out the same).  With --mate2, the MEMs of
     // both mates, mate 1's first; --exclude-docs: documents that can't be called (the scorer's unscored clades)
-    bool classify = false;
+    // --classify bayesem: with a prior learned by EM over the whole read set, as score_silva.py --mode bayesem: each read's
+    // log-likelihoods are kept (bem_store), and the calls written once the iterations are done
+    bool classify = false, bem = false;
+    int bem_iters = 20;
     std::vector<u64> nseq;                    // N_g per document (--nseq)
     std::vector<bool> excluded;               // per document (--exclude-docs; empty: none)
     double logeps = 0;
@@ -656,7 +661,18 @@ struct finder {
         };
         find_mems(Q, hpc ? h : read, opt, emit);
         if (mate2) find_mems(Q, *mate2, opt, emit);
-        if (classify) {             // the top documents (0-based, sorted, comma-separated), or - for a read without MEMs
+        if (classify && bem) {      // name, then each document's log-likelihood, for bem_store
+            const u64 c = ll.size(), nl = name.size();
+            line.assign(sizeof(u64) * 2, '\0');
+            memcpy(&line[0], &nl, sizeof nl); memcpy(&line[sizeof nl], &c, sizeof c);
+            line += name;
+            for (size_t q = 0; q < ll.size(); ++q) {
+                const double v = ll[q].second + (double)(nm - hits[q]) * logeps;
+                const u64 d = ll[q].first;
+                line.append((const char *)&d, sizeof d); line.append((const char *)&v, sizeof v);
+            }
+            for (auto &x : ll) slot[x.first] = ~0ull;
+        } else if (classify) {      // the top documents (0-based, sorted, comma-separated), or - for a read without MEMs
             double top = -INFINITY;
             static thread_local std::vector<double> sc;
             sc.resize(ll.size());
@@ -734,7 +750,84 @@ struct read_parser {
 struct run_stats { u64 reads = 0, mems = 0, unclassified = 0; double read_time = 0; search_counters sc; };   // read_time: the sum of each read's own time
 
 // threads take chunks of reads and write their outputs back in input order
-static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr, FILE *lout = nullptr, read_parser *P2 = nullptr) {
+// each read's record from finder::run, in input order (--classify bayesem)
+struct bem_store {
+    std::vector<string> rec;
+    u64 count(u64 r) const { u64 c; memcpy(&c, rec[r].data() + sizeof(u64), sizeof c); return c; }
+    string name(u64 r) const { u64 nl; memcpy(&nl, rec[r].data(), sizeof nl); return rec[r].substr(sizeof(u64) * 2, nl); }
+    const char *pairs(u64 r) const { u64 nl; memcpy(&nl, rec[r].data(), sizeof nl); return rec[r].data() + sizeof(u64) * 2 + nl; }
+};
+
+// EM over the reads' log-likelihoods, then the calls: the same arithmetic as score_silva.py's bem_pass, in its order (reads in
+// the chunks of its pool, the chunks' sums added in turn), so the calls are the same read by read.  logpi[g]: NaN for a prior of 0
+static void bem_classify(const finder &K, const bem_store &S, FILE *out, int nthreads) {
+    const u64 N = S.rec.size(), G = K.nseq.size();
+    std::vector<double> logpi(G, -std::log((double)G));
+    const u64 step = N ? (N + 4 * nthreads - 1) / (4 * nthreads) : 1;
+    std::vector<std::pair<u64, u64>> chunks;
+    for (u64 i = 0; i < N; i += step) chunks.push_back({i, std::min(N, i + step)});
+    for (int it = 0; it < K.bem_iters; ++it) {
+        std::vector<std::vector<double>> part(chunks.size(), std::vector<double>());
+        std::atomic<u64> next{0};
+        auto work = [&]() {
+            std::vector<std::pair<u64, double>> sc;
+            for (;;) {
+                const u64 c = next++;
+                if (c >= chunks.size()) break;
+                std::vector<double> T(G, 0.0);
+                for (u64 r = chunks[c].first; r < chunks[c].second; ++r) {
+                    const char *p = S.pairs(r);
+                    sc.clear();
+                    double top = -INFINITY;
+                    for (u64 q = 0, n = S.count(r); q < n; ++q, p += 16) {
+                        u64 d; double v;
+                        memcpy(&d, p, 8); memcpy(&v, p + 8, 8);
+                        if (std::isnan(logpi[d])) continue;
+                        v += logpi[d];
+                        sc.push_back({d, v}); top = std::max(top, v);
+                    }
+                    if (sc.empty()) continue;
+                    double tot = 0.0;
+                    for (auto &x : sc) { x.second = std::exp(x.second - top); tot += x.second; }
+                    for (auto &x : sc) T[x.first] += x.second / tot;
+                }
+                part[c].swap(T);
+            }
+        };
+        std::vector<std::thread> th;
+        for (int t = 0; t < nthreads; ++t) th.emplace_back(work);
+        for (auto &x : th) x.join();
+        std::vector<double> T(G, 0.0);
+        double tt = 0.0;
+        for (auto &p : part) for (u64 g = 0; g < G; ++g) T[g] += p[g];
+        for (u64 g = 0; g < G; ++g) tt += T[g];
+        const double ltt = std::log(tt);
+        for (u64 g = 0; g < G; ++g) logpi[g] = T[g] > 0 ? std::log(T[g]) - ltt : NAN;
+    }
+    std::vector<u64> best;
+    for (u64 r = 0; r < N; ++r) {
+        const char *p = S.pairs(r);
+        double top = -INFINITY;
+        best.clear();
+        for (u64 q = 0, n = S.count(r); q < n; ++q, p += 16) {
+            u64 d; double v;
+            memcpy(&d, p, 8); memcpy(&v, p + 8, 8);
+            if (std::isnan(logpi[d]) || (!K.excluded.empty() && K.excluded[d])) continue;
+            v += logpi[d];
+            if (v > top) { top = v; best.clear(); }
+            if (v == top) best.push_back(d);
+        }
+        std::sort(best.begin(), best.end());
+        string line = S.name(r) + "\t";
+        if (best.empty()) line += "-";
+        char b[32];
+        for (size_t q = 0; q < best.size(); ++q) { snprintf(b, sizeof b, q ? ",%lu" : "%lu", best[q]); line += b; }
+        line += "\n";
+        fputs(line.c_str(), out);
+    }
+}
+
+static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthreads, FILE *sout = nullptr, FILE *lout = nullptr, read_parser *P2 = nullptr, bem_store *BS = nullptr) {
     const size_t CHUNK = 256;
     std::mutex in_m, out_m, st_m;
     std::condition_variable out_cv;
@@ -777,7 +870,8 @@ static run_stats find_all(const finder &K, read_parser &P, FILE *out, int nthrea
             {
                 std::unique_lock<std::mutex> lk(out_m);
                 out_cv.wait(lk, [&] { return next_out == my; });
-                for (size_t i = 0; i < names.size(); ++i) fputs(lines[i].c_str(), out);
+                if (BS) for (size_t i = 0; i < names.size(); ++i) BS->rec.push_back(std::move(lines[i]));
+                else for (size_t i = 0; i < names.size(); ++i) fputs(lines[i].c_str(), out);
                 if (sout) for (size_t i = 0; i < names.size(); ++i) fputs(slines[i].c_str(), sout);
                 if (lout) for (size_t i = 0; i < names.size(); ++i) fputs(plines[i].c_str(), lout);
                 ++next_out;
@@ -812,7 +906,7 @@ static int cmd_find(int argc, char **argv) {
         {"read-stats", 1, 0, 21}, {"kebab-check", 1, 0, 23}, {"strict", 0, 0, 24}, {"check-seed", 0, 0, 26}, {"fixed-L", 0, 0, 25}, {"fb", 0, 0, 2}, {"no-hpc", 0, 0, 3}, {"inline-kebab", 1, 0, 4}, {"kbf", 1, 0, 5},
         {"csa", 0, 0, 6}, {"efcsa", 0, 0, 7}, {"twolevel", 0, 0, 8}, {"no-jumps", 0, 0, 9}, {"count", 0, 0, 'c'}, {"list", 0, 0, 'l'},
         {"range", 0, 0, 10}, {"format", 1, 0, 11}, {"stats", 0, 0, 12}, {"no-tags", 0, 0, 13}, {"stpd", 0, 0, 14},
-        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"classify", 1, 0, 29}, {"nseq", 1, 0, 30}, {"epsilon", 1, 0, 31}, {"mate2", 1, 0, 32}, {"exclude-docs", 1, 0, 33}, {"narrow", 0, 0, 34}, {"absent", 0, 0, 35}, {"compact", 0, 0, 36}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"no-intervals", 0, 0, 15}, {"locate", 0, 0, 16}, {"parse-oracle", 0, 0, 17}, {"stpd-parse", 0, 0, 22}, {"rlzap-oracle", 0, 0, 27}, {"locate-out", 1, 0, 28}, {"classify", 1, 0, 29}, {"nseq", 1, 0, 30}, {"epsilon", 1, 0, 31}, {"mate2", 1, 0, 32}, {"exclude-docs", 1, 0, 33}, {"narrow", 0, 0, 34}, {"absent", 0, 0, 35}, {"compact", 0, 0, 36}, {"em-iters", 1, 0, 37}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int c;
     optind = 1;
     while ((c = getopt_long(A.argc(), A.argv(), "L:XD:UK:F:clT:j:h", longopts, nullptr)) != -1) {
@@ -852,7 +946,10 @@ static int cmd_find(int argc, char **argv) {
             case 'F': ft = std::stoi(optarg); break;
             case 'j': nthreads = std::max(1, std::stoi(optarg)); break;
             case 12: stats = true; break;
-            case 29: if (string(optarg) != "bayes") die("--classify bayes"); K.classify = true; break;
+            case 29:
+                if (string(optarg) == "bayesem") K.bem = true;
+                else if (string(optarg) != "bayes") die("--classify bayes or bayesem");
+                K.classify = true; break;
             case 30: { std::ifstream in(optarg); if (!in) die(string("cannot open ") + optarg); u64 x; while (in >> x) K.nseq.push_back(x); break; }
             case 31: epsilon = std::stod(optarg); break;
             case 32: mate2file = optarg; break;
@@ -860,6 +957,7 @@ static int cmd_find(int argc, char **argv) {
             case 34: narrow = true; break;
             case 35: absent = true; break;
             case 36: compact = true; break;
+            case 37: K.bem_iters = std::stoi(optarg); break;
             case 13: mode = NONE; break;
             case 14: use_stpd = true; break;
             case 17: poracle = true; break;
@@ -1033,7 +1131,9 @@ static int cmd_find(int argc, char **argv) {
     if (!readstats.empty()) { sout = open_or_die(readstats, "w"); fputs("read\tpseudo_mems\tsearched\tbatches\tfallback\tbackward_steps\tmems\tfallback_reason\n", sout); }
     if (!locate_out.empty() && !K.locate) die("--locate-out needs --locate");
     FILE *lout = locate_out.empty() ? nullptr : open_or_die(locate_out, "w");
-    run_stats st = find_all(K, P, out, nthreads, sout, lout, P2.get());
+    bem_store BS;
+    run_stats st = find_all(K, P, out, nthreads, sout, lout, P2.get(), K.bem ? &BS : nullptr);
+    if (K.bem) bem_classify(K, BS, out, nthreads);
 #ifdef KATKA_COUNT_PROBES
     fprintf(stderr, "probes %lu over %lu steps: %.3f per step\n", g_probes, g_steps, (double)g_probes / (g_steps ? g_steps : 1));
 #endif
