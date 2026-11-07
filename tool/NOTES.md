@@ -1,5 +1,8 @@
 # Notes on the tool
 
+**Overnight batch (2026-11-07), for the morning.** Each item is in `results/silva/README.md`; this is the short version.
+1. **Cliffy's tie rule.** Done. Cliffy counts a read correct if the true genus is among those tied at the top; `cliffy_listing_score.py` reports that as `theirs` and also `strict`. No Cliffy listings are here (they are Gonzalo's), so they couldn't be rescored: he needs to run `score_cliffy_listing.sh`. **Found on the way:** Cliffy's `classify_method2` adds the whole match length to every listed genus, not |M|/|D′| as `silva.tex` lines 38 and 42 say. With that credit on exact lists the tie rule adds 3.47 points (92.50 strict, 95.97 under its rule, 3.6% of reads tied). Naive Bayes, EM and the EM prior gain nothing from it.
+
 **For the chat session (2026-11-06).**
 - **New results:** `results/silva/README.md`, last sections, with `narrow_tables.txt`. Lookup table at every step: neither (a) nor (b) speeds up search. RLCSA with sampled tags and no RLBWT: full 1,401.6 MB and 45.69 µs; s = 4 995.5 MB and 59.33 µs; built-in grammar 1,015.0 MB and 53.03 µs. The default's footprint is 1.40 GB of files, peak 1.43 GB.
 - **Baseline:** 45.69 µs, on the fixed build. A refactor had slowed search by 3.5% (47.13 µs); it is undone, and those two sections say which numbers came before the fix. The lookup-table table is the one measured before it.

@@ -44,7 +44,7 @@ for pr in $PR; do
         || { echo "FAILED: find on $pr $r"; exit 1; }
     done
     for spec in lca:lca: one:one: cliffs:cliffs: list:list: norm:norm: freq:freq: prior:prior: mix:mix: em:em: \
-                bayesflat:bayes:--prior+flat bayesauto:bayesauto: bayesem:bayesem:--em-iters+20; do
+                bayesflat:bayes:--prior+flat+--epsilon+1e-6,1e-4,1e-5,1e-7,1e-8 bayesauto:bayesauto: bayesem:bayesem:--em-iters+20; do
       name=${spec%%:*}; rest=${spec#*:}; mode=${rest%%:*}; opts=${rest#*:}; opts=${opts//+/ }
       stamp "$pr $r: $name"
       $CAP python3 "$HERE/scripts/score_silva.py" --mode $mode $opts --levels genus --nseq "$NSEQ" --mate1-listings "$d/1.out" --mate2-listings "$d/2.out" \

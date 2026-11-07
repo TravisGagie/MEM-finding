@@ -602,3 +602,30 @@ Whole index (MB), files loaded. Boundaries are 207.5 MB in the first two columns
 | s = 8 | 267.75 (266.10–274.75) | 298.10 |
 
   This makes it the fastest configuration at full tags and with grammar tags, 4% ahead of the row list at 42 MB more. Sampled tags stay well behind: 73% of LF-step lookups on one file (s = 4) fell in runs of over 16 tag starts, where the scan gives way to binary search.
+
+## Cliffy's tie rule (2026-11-07)
+
+**What the code does.** `cliffy-experiments/src/classify_silva_readset.py` counts a read as correct if the true clade is among the clades of maximum weight (lines 336–340 in `classify_method0`, 430–434 in `classify_method1`, and the same in `classify_method2`). `scripts/cliffy_listing_score.py` follows that as `theirs=`, and also reports `strict=`, with ties wrong; `score_cliffy_listing.sh` prints `theirs` and leaves `strict` in the CSVs. Reads with no match also count as correct under their rule, unless the genus is "uncultured".
+
+**No Cliffy listings are on the desktop or the external drive,** so they couldn't be rescored. They are on the server, from Gonzalo's run (`score_cliffy_listing.sh RESULTS_DIR` gives `theirs` and `strict` per region). From the draft, for the LCA query on our reads: 85.75 strict and 86.45 under their rule, undigested; 84.15 and 85.53 digested.
+
+**A discrepancy in the draft.** `classify_method2`, Cliffy's approximate-listing score, adds the match's **whole length** to every listed genus (`weight_dict[taxa_hit][0] += length`). The draft (`silva.tex` lines 38 and 42) describes |M|/|D′| and |M|/|D|, and our `cliffs` and `list` schemes split the credit that way. So those schemes aren't Cliffy's listing score. `score_silva.py --mode cliffsfull` and `listfull` now apply method2's rule.
+
+Aquatic reads, MSv1.1, from `find --preset silva` at L = 30 (`tie_rule.txt`, with each region). Means of the four regions, as %; ties are reads whose top weight is shared:
+
+| scheme | Cliffy's rule | strict | gain | reads tied |
+|---|---:|---:|---:|---:|
+| range | 87.60 | 86.95 | 0.65 | 0.77 |
+| sample, |M|/|D′| | 91.03 | 90.46 | 0.57 | 0.73 |
+| even, |M|/|D| | 91.83 | 90.28 | 1.55 | 1.60 |
+| sample, full length (method2's credit) | 91.41 | 90.51 | 0.90 | 1.76 |
+| every genus, full length (method2's credit) | 95.97 | 92.50 | 3.47 | 3.60 |
+| normalised | 92.76 | 92.76 | 0.00 | 0.01 |
+| proportional | 93.79 | 93.77 | 0.02 | 0.04 |
+| EM, 20 iterations | 96.39 | 96.39 | 0.00 | 0.00 |
+| naive Bayes, ε = 10⁻⁶ | 94.70 | 94.70 | 0.00 | 0.01 |
+| naive Bayes, EM prior | 96.06 | 96.07 | 0.00 | 0.00 |
+
+- **The rule matters most where credit doesn't discriminate,** and full-length credit ties most often. Ties reach 5.7% on V4 with exact listings.
+- **Our best schemes don't depend on the rule.** They hardly ever tie, so they can be quoted under either.
+- **These are MEMs at L = 30 with simulated lists,** not Cliffy's ZMPs and sampled profiles. They show the rule's effect, not Cliffy's own numbers. The small negative gap on the last row is rounding: `theirs` has 4 decimals.

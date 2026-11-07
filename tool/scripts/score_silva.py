@@ -32,6 +32,7 @@
 #                 E, bayesauto's mixture likelihood at E, and sets each genus's prior to its share of the posteriors,
 #                 over all genera, "uncultured" included; the calls, as in bayes, are among the scored genera.  One line per
 #                 number of iterations in --em-iters: bayesem<iterations>, or bayesemmix<iterations>; 0 is bayesflat, or bayesauto
+#   --mode listfull, cliffsfull: as list and cliffs, but each listed genus gets the match's whole length, as Cliffy's method2 does
 # Output: katka,<mode>,<level>,<accuracy>,correct=..,unclassified=..,wrong=..,reads=..,ambiguous_truth=..,theirs=..,strict=..,strict_correct=..
 # (accuracy counts unclassified reads as wrong; theirs = accuracy under their rule for unclassified reads;
 #  strict = accuracy when a tie for the maximum weight counts as wrong; all three count ties as in their code otherwise).
@@ -49,7 +50,7 @@ p.add_argument("--doc-id-to-traversal", required=True); p.add_argument("--silva-
 p.add_argument("--readset-truthset", required=True); p.add_argument("--trav-to-length", required=True)
 p.add_argument("--output", required=True); p.add_argument("--exp-src", required=True)
 p.add_argument("--threads", type=int, default=os.cpu_count())
-p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes", "bayesauto", "bayesem"], default="lca")
+p.add_argument("--mode", choices=["lca", "list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "bayes", "bayesauto", "bayesem", "listfull", "cliffsfull"], default="lca")
 p.add_argument("--beta", default="0,0.1,0.25,0.5,0.75,1", help="--mode prior or mix: the values of beta (comma-separated)")
 p.add_argument("--prior", choices=["sample", "flat", "db"], default="sample",
                help="--mode bayes: the prior: sample (N_g^alpha, the sample's own, with --alpha: the reference), flat (1/G) or db (N_g / N)")
@@ -61,7 +62,9 @@ p.add_argument("--calls", default=None, help="--mode bayes: also write each read
                "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
 p.add_argument("--em-sample", default=None, help="--mode bayesem: also learn the prior from this many reads of the set, drawn with --seed (comma-separated), "
                "then classify every read: one line per size and --em-smooth, bayesem<iterations>n<size>a<smoothing>")
-p.add_argument("--em-smooth", default="0", help="--mode bayesem with --em-sample: pseudo-reads added to every genus at each iteration (comma-separated)")
+p.add_argument("--em-smooth", default="0", help="--mode bayesem with --em-sample: smoothing of the sampled prior (comma-separated): 0, none; p<c>, c "
+               "pseudo-reads for every genus at each iteration; m<w>, the final prior mixed with a flat one, with weight w")
+p.add_argument("--em-seeds", default=None, help="--mode bayesem with --em-sample: the sampling seeds (comma-separated; default --seed)")
 p.add_argument("--mixture-eps", type=float, default=None, help="--mode bayesem: use bayesauto's mixture likelihood with this epsilon")
 p.add_argument("--exclude-out", default=None, help="write the 0-based documents outside the scored genera, one per line, for "
                "find --classify bayes --exclude-docs (needs --nseq)")
@@ -123,8 +126,8 @@ def level_tables(level):
 G = {}
 def work(rng):
     lo, hi = rng; keys = G["keys"]; d2c = G["d2c"]; labels = G["labels"]; level = G["level"]
-    tp = uncl = uncl_theirs = amb = strict = 0
-    listmode = G["mode"] in ("list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em")
+    tp = uncl = uncl_theirs = amb = strict = ties = 0
+    listmode = G["mode"] in ("list", "freq", "norm", "one", "cliffs", "longest", "prior", "mix", "em", "listfull", "cliffsfull")
     beta = G.get("beta"); pi = G.get("pi")
     rnd = random.Random(a.seed * 1000003 + lo)
     for idx, r in enumerate(rs.read_list[lo:hi], lo):
@@ -216,7 +219,7 @@ def work(rng):
                     t = d2c.get(doc)
                     if t and t in keys: acc[t] = acc.get(t, 0) + L
                     continue
-                if G["mode"] == "cliffs" and not rng:
+                if G["mode"] in ("cliffs", "cliffsfull") and not rng:
                     # an even split over a cliffs-shaped sample: random values, left-to-right and right-to-left maxima
                     v = [rnd.random() for _ in d]; keep = set(); m = -1.0
                     for i, y in enumerate(v):
@@ -227,17 +230,19 @@ def work(rng):
                     docs = [d[i] for i in sorted(keep)]
                 else:
                     docs = d if listmode and not rng else range(d[0], d[-1] + 1)
-                w = L / len(docs)
+                w = L if G["mode"] in ("listfull", "cliffsfull") else L / len(docs)   # (the full length to each: Cliffy's method2)
                 for doc in docs:
                     t = d2c.get(doc)
                     if t and t in keys: acc[t] = acc.get(t, 0) + w
         if not acc:                                  # unclassified (their code: correct unless "uncultured")
             uncl += 1; uncl_theirs += correct in keys; continue
         m = max(acc.values())
+        tied = sum(1 for v in acc.values() if v == m)
+        ties += tied > 1
         if m <= 0 or acc.get(correct) == m:
             tp += 1
-            if sum(1 for v in acc.values() if v == m) == 1: strict += 1   # the true clade alone has the maximum
-    return (tp, uncl, uncl_theirs, amb, strict)
+            if tied == 1: strict += 1                # the true clade alone has the maximum
+    return (tp, uncl, uncl_theirs, amb, strict, ties)
 
 def em_pass(rng):
     """the total credit per document over reads lo..hi, under the current prior G["pi"]"""
@@ -333,20 +338,24 @@ elif a.mode == "bayesem":
         logpi = [math.log(x) - ltt if x > 0 else None for x in T]       # (x / tt can underflow to 0)
         print("bayesem iteration %d: %d genera with a prior above 0" % (k + 1, sum(1 for x in T if x > 0)), file=sys.stderr, flush=True)
     for n in ([int(x) for x in a.em_sample.split(",")] if a.em_sample else []):
-        sub = random.Random(a.seed * 1000003 + n).sample(range(N), min(n, N))
-        st = (len(sub) + 4 * a.threads - 1) // (4 * a.threads)
-        sch = [(i, min(len(sub), i + st)) for i in range(0, len(sub), st)]
-        for sm in a.em_smooth.split(","):
-            al = float(sm); lpi = [-math.log(NGEN)] * NGEN
-            for k in range(iters[-1]):
-                G["logpi"] = lpi; G["subset"] = sub
-                with Pool(a.threads) as pool:
-                    parts = pool.map(bem_pass, sch)
-                T = [sum(x[i] for x in parts) + al for i in range(NGEN)]; lt = math.log(sum(T))
-                lpi = [math.log(x) - lt if x > 0 else None for x in T]
-            G["subset"] = None
-            variants.append(("%s%dn%da%s" % (tag, iters[-1], n, sm), {"logpi": lpi}))
-            print("bayesem: %d reads, smoothing %s: %d genera with a prior above 0" % (len(sub), sm, sum(1 for x in lpi if x is not None)), file=sys.stderr, flush=True)
+        for seed in [int(x) for x in (a.em_seeds or str(a.seed)).split(",")]:
+            sub = random.Random(seed * 1000003 + n).sample(range(N), min(n, N))
+            st = (len(sub) + 4 * a.threads - 1) // (4 * a.threads)
+            sch = [(i, min(len(sub), i + st)) for i in range(0, len(sub), st)]
+            for sm in a.em_smooth.split(","):
+                pc = float(sm[1:]) if sm[0] == "p" else 0.0
+                lpi = [-math.log(NGEN)] * NGEN
+                for k in range(iters[-1]):
+                    G["logpi"] = lpi; G["subset"] = sub
+                    with Pool(a.threads) as pool:
+                        parts = pool.map(bem_pass, sch)
+                    T = [sum(x[i] for x in parts) + pc for i in range(NGEN)]; lt = math.log(sum(T))
+                    lpi = [math.log(x) - lt if x > 0 else None for x in T]
+                if sm[0] == "m":
+                    w = float(sm[1:]); lpi = [math.log((1 - w) * (math.exp(x) if x is not None else 0.0) + w / NGEN) for x in lpi]
+                G["subset"] = None
+                variants.append(("%s%dn%ds%d%s" % (tag, iters[-1], n, seed, sm), {"logpi": lpi}))
+                print("bayesem: %d reads, seed %d, smoothing %s: %d genera with a prior above 0" % (len(sub), seed, sm, sum(1 for x in lpi if x is not None)), file=sys.stderr, flush=True)
 elif a.mode == "bayesauto":
     with Pool(a.threads) as pool:
         parts = pool.map(auto_pass, chunks)
@@ -371,10 +380,10 @@ with open(a.output, "w") as out:
         G.update(mode=a.mode, level=level, labels=labels, keys=keys, d2c=d2c)
         with Pool(a.threads) as pool:           # forked workers see G and rs without pickling them
             res = pool.map(work, chunks)
-        tp, uncl, uth, amb, st = (sum(x[i] for x in res) for i in range(5))
+        tp, uncl, uth, amb, st, nt = (sum(x[i] for x in res) for i in range(6))
         # accuracy counts unclassified reads as wrong; "theirs" applies their rule to unclassified reads
         line = (f"katka,{label},{level},{round(tp / N, 4)},correct={tp},unclassified={uncl},wrong={N - tp - uncl},"
-                f"reads={N},ambiguous_truth={amb},theirs={round((tp + uth) / N, 4)},strict={round(st / N, 4)},strict_correct={st}")
+                f"reads={N},ambiguous_truth={amb},theirs={round((tp + uth) / N, 4)},strict={round(st / N, 4)},strict_correct={st},ties={nt}")
         print(line, flush=True); out.write(line + "\n")
 if a.exclude_out:
     _, keys, d2c = level_tables("genus")
