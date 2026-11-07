@@ -590,5 +590,5 @@ Whole index (MB), files loaded. Boundaries are 207.5 MB in the first two columns
 - **Answers are identical:** all 8 files, first repeat, at every tag array.
 - **Size:** B is 80.2 MB and E 227.8 MB, 308.0 MB in all, against 266.1 MB for row starts and boundaries. So it's 42 MB larger, not smaller: merging the lists adds a bit per entry, and E must hold every entry.
 - **Scan:** 4.99 tag starts per point query for lookups, as predicted, and 7.2 to 7.6 in LF steps, which land more often in long runs.
-- **Time:** slower than the row list everywhere, by 12% at full tags and about 90% with sampling. A point query costs two selects plus a select in E per entry scanned, where the row list costs a rank and an access.
+- **Time:** slower than the row list everywhere: by 12% at full tags, 9% with grammar tags, and 39 to 91% with sampling. A point query costs two selects plus a select in E per entry scanned, where the row list costs a rank and an access.
 - **Not tried:** decoding E's entries in sequence during a scan instead of with a separate select each. It could close part of the gap.
