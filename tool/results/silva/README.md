@@ -757,3 +757,34 @@ The undigested index on the shared BWT (`%` separators), L = 30, the 8 aquatic f
 - **Steps per read:** this file has 559 steps per read, so 395 ns per step is about 221 µs of its 275 µs per read: 80% is backward steps, and tags, the table and the rest come to about 54 µs.
 - **What Theorem 7 removes,** the rank on B_L, corresponds to our predecessor search: 46%. But it applies only if interval ends are kept as runs and offsets. In our design, rows are what make the predecessor search necessary.
 - **Half the time is selects,** six per step, of which two (`count_less(c n)` and `FP.access(b)`) depend only on c and could be stored per character.
+
+## The Elias-Fano RLCSA, made faster (2026-11-07)
+
+Two changes (`src/bits.hpp` `EFRank`, `src/rlcsa.hpp`), each profiled on the same 11.2 million recorded steps (`rlcsa_profile_cached.txt`, `rlcsa_profile_remapped.txt`). Answers are unchanged: `find --efcsa` gives the default's output on V3_V4_1 with the new file, and with a file in the old format, which still loads. The self-test passes.
+
+1. **Per-character values.** c's first run in `KS` and its position in F depend only on c, so they're stored per character (5 KB) instead of a `count_less` and an `FP.access` on every step.
+2. **`KS` over the characters that occur.** `KS` keyed run starts by c·n with c up to 256, so its universe was 256n. With 6 characters, that gave 12-bit low parts, and each high-bit bucket held about 81 runs. Keys are now slot(c)·n, slot(c) being c's rank among the characters that occur, so the universe is 7n. That gives 6-bit low parts and buckets of 2.6 runs, which is a finer sampling of the high bits, here at no cost: `KS` shrinks from 126.8 to 85.0 MB. New files carry the mapping (format 3 of `KTCSA001`).
+
+| version | ns per step | predecessor search | rank from the runs | Elias-Fano RLCSA (MB) |
+|---|---:|---:|---:|---:|
+| before | 394.7 | 180.3 (46%) | 188.4 (49%) | 185.3 |
+| 1. per-character values | 346.9 | 183.2 (52%) | 166.1 (47%) | 185.3 |
+| 2. and `KS` over the characters that occur | **267.1** | **90.0** (34%) | 174.6 (65%) | **143.6** |
+| explicit RLCSA | 69.7 | | | 565.2 |
+
+- **Per search:** 2.6 entries in the bucket and 2.3 low-bit reads, against 80.7 and 8.6 before.
+- **What's left is selects:** two `KS.access` and two `FP.access2` per step, 65% of it. The gap to the explicit RLCSA is 3.8×, and the search no longer dominates.
+
+## Interpolative coding, bits per value (2026-11-07)
+
+`experiments/interp_bits.cpp`, `interp_bits.txt`: code lengths only, on the explicit RLCSA's lists, per character. Midpoint codes recurse over the same nodes as interpolative coding: the middle value's deviation from the linear interpolation of the node's two known neighbours (their average when the middle is the centre), zig-zagged. Rice's parameter is 2^round(log₂(R / (2√(2k + 3)))), for a node of 2k + 1 values whose neighbours differ by R.
+
+| list (68.3 M values each) | Elias-Fano | interpolative, minimal binary | interpolative, centred | midpoint, Elias γ | midpoint, Rice |
+|---|---:|---:|---:|---:|---:|
+| run starts (universe n) | 8.14 | 6.21 | **6.16** | 9.59 | 6.76 |
+| F positions (universe of c's rows) | 6.05 | **3.26** | 3.31 | 5.47 | 4.23 |
+
+- **Interpolative coding beats Elias-Fano by about 2 and 3 bits per value.** On both lists together that's 80.9 MB against 121.1 for these per-character lists. These have no select support; `KS` and `FP` as built are 143.5 MB.
+- **Centred codes help slightly on run starts** (−0.05 bits) and hurt slightly on F positions (+0.05).
+- **Midpoint deviation is worse than plain interpolative coding** with either code. With γ it's worse even than Elias-Fano on run starts. Values don't sit close enough to the linear interpolation: the deviations are about as large as the range allows, so a code that favours small deviations pays for it.
+- **Random access:** interpolative coding gives none by itself, so it would need blocks with sampled values. These counts leave that cost out.

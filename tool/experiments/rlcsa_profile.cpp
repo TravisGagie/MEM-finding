@@ -12,9 +12,9 @@
 using namespace katka;
 static double now_s() { return std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count(); }
 int main(int argc, char **argv) {
-    if (argc != 3) { fprintf(stderr, "usage: rlcsa_profile PREFIX STEPS\n"); return 1; }
+    if (argc < 3) { fprintf(stderr, "usage: rlcsa_profile PREFIX STEPS [EFCSA]\n"); return 1; }
     const std::string P = argv[1];
-    rlcsa X, Y; X.load(P + ".csa"); Y.load(P + ".efcsa");
+    rlcsa X, Y; X.load(P + ".csa"); Y.load(argc > 3 ? argv[3] : (P + ".efcsa").c_str());
     struct st { unsigned char c; uint64_t sp, ep; };
     std::vector<st> S;
     { FILE *f = fopen(argv[2], "rb"); st x; while (fread(&x.c, 1, 1, f) == 1 && fread(&x.sp, 8, 1, f) == 1 && fread(&x.ep, 8, 1, f) == 1) if (Y.C[x.c + 1] > Y.C[x.c]) S.push_back(x); fclose(f); }
@@ -30,17 +30,19 @@ int main(int argc, char **argv) {
     };
     printf("Elias-Fano RLCSA (%.1f MB)\n", Y.bytes() / 1e6);
     double t_all = rep("whole step (rank2)", [&](const st &x) { uint64_t a, b; E.rank2(x.c, x.sp, x.ep, a, b); return a + b; });
-    double t_b = rep("first run of c: KS.count_less(c n)", [&](const st &x) { return E.KS.count_less((uint64_t)x.c * E.n); });
-    double t_s = rep("runs of sp and ep: 2 KS.count_less (predecessor search)", [&](const st &x) { uint64_t base = (uint64_t)x.c * E.n; return E.KS.count_less(base + x.sp) + E.KS.count_less(base + x.ep); });
-    std::vector<uint64_t> A1(N), A2(N), BB(N);
-    for (uint64_t i = 0; i < N; ++i) { uint64_t base = (uint64_t)S[i].c * E.n; BB[i] = E.KS.count_less(base); A1[i] = S[i].sp ? E.KS.count_less(base + S[i].sp) : BB[i]; A2[i] = S[i].ep ? E.KS.count_less(base + S[i].ep) : BB[i]; }
+    const bool cached = !E.first.empty();
+    double t_b = rep(cached ? "first run of c and its F position: stored per character" : "first run of c: KS.count_less(c n), FP.access(b)",
+                     [&](const st &x) { return cached ? E.first[x.c] + E.ffirst[x.c] : E.KS.count_less(E.base_of(x.c)) + E.FP.access(E.KS.count_less(E.base_of(x.c))); });
+    double t_s = rep("runs of sp and ep: 2 KS.count_less (predecessor search)", [&](const st &x) { uint64_t base = E.base_of(x.c); return E.KS.count_less(base + x.sp) + E.KS.count_less(base + x.ep); });
+    std::vector<uint64_t> A1(N), A2(N), BB(N), FB(N);
+    for (uint64_t i = 0; i < N; ++i) { uint64_t base = E.base_of(S[i].c); BB[i] = E.KS.count_less(base); FB[i] = BB[i] < E.nruns ? E.FP.access(BB[i]) : E.n; A1[i] = S[i].sp ? E.KS.count_less(base + S[i].sp) : BB[i]; A2[i] = S[i].ep ? E.KS.count_less(base + S[i].ep) : BB[i]; }
     uint64_t k = 0;
-    double t_r = rep("from the runs: 2 rank_from (KS.access, FP.access2, FP.access(b))", [&](const st &x) { uint64_t i = k++ % N; uint64_t r1 = A1[i] == BB[i] ? 0 : E.rank_from(BB[i], A1[i], x.c, x.sp), r2 = A2[i] == BB[i] ? 0 : E.rank_from(BB[i], A2[i], x.c, x.ep); return r1 + r2; });
+    double t_r = rep("from the runs: 2 rank_from (KS.access, FP.access2)", [&](const st &x) { uint64_t i = k++ % N, base = E.base_of(x.c); uint64_t r1 = A1[i] == BB[i] ? 0 : E.rank_from(FB[i], A1[i], base, x.sp), r2 = A2[i] == BB[i] ? 0 : E.rank_from(FB[i], A2[i], base, x.ep); return r1 + r2; });
     printf("  sum of the parts %.1f ns against %.1f for the whole step\n", t_b + t_s + t_r, t_all);
     // the predecessor search's own work: elements compared within the high bucket (get_low), per count_less
     uint64_t lows = 0, buck = 0;
     for (uint64_t i = 0; i < N; ++i) for (uint64_t x : {S[i].sp, S[i].ep}) {
-        uint64_t v = (uint64_t)S[i].c * E.n + x, h = v >> E.KS.l;
+        uint64_t v = E.base_of(S[i].c) + x, h = v >> E.KS.l;
         uint64_t lo, hi;
         if (h == 0) { lo = 0; hi = E.KS.template select_<false>(0); }
         else { uint64_t p = E.KS.template select_<false>(h - 1); lo = p - (h - 1); uint64_t q = p + 1, w = q >> 6, word = ~E.KS.high[w] & (~0ull << (q & 63)); while (!word) word = ~E.KS.high[++w]; hi = ((w << 6) + __builtin_ctzll(word)) - h; }
@@ -51,6 +53,7 @@ int main(int argc, char **argv) {
     double x_all = rep("whole step (2 run_lists::rank)", [&](const st &x) { return X.rr.rank(x.c, x.sp) + X.rr.rank(x.c, x.ep); });
     double x_f = rep("runs of sp and ep: 2 first_run (jump table, binary search)", [&](const st &x) { return X.rr.first_run(x.c, x.sp) + X.rr.first_run(x.c, x.ep); });
     printf("  rest (rank from the run): %.1f ns\n", x_all - x_f);
+    printf("KS %.1f MB, FP %.1f MB, per-character values %.3f MB\n", E.KS.bytes() / 1e6, E.FP.bytes() / 1e6, (E.slot.size() * 4 + (E.first.size() + E.ffirst.size()) * 8) / 1e6);
     printf("summary: Elias-Fano %.1f ns per step (first run of c %.0f%%, predecessor search %.0f%%, from the runs %.0f%%); explicit %.1f ns (search %.0f%%)\n",
            t_all, 100 * t_b / (t_b + t_s + t_r), 100 * t_s / (t_b + t_s + t_r), 100 * t_r / (t_b + t_s + t_r), x_all, 100 * x_f / x_all);
     return (int)(sink & 0);

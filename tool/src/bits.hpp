@@ -278,6 +278,18 @@ struct EFRank {
     uint32_t sigma = 0;
     uint64_t nruns = 0;
     EliasFano KS, FP;     // KS[j] = c * n + start of run j (runs grouped by c); FP[j] = its position in F
+    // For an RLCSA (rlcsa::build_ef): slot[c], the rank of c among the characters that occur, so that KS's universe is (characters + 1) n,
+    // not 256 n, and its low parts are about 6 bits shorter (the buckets of the predecessor search hold 1 or 2 runs, not about 80); a
+    // character that doesn't occur maps past the last.  Empty: c itself.  first[c] and ffirst[c]: c's first run in KS and its position
+    // in F, for every c (they depend only on c).
+    std::vector<uint32_t> slot;
+    std::vector<uint64_t> first, ffirst;
+    inline uint64_t base_of(uint32_t c) const { return (uint64_t)(slot.empty() ? c : slot[c]) * n; }
+    void prepare() {                      // after build or load: the per-character values
+        if (sigma > 65536) { first.clear(); ffirst.clear(); return; }
+        first.assign(sigma, 0); ffirst.assign(sigma, 0);
+        for (uint32_t c = 0; c < sigma; ++c) { first[c] = KS.count_less(base_of(c)); ffirst[c] = first[c] < nruns ? FP.access(first[c]) : n; }
+    }
 
     template <class V> void build(const V &s, uint32_t sig) {
         n = s.size(); sigma = sig;
@@ -302,19 +314,21 @@ struct EFRank {
         KS.build(ks, (uint64_t)sigma * n);
         FP.build(fp, n);
     }
-    inline uint64_t rank_from(uint64_t b, uint64_t a, uint32_t c, uint64_t i) const {
-        uint64_t j = a - 1, start = KS.access(j) - (uint64_t)c * n, f, fn;
+    inline uint64_t rank_from(uint64_t fb, uint64_t a, uint64_t base, uint64_t i) const {   // fb: c's first run's position in F
+        uint64_t j = a - 1, start = KS.access(j) - base, f, fn;
         if (j + 1 < nruns) FP.access2(j, f, fn); else { f = FP.access(j); fn = n; }
         uint64_t len = fn - f, d = i - start;
-        return f - FP.access(b) + (d < len ? d : len);
+        return f - fb + (d < len ? d : len);
     }
     // rank_c at two positions, finding c's first run once
     inline void rank2(uint32_t c, uint64_t i1, uint64_t i2, uint64_t &r1, uint64_t &r2) const {
         if (c >= sigma) { r1 = r2 = 0; return; }
-        uint64_t base = (uint64_t)c * n, b = KS.count_less(base);
+        const uint64_t base = base_of(c), b = first.empty() ? KS.count_less(base) : first[c];
         uint64_t a1 = i1 ? KS.count_less(base + i1) : b, a2 = i2 ? KS.count_less(base + i2) : b;
-        r1 = a1 == b ? 0 : rank_from(b, a1, c, i1);
-        r2 = a2 == b ? 0 : rank_from(b, a2, c, i2);
+        if (a1 == b && a2 == b) { r1 = r2 = 0; return; }
+        const uint64_t fb = first.empty() ? FP.access(b) : ffirst[c];
+        r1 = a1 == b ? 0 : rank_from(fb, a1, base, i1);
+        r2 = a2 == b ? 0 : rank_from(fb, a2, base, i2);
     }
     // rank2, knowing that both positions' runs lie among runs rl..rh (positions in KS): binary search over KS within them
     inline uint64_t count_less_in(uint64_t x, uint64_t lo, uint64_t hi) const {
@@ -326,10 +340,11 @@ struct EFRank {
     }
     inline void rank2_in(uint32_t c, uint64_t i1, uint64_t i2, uint64_t rl, uint64_t rh, uint64_t &r1, uint64_t &r2) const {
         if (c >= sigma) { r1 = r2 = 0; return; }
-        uint64_t base = (uint64_t)c * n, b = KS.count_less(base);
+        const uint64_t base = base_of(c), b = first.empty() ? KS.count_less(base) : first[c];
         uint64_t a1 = i1 ? count_less_in(base + i1, rl, rh) : b, a2 = i2 ? count_less_in(base + i2, rl, rh) : b;
-        r1 = a1 == b ? 0 : rank_from(b, a1, c, i1);
-        r2 = a2 == b ? 0 : rank_from(b, a2, c, i2);
+        const uint64_t fb = (a1 == b && a2 == b) ? 0 : first.empty() ? FP.access(b) : ffirst[c];
+        r1 = a1 == b ? 0 : rank_from(fb, a1, base, i1);
+        r2 = a2 == b ? 0 : rank_from(fb, a2, base, i2);
     }
     // LF without a C array: C[c] + rank_c(i)
     inline uint64_t lf_one(uint64_t base, uint64_t b, uint64_t i) const {
@@ -347,7 +362,7 @@ struct EFRank {
         if (b == nruns || KS.access(b) >= base + n) { o1 = o2 = n; return; }    // c does not occur
         o1 = lf_one(base, b, i1); o2 = lf_one(base, b, i2);
     }
-    uint64_t bytes() const { return KS.bytes() + FP.bytes(); }
+    uint64_t bytes() const { return KS.bytes() + FP.bytes() + slot.size() * 4 + (first.size() + ffirst.size()) * 8; }
     void save(FILE *f) const { wr(f, n); wr(f, sigma); wr(f, nruns); KS.save(f); FP.save(f); }
     void load(FILE *f) { rd(f, n); rd(f, sigma); rd(f, nruns); KS.load(f); FP.load(f); }
 };

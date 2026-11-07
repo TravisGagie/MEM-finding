@@ -130,7 +130,7 @@ struct rlcsa {
         for_each_bwt_run(bwtfile, [&](uint64_t k, uint64_t s, uint64_t len, unsigned char c) { count[c] += len; nruns[c]++; R = k + 1; n = s + len; });
         C[0] = 0;
         for (int c = 0; c < 256; ++c) C[c + 1] = C[c] + count[c];
-        if (ef) build_ef(bwtfile, nruns);
+        if (ef) { build_ef(bwtfile, nruns); er.prepare(); }
         else if ((wide = (n >> 32) != 0)) build_explicit(rr64, bwtfile, nruns);
         else build_explicit(rr, bwtfile, nruns);
         prepare_lf();
@@ -163,18 +163,21 @@ struct rlcsa {
     }
     void build_ef(const std::string &bwtfile, const uint64_t *nruns) {
         er.n = n; er.sigma = 256; er.nruns = R;
+        er.slot.assign(256, 0); uint32_t ns = 0;       // the characters that occur, in order; the others past them
+        for (int c = 0; c < 256; ++c) if (nruns[c]) er.slot[c] = ns++;
+        for (int c = 0; c < 256; ++c) if (!nruns[c]) er.slot[c] = ns;
         std::vector<uint64_t> slot(257, 0), seen(256, 0), ks(R), fp(R);
         for (int c = 0; c < 256; ++c) slot[c + 1] = slot[c] + nruns[c];
         for_each_bwt_run(bwtfile, [&](uint64_t, uint64_t s, uint64_t len, unsigned char c) {
-            uint64_t k = slot[c]++; ks[k] = (uint64_t)c * n + s; fp[k] = C[c] + seen[c]; seen[c] += len; });
-        er.KS.build(ks, 256 * n);
+            uint64_t k = slot[c]++; ks[k] = er.base_of(c) + s; fp[k] = C[c] + seen[c]; seen[c] += len; });
+        er.KS.build(ks, (uint64_t)(ns + 1) * n);
         std::vector<uint64_t>().swap(ks);
         er.FP.build(fp, n);
     }
 
     // the first of c's runs starting at or after row i, for extend_in
     uint64_t first_run(unsigned char c, uint64_t i) const {
-        if (ef) return er.KS.count_less((uint64_t)c * n + i);
+        if (ef) return er.KS.count_less(er.base_of(c) + i);
         return wide ? rr64.first_run(c, i) : rr.first_run(c, i);
     }
     // LF(i) = C[c] + rank_c(i), with no BWT: c is the character whose runs hold row i, tried in decreasing order of frequency (for
@@ -226,8 +229,8 @@ struct rlcsa {
     void save(const std::string &file) const {
         FILE *f = open_or_die(file, "wb");
         wmagic(f, "KTCSA001"); wr(f, n); wr(f, R); fwrite(C, 8, 257, f);
-        uint8_t e = ef ? 1 : wide ? 2 : 0; wr(f, e);
-        if (ef) er.save(f); else if (wide) rr64.save(f); else rr.save(f);
+        uint8_t e = ef ? (er.slot.empty() ? 1 : 3) : wide ? 2 : 0; wr(f, e);   // 3: Elias-Fano over the characters that occur
+        if (ef) { er.save(f); if (e == 3) wvec(f, er.slot); } else if (wide) rr64.save(f); else rr.save(f);
         fclose(f);
     }
     void load(const std::string &file) {
@@ -237,8 +240,8 @@ struct rlcsa {
         rd(f, n); rd(f, R);
         if (fread(C, 8, 257, f) != 257) die("cannot read " + file);
         rd(f, e);
-        ef = e == 1; wide = e == 2;
-        if (ef) er.load(f); else if (wide) rr64.load(f); else rr.load(f);
+        ef = e == 1 || e == 3; wide = e == 2;
+        if (ef) { er.load(f); if (e == 3) rvec(f, er.slot); else er.slot.clear(); er.prepare(); } else if (wide) rr64.load(f); else rr.load(f);
         fclose(f);
         prepare_lf();
     }
