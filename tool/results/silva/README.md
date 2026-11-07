@@ -557,20 +557,38 @@ Movi 2 (v2.0.0 + 12 commits, 9bc0acc), `regular` mode, with the prototype in `mo
 
 So with the same output the two are within 3%. The first row doesn't convert to rows.
 
-**With tags, 5 repeats, in rotation with the RLCSA.** Index size is Movi 2's index, 33.6 MB ftab, 58.5 MB Elias-Fano row starts and tags; for the RLCSA, `.csa` and tags, with its table built at load. Boundaries are 207.5 MB throughout.
+**With tags, 5 repeats** (`movi2/select.txt`). The first run of this table was wrong: the prototype's setup (loading the tags, building the row list) fell inside Movi 2's clock, about 1.4 s per file or 7 µs per read. These times subtract it, and replace that table. The RLCSA, rows at full tags and the select version took turns; the other row-list configurations ran directly afterwards. µs per read, median (range), one thread, pinned. All 80 first-repeat comparisons in the rotation are identical to `find`'s; the row-list tag arrays were compared in the earlier run.
 
-| configuration | labels (MB) | tags (MB) | whole index (MB) | µs per read, median (range) |
+| tags | RLCSA | Movi 2, row list | Movi 2, select (below) |
+|---|---:|---:|---:|
+| full | 46.70 (46.41–46.94) | **44.73** (44.63–46.00) | 49.99 (49.67–50.28) |
+| s = 2 | 51.64 (51.58–52.41) | 59.48 (59.25–60.86) | 82.87 (82.37–83.33) |
+| s = 4 | 60.55 (60.31–60.86) | 88.98 (88.83–90.54) | 149.40 (149.06–150.67) |
+| s = 8 | 80.02 (79.94–80.19) | 156.44 (153.75–160.32) | 298.10 (295.11–304.97) |
+| s = 16 | | 297.93 (297.60–309.14) | |
+| built-in grammar | 53.98 (53.88–54.37) | **53.35** (53.10–55.22) | 58.12 (58.02–59.39) |
+| bigrepair | | 55.86 (55.71–56.99) | |
+
+Whole index (MB), files loaded. Boundaries are 207.5 MB in the first two columns. RLCSA: `.csa` and tags, its table built at load. Row list: Movi 2's index 546.6, ftab 33.6, row starts 58.5, tags. Select: Movi 2's index, ftab, B and E 308.0, labels.
+
+| tags | labels | RLCSA | Movi 2, row list | Movi 2, select |
 |---|---:|---:|---:|---:|
-| RLCSA, full tags | 628.8 | 836.4 | 1,401.5 | 46.43 (46.30–46.84) |
-| Movi 2, full tags | 628.8 | 836.4 | 1,475.1 | 51.87 (51.83–53.29) |
-| Movi 2, s = 2 | 380.6 | 588.2 | 1,226.9 | 66.90 (66.63–68.54) |
-| Movi 2, s = 4 | 222.7 | 430.2 | 1,068.9 | 96.99 (96.58–98.29) |
-| Movi 2, s = 8 | 143.7 | 351.2 | 989.9 | 161.04 (160.62–161.76) |
-| Movi 2, s = 16 | 104.2 | 311.8 | 950.5 | 308.42 (302.96–315.16) |
-| Movi 2, built-in grammar | 242.0 | 449.6 | 1,088.3 | 59.58 (59.01–59.71) |
-| Movi 2, bigrepair | 302.0 | 509.5 | 1,148.2 | 62.15 (61.90–62.24) |
+| full | 628.8 | 1,401.5 | 1,475.1 | 1,517.0 |
+| s = 2 | 380.6 | 1,153.4 | 1,226.9 | 1,268.8 |
+| s = 4 | 222.7 | 995.4 | 1,068.9 | 1,110.9 |
+| s = 8 | 143.7 | 916.4 | 989.9 | 1,031.9 |
+| s = 16 | 104.2 | | 950.5 | |
+| built-in grammar | 242.0 | 1,014.7 | 1,088.3 | 1,130.2 |
+| bigrepair | 302.0 | | 1,148.2 | |
 
-- **The RLCSA stays ahead with tags,** in space and time. Beside the section above (on the other BWT, at 45.69 µs): s = 4 is 59.33 µs on the RLCSA against 96.99, and s = 8 78.13 against 161.04.
-- **Sampling is costlier on Movi 2** because each LF step adds a rank and an access on the row list, around Movi 2's own step. Doubling s nearly doubles the time past s = 4.
-- **Tags cost more on Movi 2 than on the RLCSA:** 12.1 µs over the row output, against 5.3. That the prototype prints each tag through `fprintf` may be part of it; this wasn't separated.
-- **Peak memory** in `sweep.txt` includes a temporary 547 MB array in the prototype's loader, so it isn't the index's real footprint.
+- **Full tags:** Movi 2 with the row list is 4% faster than the RLCSA, at 5% more space. With grammar tags the two are level (1%), at 7% more space.
+- **Sampled tags:** the RLCSA wins clearly, by 15% at s = 2 and 2× at s = 8. Each LF step on Movi 2 adds a rank and an access on the row list.
+- **Peak memory** for the row-list prototype includes a temporary 547 MB array in its loader; it isn't the index's footprint.
+
+**Tag lookup by select, with no row numbers** (`KATKA_SELECT` in `prototype.patch`). B has one 0 per Movi run start and one 1 per tag run start, in row order, BWT starts first on ties; E is the Elias-Fano list of each entry's row. A point query takes two select₀ and scans run i's tag starts; an interval query adds the tag runs between. The tie bit T (about 8.5 MB) wasn't needed: the scan finds a tied tag run at offset 0. It's not counted.
+
+- **Answers are identical:** all 8 files, first repeat, at every tag array.
+- **Size:** B is 80.2 MB and E 227.8 MB, 308.0 MB in all, against 266.1 MB for row starts and boundaries. So it's 42 MB larger, not smaller: merging the lists adds a bit per entry, and E must hold every entry.
+- **Scan:** 4.99 tag starts per point query for lookups, as predicted, and 7.2 to 7.6 in LF steps, which land more often in long runs.
+- **Time:** slower than the row list everywhere, by 12% at full tags and about 90% with sampling. A point query costs two selects plus a select in E per entry scanned, where the row list costs a rank and an access.
+- **Not tried:** decoding E's entries in sequence during a scan instead of with a separate select each. It could close part of the gap.

@@ -1,0 +1,17 @@
+csafull      46.70 (46.41-46.94) peak 1.43 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+oldfull      44.73 (44.63-46.00) peak 2.03 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+selfull      49.99 (49.67-50.28) peak 1.73 n=5 points 17.1M scanned/point 4.99 lf_steps 0.0M
+csas2        51.64 (51.58-52.41) peak 1.18 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+olds2        59.48 (59.25-60.86) peak 1.78 n=5 points 0.0M scanned/point 0.00 lf_steps 69.9M
+sels2        82.87 (82.37-83.33) peak 1.48 n=5 points 87.0M scanned/point 7.23 lf_steps 69.9M
+csas4        60.55 (60.31-60.86) peak 1.02 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+olds4        88.98 (88.83-90.54) peak 1.63 n=5 points 0.0M scanned/point 0.00 lf_steps 209.4M
+sels4       149.40 (149.06-150.67) peak 1.33 n=5 points 226.4M scanned/point 7.54 lf_steps 209.4M
+csas8        80.02 (79.94-80.19) peak 0.94 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+olds8       156.44 (153.75-160.32) peak 1.55 n=5 points 0.0M scanned/point 0.00 lf_steps 487.6M
+sels8       298.10 (295.11-304.97) peak 1.25 n=5 points 504.7M scanned/point 7.60 lf_steps 487.6M
+olds16      297.93 (297.60-309.14) peak 1.51 n=5 points 0.0M scanned/point 0.00 lf_steps 1033.2M
+csag         53.98 (53.88-54.37) peak 1.04 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+oldg         53.35 (53.10-55.22) peak 1.64 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M
+selg         58.12 (58.02-59.39) peak 1.35 n=5 points 17.1M scanned/point 4.99 lf_steps 0.0M
+oldbg        55.86 (55.71-56.99) peak 1.70 n=5 points 0.0M scanned/point 0.00 lf_steps 0.0M

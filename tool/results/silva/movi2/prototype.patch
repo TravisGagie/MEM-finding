@@ -1,8 +1,8 @@
 diff --git a/src/mem_finder.cpp b/src/mem_finder.cpp
-index 23ef7f4..d307457 100644
+index 23ef7f4..3f9d0fe 100644
 --- a/src/mem_finder.cpp
 +++ b/src/mem_finder.cpp
-@@ -3,10 +3,45 @@
+@@ -3,10 +3,121 @@
  #include "move_structure.hpp"
  #include "utils.hpp"
  
@@ -11,19 +11,71 @@ index 23ef7f4..d307457 100644
 +#include <cstdlib>
 +extern uint64_t g_ext, g_walk1, g_walk2, g_walk3, g_steps;
 +static uint64_t g_cnt = 0, g_mems = 0;
-+static void g_print() { fprintf(stderr, "COUNTERS mems %lu count_runs %lu extend %lu walk1 %lu walk2 %lu walk3 %lu steps %lu\n", g_mems, g_cnt, g_ext, g_walk1, g_walk2, g_walk3, g_steps); if (g_out) fclose(g_out); }
++static void g_print2();
++static void g_print() { fprintf(stderr, "COUNTERS mems %lu count_runs %lu extend %lu walk1 %lu walk2 %lu walk3 %lu steps %lu\n", g_mems, g_cnt, g_ext, g_walk1, g_walk2, g_walk3, g_steps); if (g_out) fclose(g_out); g_print2(); }
 +#include "/home/travis/rz/MEM-finding/tool/src/tag_array.hpp"
++#include <filesystem>
 +// The prototype's bridge to katka: rows from runs and offsets, and tags.  Environment: KATKA_TAG (a tag array), KATKA_OUT (the output),
 +// KATKA_MEMS=1 (a line per MEM: name, start, end, sp, ep; else katka's listing).  Single-threaded.
 +static katka::EliasFano g_rows;
 +static katka::tag_array g_T;
 +static MoveStructure *g_mv = nullptr;
-+static bool g_bridge = false, g_memsfmt = false, g_tags = false;
++static double g_setup = 0;
++static bool g_bridge = false, g_memsfmt = false, g_tags = false, g_sel = false;
++// KATKA_SELECT=<cache file>: no row numbers.  B: one 0 per Movi run start and one 1 per tag run start, in row order, ties with the
++// BWT start first; E: the row of each entry of B.  They replace the row starts and the tag-run boundaries.
++static katka::BitRank g_B;
++static katka::EliasFano g_E;
++static uint64_t g_nb = 0, g_points = 0, g_scanned = 0;
++static inline uint64_t b_zero(uint64_t i) { return g_B.select0(i); }
++// the tag run holding offset o of Movi run i, and the row of the run's start (a point query)
++static inline uint64_t point(uint64_t i, uint64_t o, uint64_t &row0) {
++    const uint64_t p = b_zero(i), q = (i + 1 < g_B.n - g_B.nones) ? b_zero(i + 1) : g_nb;
++    row0 = g_E.access(p);
++    ++g_points;
++    uint64_t lo = p;                                    // the last entry of the run at or before offset o
++    if (q - p > 32) {
++        uint64_t a = p, b = q;                          // E[a] <= row0 + o < E[b]
++        while (b - a > 1) { uint64_t m = (a + b) >> 1; ++g_scanned; if (g_E.access(m) - row0 <= o) a = m; else b = m; }
++        lo = a;
++    } else {
++        for (uint64_t m = p + 1; m < q; ++m) { ++g_scanned; if (g_E.access(m) - row0 > o) break; lo = m; }
++    }
++    return lo == p ? p - i - 1 : lo - i - 1;
++}
++static uint64_t g_runnext(uint64_t j) {                 // sampled tags: tag run j -> the tag run of LF of its first row
++    const uint64_t pos = g_B.select1(j), run = pos - j - 1;
++    uint64_t off = g_E.access(pos) - g_E.access(b_zero(run)), r2 = run;
++    g_mv->LF_move(off, r2);
++    uint64_t row0;
++    return point(r2, off, row0);
++}
++static void sel_count(uint64_t i, uint64_t os, uint64_t k, uint64_t oe, std::vector<std::pair<uint64_t, uint64_t>> &out) {
++    uint64_t r0, r1;
++    const uint64_t js = point(i, os, r0), je = point(k, oe, r1), rs = r0 + os, re = r1 + oe + 1;
++    out.clear();
++    if (js == je) { out.push_back({g_T.tag(js), re - rs}); return; }
++    static std::vector<uint32_t> cnt(1 << 16, 0);
++    static std::vector<uint64_t> touched;
++    uint64_t st = rs, pos = g_B.select1(js);
++    g_T.tags_of(js, je, [&](uint64_t j, uint64_t t) {
++        uint64_t en = re;
++        if (j < je) { ++pos; while (!g_B.get(pos)) ++pos; en = g_E.access(pos); }
++        if (t >= cnt.size()) cnt.resize(t + 1, 0);
++        if (cnt[t] == 0) touched.push_back(t);
++        cnt[t] += (uint32_t)(en - st);
++        st = en;
++    });
++    for (uint64_t t : touched) { out.push_back({t, cnt[t]}); cnt[t] = 0; }
++    touched.clear();
++    std::sort(out.begin(), out.end());
++}
 +static uint64_t g_lf(uint64_t row) {
 +    uint64_t run = g_rows.count_less(row + 1) - 1, off = row - g_rows.access(run);
 +    g_mv->LF_move(off, run);
 +    return g_rows.access(run) + off;
 +}
++static void g_print2() { fprintf(stderr, "BRIDGE points %lu scanned %lu lf_steps %lu\n", (unsigned long)g_points, (unsigned long)g_scanned, (unsigned long)katka::tag_array::lf_steps); }
  // IMPORTANT: For the bidirectional search, the index has to be built with the reverse complement of the reference
  uint64_t MoveStructure::query_mems(MoveQuery& mq) {
 +    static bool once = (at_quick_exit(g_print), true); (void)once;
@@ -33,22 +85,46 @@ index 23ef7f4..d307457 100644
 +    if (!bridge_ready) {
 +        bridge_ready = true;
 +        if (const char *o = getenv("KATKA_OUT")) {
++            const double t0 = katka::now();
 +            g_bridge = true; g_out = fopen(o, "w"); g_memsfmt = getenv("KATKA_MEMS"); g_mv = this;
-+            std::vector<uint64_t> st(r); uint64_t row = 0;
-+            for (uint64_t i = 0; i < r; ++i) { st[i] = row; row += get_n(i); }
-+            g_rows.build(st, row + 1);
-+            fprintf(stderr, "bridge: %lu rows, %lu BWT rows, Elias-Fano list of row starts %.3f MB\n", (unsigned long)r, (unsigned long)row, g_rows.bytes() / 1e6);
-+            if (const char *t = getenv("KATKA_TAG")) {
-+                g_T.load(t, false); g_T.lf_hook = g_lf; g_tags = true;
-+                fprintf(stderr, "bridge: tags %s: boundaries %.3f MB, labels %.3f MB\n", t, g_T.RB.bytes() / 1e6, ((g_T.s > 1 ? g_T.SB.bytes() : 0) + (g_T.G ? g_T.G->bytes() : g_T.L.bytes())) / 1e6);
++            const char *sel = getenv("KATKA_SELECT"); g_sel = sel;
++            if (const char *t = getenv("KATKA_TAG")) { g_T.load(t, false); g_tags = true; }
++            if (!g_sel || !std::filesystem::exists(sel)) {
++                std::vector<uint64_t> st(r); uint64_t row = 0;
++                for (uint64_t i = 0; i < r; ++i) { st[i] = row; row += get_n(i); }
++                if (g_sel) {
++                    const uint64_t rho = g_T.RB.n, nb = r + rho;
++                    g_B.init(nb); g_E.begin(nb, row + 1);
++                    for (uint64_t i = 0, j = 0, x = 0; x < nb; ++x) {
++                        const uint64_t tj = j < rho ? g_T.RB.access(j) : UINT64_MAX;
++                        if (i < r && st[i] <= tj) g_E.push(st[i++]);
++                        else { g_B.set(x); g_E.push(tj); ++j; }
++                    }
++                    g_E.finish(); g_B.finish();
++                    uint64_t ties = 0;
++                    FILE *c = fopen(sel, "wb"); g_B.save(c); g_E.save(c); fclose(c);
++                    (void)ties;
++                } else {
++                    g_rows.build(st, row + 1);
++                    fprintf(stderr, "bridge: %lu rows, %lu BWT rows, Elias-Fano list of row starts %.3f MB\n", (unsigned long)r, (unsigned long)row, g_rows.bytes() / 1e6);
++                }
++            } else {
++                FILE *c = fopen(sel, "rb"); g_B.load(c); g_E.load(c); fclose(c);
 +            }
++            if (g_tags) fprintf(stderr, "bridge: tags %s: boundaries %.3f MB, labels %.3f MB\n", getenv("KATKA_TAG"), g_T.RB.bytes() / 1e6, ((g_T.s > 1 ? g_T.SB.bytes() : 0) + (g_T.G ? g_T.G->bytes() : g_T.L.bytes())) / 1e6);
++            if (g_sel) {
++                g_nb = g_B.n; g_T.run_hook = g_runnext; g_T.RB = katka::EliasFano();
++                fprintf(stderr, "bridge: B %.3f MB (%lu zeros, %lu ones), E %.3f MB\n", g_B.bytes() / 1e6, (unsigned long)(g_B.n - g_B.nones), (unsigned long)g_B.nones, g_E.bytes() / 1e6);
++            } else if (g_tags) g_T.lf_hook = g_lf;
++            g_setup = katka::now() - t0;
++            fprintf(stderr, "bridge: setup %.3f s\n", g_setup);
 +        }
 +    }
 +    if (g_bridge && !g_memsfmt) fprintf(g_out, ">%s\n", mq.get_query_id().c_str());
  
      int32_t pos_on_r = 0; // MEM finding goes left to right
      std::string& query_seq = mq.query();
-@@ -20,6 +55,7 @@ uint64_t MoveStructure::query_mems(MoveQuery& mq) {
+@@ -20,6 +131,7 @@ uint64_t MoveStructure::query_mems(MoveQuery& mq) {
      do {
          mems_found += query_mem_bml(mq, pos_on_r, min_mem_length, query_seq, ftab_k);
      } while (pos_on_r < query_seq.length());
@@ -56,7 +132,7 @@ index 23ef7f4..d307457 100644
  
      return mems_found;
  }
-@@ -36,6 +72,21 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -36,6 +148,21 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
      uint64_t match_len = 0;
      int32_t init_pos = pos_on_r + min_mem_length - 1;
      MoveBiInterval bi_interval;
@@ -78,7 +154,7 @@ index 23ef7f4..d307457 100644
      bi_interval = initialize_bidirectional_search(mq, init_pos, match_len);
      // If min_mem_length is at least ftab_k, we skip using BML
      bool ftab_skip = match_len <= 1 && ftab_k <= min_mem_length;
-@@ -65,8 +116,9 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -65,8 +192,9 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
          }
      }
  
@@ -89,18 +165,20 @@ index 23ef7f4..d307457 100644
      MoveInterval rc_interval_before_extension = rc_interval;
      size_t i;
      for (i = pos_on_r + min_mem_length; i < query_seq.length(); ++i) {
-@@ -78,7 +130,16 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -78,7 +206,18 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
          ++match_len;
      }
  
 -    mq.add_mem(pos_on_r, i, rc_interval.count(rlbwt));
 +    if (g_bridge) {
-+        const uint64_t sp = g_rows.access(rc_interval.run_start) + rc_interval.offset_start, ep = g_rows.access(rc_interval.run_end) + rc_interval.offset_end + 1;
++        uint64_t sp = 0, ep = 0;
++        if (!g_sel) { sp = g_rows.access(rc_interval.run_start) + rc_interval.offset_start; ep = g_rows.access(rc_interval.run_end) + rc_interval.offset_end + 1; }
++        else if (g_memsfmt) { sp = g_E.access(b_zero(rc_interval.run_start)) + rc_interval.offset_start; ep = g_E.access(b_zero(rc_interval.run_end)) + rc_interval.offset_end + 1; }
 +        if (g_memsfmt) fprintf(g_out, "%s\t%d\t%zu\t%lu\t%lu\n", mq.get_query_id().c_str(), pos_on_r, i, (unsigned long)sp, (unsigned long)ep);
 +        else {
 +            static std::vector<std::pair<uint64_t, uint64_t>> tc;
 +            fprintf(g_out, "[%d,%zu] {", pos_on_r, i - 1);
-+            if (g_tags) { g_T.count(sp, ep, tc); for (size_t q = 0; q < tc.size(); ++q) fprintf(g_out, q ? ",%lu:%lu" : "%lu:%lu", (unsigned long)tc[q].first, (unsigned long)tc[q].second); }
++            if (g_tags) { if (g_sel) sel_count(rc_interval.run_start, rc_interval.offset_start, rc_interval.run_end, rc_interval.offset_end, tc); else g_T.count(sp, ep, tc); for (size_t q = 0; q < tc.size(); ++q) fprintf(g_out, q ? ",%lu:%lu" : "%lu:%lu", (unsigned long)tc[q].first, (unsigned long)tc[q].second); }
 +            fputs("} ", g_out);
 +        }
 +    } else mq.add_mem(pos_on_r, i, rc_interval.count(rlbwt));

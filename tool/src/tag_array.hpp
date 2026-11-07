@@ -29,6 +29,7 @@ struct tag_array {
     const rlbwt *bwt = nullptr;                     // for LF, when s > 1
     const rlcsa *csa = nullptr;                     // for LF instead of bwt, if set (no RLBWT is needed then)
     uint64_t (*lf_hook)(uint64_t) = nullptr;        // LF from elsewhere, if set (the Movi 2 prototype)
+    uint64_t (*run_hook)(uint64_t) = nullptr;       // tag run i -> the tag run of LF of its first row, if set (the same, without rows)
 
     static inline thread_local std::vector<uint32_t> cnt;
     static inline thread_local std::vector<char> mark;
@@ -42,8 +43,10 @@ struct tag_array {
         if (G) { u64 t = 0; G->decode(i, 1, [&](uint32_t g) { t = g; }); return t; }
         if (s == 1) return L[i];
         while (!SB.get(i)) {
+            ++lf_steps;
+            if (run_hook) { i = run_hook(i); continue; }
             u64 b = run_start(i);
-            i = run_of(lf_hook ? lf_hook(b) : csa ? csa->LF(b) : bwt->LF(b)); ++lf_steps;
+            i = run_of(lf_hook ? lf_hook(b) : csa ? csa->LF(b) : bwt->LF(b));
         }
         return L[SB.rank1(i)];
     }
