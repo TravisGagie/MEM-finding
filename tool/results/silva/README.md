@@ -655,3 +655,26 @@ Every combination, with seed ranges, is in `em_sample.txt`. Seeds differ by at m
 - **Why fewer reads can do better:** the full-set prior keeps 3,709 genera above 0 on aquatic V1_V2, while 1,000 reads give 1,475 to 2,031. Spurious genera that the full set props up get no weight. Smoothing adds them back. This is one region; the others weren't counted.
 - **As the streaming default for `find --classify bayesem`:** yes. A prior from about 10,000 read pairs, unsmoothed, then every read classified in one pass, is within 0.3 points of the full-set prior on all three kinds of sample, and needs memory for 10,000 pairs instead of the whole set.
 - **The sample must be random.** These read files are grouped by genus (MicrobeMixer writes each genus's reads together), so the first 10,000 reads of a file would be a few genera only. A reservoir sample, or a first pass, is needed. That was not tested here.
+
+## Facts for the paper (2026-11-07)
+
+- **Genera:** `work/ref/done` says `9118 genera`, and `ref/rna/doc_to_traversal.txt` has 9,118 lines, as in Cliffy's paper.
+- **Cliffy's minimizer-digested indexes:** not on the desktop, and `cliffy_index_size.sh` has not been run on them here (they were built on the server). What we have is Cliffy's Table 1 (preprint and journal): 4.266 for minimizers and 7.858 for DNA minimizers, against 9.014 undigested. By `cliffy_index_size.sh`'s description of cliffy-experiments' rule, those are GiB (2³⁰ bytes), about 4.58, 8.44 and 9.68 GB. The draft's 7.63 GB for Cliffy's digested index (`silva.tex` 255 and 276) is from the server run and couldn't be traced here; it isn't one of Table 1's figures. Gonzalo's run of `cliffy_index_size.sh` on the server would give both counts.
+- **KATKA's build, Movi 2 with the row list** (`build/`, one machine, each step in an 11 GB cgroup, timed alone; i7-8700):
+
+| step | full tags | grammar tags | peak (GB) |
+|---|---:|---:|---:|
+| `katka prep` (text, both strands, `X` separators) | 4.9 s | 4.9 s | 0.05 |
+| separator `X` to `%` (prototype only) | 1.2 s | 1.2 s | 0.01 |
+| Big-BWT | 324.1 s | 324.1 s | 5.33 |
+| tag runs and tag array (`index --tags --no-rmq`) | 329.0 s | | 5.35 |
+| … with the built-in RePair (`--grammar`) | | 1,454.6 s | 9.03 |
+| terminator byte (prototype only) | 2.2 s | 2.2 s | 0.01 |
+| Movi 2 index and ftab (`movi-regular build --ftab-k 10`) | 22.1 s | 22.1 s | 2.42 |
+| row list, built at load | 0.6 s | 0.6 s | |
+| **total** | **684 s (11.4 min)** | **1,810 s (30.2 min)** | **5.35 / 9.03** |
+
+  - **Tag runs:** the grammar step computes them again, 309.5 s of its 1,454.6. From a cached `.tagruns` it would take about 1,145 s, for a total of about 25 min.
+  - **Movi 2's exit status:** `movi-regular build` stores the index, then exits with signal 11 while generating null statistics, because the prototype passes an empty `ref.fa`. The index files are complete and were used for all the results here.
+  - **The two prototype-only steps** go away if `prep` writes `%` and Big-BWT's terminator is written as byte 0.
+  - **Querying,** the whole index takes 1,475 MB (full) or 1,088 MB (grammar) of files, from the Movi 2 section above.
