@@ -754,6 +754,6 @@ The undigested index on the shared BWT (`%` separators), L = 30, the 8 aquatic f
 | … of which the jump table and binary search | 69.3 | 98% |
 
 - **Per search:** 80.7 entries in the high bucket (KS has l = 12 low bits over 68.3 million runs), and 8.6 low-bit reads.
-- **Steps per read:** at 470 steps per read on average, 395 ns per step is about 186 µs of the 200 µs per read. Steps are almost all of the time; tags and the rest come to about 14 µs.
+- **Steps per read:** this file has 559 steps per read, so 395 ns per step is about 221 µs of its 275 µs per read: 80% is backward steps, and tags, the table and the rest come to about 54 µs.
 - **What Theorem 7 removes,** the rank on B_L, corresponds to our predecessor search: 46%. But it applies only if interval ends are kept as runs and offsets. In our design, rows are what make the predecessor search necessary.
 - **Half the time is selects,** six per step, of which two (`count_less(c n)` and `FP.access(b)`) depend only on c and could be stored per character.
