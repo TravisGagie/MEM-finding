@@ -7,14 +7,14 @@
 #
 # OUT/<PROFILE.REPEAT>/<region>/: credit/*.csv, the 10 M pairs' seqtax.txt and stdout.log.  The sampled reads are kept
 # gzipped in SAMPLES/<PROFILE.REPEAT>/ (default OUT/samples), since they can't be regenerated; full reads and listings are deleted.
-# Needs about 35 GB of disk per region at the peak.  Environment: AB (the abundance table; %r stands for the region), S (katka/silva), IDX, NSEQ, EXP, MM, REGIONS, THREADS, MEMMAX.
+# Needs about 35 GB of disk per region at the peak.  Environment: AB (the abundance table; %r stands for the region), FASTA (the reference simulated from), S (katka/silva), IDX, NSEQ, EXP, MM, REGIONS, THREADS, MEMMAX.
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
 OUT=$1; PR=$2; mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd); SAMPLES=${SAMPLES:-$OUT/samples}
 S=${S:-$TOP/katka/silva}; IDX=${IDX:-$HOME/tool/silva/bac}; NSEQ=${NSEQ:-$HOME/tool/silva/queue/nseq.txt}
 EXP=${EXP:-$TOP/katka/cliffy-experiments/src}; MM=${MM:-$HOME/rz/MicrobeMixer}; THREADS=${THREADS:-12}
 REGIONS=${REGIONS:-"V1_V2 V3_V4 V4_V4 V4_V5"}
-FASTA=$S/exp1_data/SILVA_138.1_SSURef_NR99_tax_silva.fasta; TAX=$S/exp1_data/tax_slv_ssu_138.1.txt
+FASTA=${FASTA:-$S/exp1_data/SILVA_138.1_SSURef_NR99_tax_silva.fasta}; TAX=$S/exp1_data/tax_slv_ssu_138.1.txt
 D2T=$S/work/ref/rna/doc_to_traversal.txt; T2L=$S/work/ref/trav_to_length.txt; AB=${AB:-$S/work/abundance/aquatic.tsv}
 CAP="systemd-run --user --scope -q -p MemoryMax=${MEMMAX:-11G} -p MemorySwapMax=0"
 stamp() { echo "[$(date '+%F %T')] $*"; }
@@ -44,7 +44,7 @@ for pr in $PR; do
         || { echo "FAILED: find on $pr $r"; exit 1; }
     done
     for spec in lca:lca: one:one: cliffs:cliffs: list:list: norm:norm: freq:freq: prior:prior: mix:mix: em:em: \
-                bayesflat:bayes:--prior+flat bayesauto:bayesauto:; do
+                bayesflat:bayes:--prior+flat bayesauto:bayesauto: bayesem:bayesem:--em-iters+20; do
       name=${spec%%:*}; rest=${spec#*:}; mode=${rest%%:*}; opts=${rest#*:}; opts=${opts//+/ }
       stamp "$pr $r: $name"
       $CAP python3 "$HERE/scripts/score_silva.py" --mode $mode $opts --levels genus --nseq "$NSEQ" --mate1-listings "$d/1.out" --mate2-listings "$d/2.out" \

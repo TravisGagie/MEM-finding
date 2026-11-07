@@ -591,4 +591,14 @@ Whole index (MB), files loaded. Boundaries are 207.5 MB in the first two columns
 - **Size:** B is 80.2 MB and E 227.8 MB, 308.0 MB in all, against 266.1 MB for row starts and boundaries. So it's 42 MB larger, not smaller: merging the lists adds a bit per entry, and E must hold every entry.
 - **Scan:** 4.99 tag starts per point query for lookups, as predicted, and 7.2 to 7.6 in LF steps, which land more often in long runs.
 - **Time:** slower than the row list everywhere: by 12% at full tags, 9% with grammar tags, and 39 to 91% with sampling. A point query costs two selects plus a select in E per entry scanned, where the row list costs a rank and an access.
-- **Not tried:** decoding E's entries in sequence during a scan instead of with a separate select each. It could close part of the gap.
+- **Sequential scan, tried afterwards** (`movi2/seqscan.txt`, in rotation with the RLCSA and the row list, 5 repeats, 48 comparisons identical): one select on B and one on E, then each next entry from E's high bits, up to the next 0 of B, with binary search after 16 entries. Sizes are unchanged. µs per read, median (range), against 46.68 for the RLCSA and 44.76 for the row list in the same rotation:
+
+| tags | select, sequential scan | select, one select per entry |
+|---|---:|---:|
+| full | **42.83** (42.65–44.01) | 49.99 |
+| built-in grammar | **50.76** (50.47–52.42) | 58.12 |
+| s = 2 | 74.60 (74.17–75.84) | 82.87 |
+| s = 4 | 136.54 (135.55–138.46) | 149.40 |
+| s = 8 | 267.75 (266.10–274.75) | 298.10 |
+
+  This makes it the fastest configuration at full tags and with grammar tags, 4% ahead of the row list at 42 MB more. Sampled tags stay well behind: 73% of LF-step lookups on one file (s = 4) fell in runs of over 16 tag starts, where the scan gives way to binary search.

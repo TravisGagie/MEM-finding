@@ -59,6 +59,9 @@ p.add_argument("--eps-grid", default="1e-8,3e-8,1e-7,3e-7,1e-6,3e-6,1e-5,3e-5,1e
                help="--mode bayesauto: the values of epsilon searched")
 p.add_argument("--calls", default=None, help="--mode bayes: also write each read's top documents (0-based, comma-separated; - if none), "
                "one line per read (name, then the call), for the first value of --epsilon, as katka find --classify bayes does")
+p.add_argument("--em-sample", default=None, help="--mode bayesem: also learn the prior from this many reads of the set, drawn with --seed (comma-separated), "
+               "then classify every read: one line per size and --em-smooth, bayesem<iterations>n<size>a<smoothing>")
+p.add_argument("--em-smooth", default="0", help="--mode bayesem with --em-sample: pseudo-reads added to every genus at each iteration (comma-separated)")
 p.add_argument("--mixture-eps", type=float, default=None, help="--mode bayesem: use bayesauto's mixture likelihood with this epsilon")
 p.add_argument("--exclude-out", default=None, help="write the 0-based documents outside the scored genera, one per line, for "
                "find --classify bayes --exclude-docs (needs --nseq)")
@@ -269,7 +272,8 @@ def bem_likelihoods(r):
 def bem_pass(rng):
     """the sum over reads lo..hi of each genus's posterior, under the prior G["logpi"] (None: a prior of 0)"""
     lo, hi = rng; lp = G["logpi"]; T = [0.0] * NGEN
-    for docs, vals in BEM[lo:hi]:
+    sub = G.get("subset")
+    for docs, vals in (BEM[lo:hi] if sub is None else [BEM[i] for i in sub[lo:hi]]):
         sc = [(doc, v + lp[doc]) for doc, v in zip(docs, vals) if lp[doc] is not None]
         if not sc: continue
         top = max(v for _, v in sc)
@@ -328,6 +332,21 @@ elif a.mode == "bayesem":
         ltt = math.log(tt)
         logpi = [math.log(x) - ltt if x > 0 else None for x in T]       # (x / tt can underflow to 0)
         print("bayesem iteration %d: %d genera with a prior above 0" % (k + 1, sum(1 for x in T if x > 0)), file=sys.stderr, flush=True)
+    for n in ([int(x) for x in a.em_sample.split(",")] if a.em_sample else []):
+        sub = random.Random(a.seed * 1000003 + n).sample(range(N), min(n, N))
+        st = (len(sub) + 4 * a.threads - 1) // (4 * a.threads)
+        sch = [(i, min(len(sub), i + st)) for i in range(0, len(sub), st)]
+        for sm in a.em_smooth.split(","):
+            al = float(sm); lpi = [-math.log(NGEN)] * NGEN
+            for k in range(iters[-1]):
+                G["logpi"] = lpi; G["subset"] = sub
+                with Pool(a.threads) as pool:
+                    parts = pool.map(bem_pass, sch)
+                T = [sum(x[i] for x in parts) + al for i in range(NGEN)]; lt = math.log(sum(T))
+                lpi = [math.log(x) - lt if x > 0 else None for x in T]
+            G["subset"] = None
+            variants.append(("%s%dn%da%s" % (tag, iters[-1], n, sm), {"logpi": lpi}))
+            print("bayesem: %d reads, smoothing %s: %d genera with a prior above 0" % (len(sub), sm, sum(1 for x in lpi if x is not None)), file=sys.stderr, flush=True)
 elif a.mode == "bayesauto":
     with Pool(a.threads) as pool:
         parts = pool.map(auto_pass, chunks)

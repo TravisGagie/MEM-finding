@@ -316,6 +316,9 @@ for k in (5, 20): check("reference: bayesem, %d iterations" % k, counts(B["bayes
 M = score(d, "bayesem", ["--em-iters", "0,5,20", "--mixture-eps", str(chosen)])
 check("bayesem: mixture, 0 iterations = bayesauto", counts(M["bayesemmix0"]["genus"]) == counts(got[3:]))
 for k in (5, 20): check("reference: bayesem, mixture, %d iterations" % k, counts(M["bayesemmix%d" % k]["genus"]) == bem_ref(BAYES_READS, BAYES_NSEQ, k, mix=chosen))
+d = os.path.join(W, "generic")
+Sm = score(d, "bayesem", ["--em-iters", "20", "--em-sample", "%d" % len(BAYES_READS), "--em-smooth", "0,1"])
+check("bayesem: a sample of every read = the full set", counts(Sm["bayesem20n%da0" % len(BAYES_READS)]["genus"]) == counts(Sm["bayesem20"]["genus"]))
 # the learned prior decides: 9 reads match A alone; a tenth, from A, matches A and B equally.  A flat prior ties them; EM learns A
 nseq = [1, 1] + [1] * (G - 2)
 reads = [(0, [(60, {0: 1})], [(60, {0: 1})]) for _ in range(9)] + [(0, [(60, {0: 1, 1: 1})], [(60, {0: 1, 1: 1})])]

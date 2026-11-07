@@ -3,14 +3,14 @@
 of the 8 files, without loading; for Movi 2, its processing time minus the prototype's setup, which falls inside that clock."""
 import glob, os, re, statistics as st, sys
 D = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/pc/movi")
-for c in "csafull oldfull selfull csas2 olds2 sels2 csas4 olds4 sels4 csas8 olds8 sels8 olds16 csag oldg selg oldbg".split():
+for c in (sys.argv[2] if len(sys.argv) > 2 else "csafull oldfull selfull csas2 olds2 sels2 csas4 olds4 sels4 csas8 olds8 sels8 olds16 csag oldg selg oldbg").split():
     t = []; pk = 0; P = S = 0; lf = 0
     for d in sorted(glob.glob("%s/t3/%s.r?" % (D, c))):
         w = 0.0
         for g in glob.glob(d + "/*.log"):
             s = open(g, errors="ignore").read()
             if "peak" not in s: w = None; break
-            if c.startswith("csa"): w += float(re.search(r"timing: .*\(total ([\d.]+) s\)", s)[1])
+            if "csa" in c: w += float(re.search(r"timing: .*\(total ([\d.]+) s\)", s)[1])
             else:
                 w += float(re.search(r"processing the reads: ([\d.]+) seconds", s)[1]) - float(re.search(r"bridge: setup ([\d.]+) s", s)[1])
                 y = re.search(r"BRIDGE points (\d+) scanned (\d+) lf_steps (\d+)", s)
