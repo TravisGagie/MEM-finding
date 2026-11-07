@@ -734,3 +734,26 @@ The undigested index on the shared BWT (`%` separators), L = 30, the 8 aquatic f
 - **Movi 2 is 4% faster than the explicit RLCSA** with full tags, and 2% with grammar tags, at 73.6 MB more.
 - **With s = 4,** Movi 2 is 52% slower than the explicit RLCSA, because each LF step on Movi 2 adds a rank and an access on the row list.
 - **Elias-Fano costs much less with sampling, relatively:** s = 4 adds 31% to its time, against 29% on the explicit RLCSA and 105% on Movi 2.
+
+## Where the Elias-Fano RLCSA's time goes (2026-11-07)
+
+`experiments/rlcsa_profile.cpp`, `rlcsa_profile.txt`. `find` built with `-DKATKA_RECORD_STEPS` wrote every backward step (c, sp, ep) on the first 20,000 reads of V3_V4_1 (L = 30, full tags, `--efcsa -F 10`): 11.2 million steps. They were replayed on both RLCSAs, each part timed alone, best of 3, pinned to CPU 9.
+
+**How our Elias-Fano RLCSA differs from the paper's.** In Brown et al.'s RLCSA (Theorem 7, "Faster run-length compressed suffix arrays"), interval ends are kept as an L-run and an offset; a step searches Ψ′ in run numbers, and a rank on the sparse bitvector B_L turns the new F position back into a run and an offset. B_FL replaces that rank. Ours keeps rows. `EFRank` stores, for each character c, the run starts shifted by c·n (`KS`) and their positions in F (`FP`), and a step is:
+- **a predecessor search** in `KS` for sp and for ep: `count_less`, a rank on a sparse bitvector over a universe of σn = 3·10¹¹;
+- **the first run of c**, `count_less(c n)`, the same for every step by c;
+- **the rank from the run found**, `rank_from`: one `KS.access` and one `FP.access2` per end, and `FP.access(b)`, all selects on the Elias-Fano lists.
+
+| part | ns per step | share |
+|---|---:|---:|
+| predecessor search: 2 `KS.count_less` | 180.3 | 46% |
+| rank from the runs: 2 × (`KS.access`, `FP.access2`, `FP.access(b)`) | 188.4 | 49% |
+| first run of c: `KS.count_less(c n)` | 19.7 | 5% |
+| **whole step** (parts sum to 388.3) | **394.7** | |
+| explicit RLCSA, whole step | 71.0 | |
+| … of which the jump table and binary search | 69.3 | 98% |
+
+- **Per search:** 80.7 entries in the high bucket (KS has l = 12 low bits over 68.3 million runs), and 8.6 low-bit reads.
+- **Steps per read:** at 470 steps per read on average, 395 ns per step is about 186 µs of the 200 µs per read. Steps are almost all of the time; tags and the rest come to about 14 µs.
+- **What Theorem 7 removes,** the rank on B_L, corresponds to our predecessor search: 46%. But it applies only if interval ends are kept as runs and offsets. In our design, rows are what make the predecessor search necessary.
+- **Half the time is selects,** six per step, of which two (`count_less(c n)` and `FP.access(b)`) depend only on c and could be stored per character.

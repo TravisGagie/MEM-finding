@@ -1111,6 +1111,9 @@ static int cmd_find(int argc, char **argv) {
         }
         LT.narrow = narrow; LT.absent = absent; LT.compact = compact;
         LT.build(K.S, ft); K.table = &LT;
+#ifdef KATKA_RECORD_STEPS
+        if (const char *r = getenv("KATKA_RECORD")) g_record = fopen(r, "wb");   // (after the table's own steps)
+#endif
         fprintf(stderr, "lookup table: t = %d, %lu of %.0f t-mers occur, %.3f MB (%s)\n", ft, LT.nocc, pow((double)LT.alpha.size(), ft), LT.bytes() / 1e6, LT.describe().c_str());
 #ifdef KATKA_COUNT_PROBES
         g_probes = g_steps = 0;
@@ -1133,6 +1136,9 @@ static int cmd_find(int argc, char **argv) {
     FILE *lout = locate_out.empty() ? nullptr : open_or_die(locate_out, "w");
     bem_store BS;
     run_stats st = find_all(K, P, out, nthreads, sout, lout, P2.get(), K.bem ? &BS : nullptr);
+#ifdef KATKA_RECORD_STEPS
+    if (g_record) fclose(g_record);
+#endif
     if (K.bem) bem_classify(K, BS, out, nthreads);
 #ifdef KATKA_COUNT_PROBES
     fprintf(stderr, "probes %lu over %lu steps: %.3f per step\n", g_probes, g_steps, (double)g_probes / (g_steps ? g_steps : 1));

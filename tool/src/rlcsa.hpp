@@ -14,6 +14,13 @@
 namespace katka {
 
 // probes of the binary searches over the runs, and the steps, for a build with -DKATKA_COUNT_PROBES (single-threaded runs)
+#ifdef KATKA_RECORD_STEPS
+#include <cstdio>
+inline FILE *g_record = nullptr;                  // every backward step on an RLCSA: c, sp, ep before it (for experiments/rlcsa_profile.cpp)
+#define KATKA_RECORD(c, sp, ep) do { if (g_record) { unsigned char c_ = (c); uint64_t a_ = (sp), b_ = (ep); fwrite(&c_, 1, 1, g_record); fwrite(&a_, 8, 1, g_record); fwrite(&b_, 8, 1, g_record); } } while (0)
+#else
+#define KATKA_RECORD(c, sp, ep) ((void)0)
+#endif
 #ifdef KATKA_COUNT_PROBES
 inline uint64_t g_probes = 0, g_steps = 0;
 #define KATKA_PROBE() (++g_probes)
@@ -205,6 +212,7 @@ struct rlcsa {
 
     // one backward step: [sp, ep) for P -> [sp, ep) for cP (empty if sp >= ep)
     void extend(uint64_t &sp, uint64_t &ep, unsigned char c) const {
+        KATKA_RECORD(c, sp, ep);
         if (C[c + 1] == C[c]) { sp = ep = 0; return; }
         KATKA_STEP();
         uint64_t a, b;
