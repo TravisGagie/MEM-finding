@@ -1,0 +1,5 @@
+katka,bayesflat,genus,0.8377,correct=167534,unclassified=0,wrong=32466,reads=200000,ambiguous_truth=0,theirs=0.8377,strict=0.8377,strict_correct=167534,ties=10
+katka,bayesflat0.0001,genus,0.7963,correct=159253,unclassified=0,wrong=40747,reads=200000,ambiguous_truth=0,theirs=0.7963,strict=0.7963,strict_correct=159253,ties=197
+katka,bayesflat1e-05,genus,0.837,correct=167409,unclassified=0,wrong=32591,reads=200000,ambiguous_truth=0,theirs=0.837,strict=0.837,strict_correct=167409,ties=14
+katka,bayesflat1e-07,genus,0.8342,correct=166837,unclassified=0,wrong=33163,reads=200000,ambiguous_truth=0,theirs=0.8342,strict=0.8342,strict_correct=166837,ties=10
+katka,bayesflat1e-08,genus,0.8299,correct=165978,unclassified=0,wrong=34022,reads=200000,ambiguous_truth=0,theirs=0.8299,strict=0.8299,strict_correct=165978,ties=10

@@ -678,3 +678,36 @@ Every combination, with seed ranges, is in `em_sample.txt`. Seeds differ by at m
   - **Movi 2's exit status:** `movi-regular build` stores the index, then exits with signal 11 while generating null statistics, because the prototype passes an empty `ref.fa`. The index files are complete and were used for all the results here.
   - **The two prototype-only steps** go away if `prep` writes `%` and Big-BWT's terminator is written as byte 0.
   - **Querying,** the whole index takes 1,475 MB (full) or 1,088 MB (grammar) of files, from the Movi 2 section above.
+
+## Held out: reads from sequences not in the index (2026-11-07)
+
+`heldout/` (`heldout.py`, `heldout2.sh`, `split.tsv`, `dropped.txt`, the CSVs). For each of the 100 aquatic genera, a random 10% of its SILVA sequences, at least 1, were held out: 5,977 sequences, against 53,344 left in the index. The other 9,018 genera are unchanged. The held-out index was built as the default (`index --preset silva`, 334 s). Reads were simulated as for the aquatic reads (MicrobeMixer at 6409f5d, MSv1, its 2% mutation, 10 million pairs per region, every 50th kept), but from the held-out sequences only: MicrobeMixer's `--silva-ref` is given a FASTA of just those, so MicrobeMixer itself is unchanged.
+
+**Genera without reads.** In V1–V2, 12 of the 100 genera were left out of the abundance table, and MicrobeMixer spread their reads over the other 88. For 11 of them the held-out set had no V1–V2 region after primer extraction; for one, too few of its amplicons were usable by ART (250 bases or more, A/C/G/T only). The other three regions kept all 100 (`dropped.txt`). The first attempt, without that step, failed on MicrobeMixer's "not enough reads".
+
+Strict genus accuracy, mean of the four regions. In-database is the aquatic reads (MSv1, mean of 3 repeats); held-out is these reads against the held-out index; the last column is the same reads against the full index, which contains their sequences:
+
+| scheme | in-database | held-out index | full index, same reads | change, held-out |
+|---|---:|---:|---:|---:|
+| range | 86.68 | 76.85 | 87.41 | −9.83 |
+| one label per MEM | 92.01 | 83.59 | 92.12 | −8.42 |
+| sample | 90.34 | 81.07 | 90.72 | −9.27 |
+| even | 90.20 | 80.91 | 90.58 | −9.29 |
+| normalised | 92.66 | 84.57 | 93.09 | −8.09 |
+| proportional | 93.59 | 85.40 | 93.61 | −8.19 |
+| prior mixture, β = 0.5 | 93.47 | 85.03 | 93.41 | −8.44 |
+| proportional/even mix, β = 0.5 | 93.07 | 84.23 | 92.95 | −8.84 |
+| EM, 20 iterations | 96.32 | 88.04 | 96.01 | −8.28 |
+| naive Bayes, ε = 10⁻⁴ | | 83.68 | 90.02 | |
+| naive Bayes, ε = 10⁻⁵ | | 87.77 | 95.18 | |
+| naive Bayes, ε = 10⁻⁶ | 94.57 | 87.66 | 95.18 | −6.91 |
+| naive Bayes, ε = 10⁻⁷ | | 87.36 | 95.00 | |
+| naive Bayes, ε = 10⁻⁸ | | 87.09 | 94.81 | |
+| `bayesauto` | 93.95 | 86.87 | 94.51 | −7.08 |
+| naive Bayes, EM prior | 95.94 | **89.03** | 96.08 | −6.91 |
+
+- **Holding out costs 7 to 10 points for every scheme.** The same reads against the full index score about as the in-database reads do (within ±0.7), so the reads aren't harder: the loss comes from their sequences being missing.
+- **The ranking holds.** Naive Bayes with an EM prior is best held out (89.03), then EM (88.04) and naive Bayes (87.66 to 87.77). Range loses most (−9.83).
+- **The naive Bayes schemes lose least,** about 7 points against 8 to 10 for the credit schemes.
+- **ε:** 10⁻⁵ and 10⁻⁶ are best held out, within 0.11 of each other. ε = 10⁻⁴ costs 4 points here, so the choice of 10⁻⁶ holds without its sequences in the index.
+- **One repeat, one held-out split.** In-database repeats varied by about ±0.2, so differences under a point here aren't meaningful.

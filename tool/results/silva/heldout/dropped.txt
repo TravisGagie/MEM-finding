@@ -1,0 +1,12 @@
+V1_V2	Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Lentibacter;	0 regions, 0 usable
+V1_V2	Bacteria;Chloroflexi;Anaerolineae;Anaerolineales;Anaerolineaceae;Thermomarinilinea;	0 regions, 0 usable
+V1_V2	Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Croceibacter;	0 regions, 0 usable
+V1_V2	Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Eudoraea;	0 regions, 0 usable
+V1_V2	Bacteria;Fusobacteriota;Fusobacteriia;Fusobacteriales;Fusobacteriaceae;Propionigenium;	0 regions, 0 usable
+V1_V2	Archaea;Halobacterota;Archaeoglobi;Archaeoglobales;Archaeoglobaceae;Archaeoglobus;	0 regions, 0 usable
+V1_V2	Bacteria;Planctomycetota;Planctomycetes;Gemmatales;Gemmataceae;Zavarzinella;	0 regions, 0 usable
+V1_V2	Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Muriicola;	0 regions, 0 usable
+V1_V2	Bacteria;Proteobacteria;Alphaproteobacteria;Rhodobacterales;Rhodobacteraceae;Loktanella;	0 regions, 0 usable
+V1_V2	Archaea;Halobacterota;Methanomicrobia;Methanomicrobiales;Methanoregulaceae;Methanoregula;	0 regions, 0 usable
+V1_V2	Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Flavicella;	0 regions, 0 usable
+V1_V2	Bacteria;Bacteroidota;Bacteroidia;Flavobacteriales;Flavobacteriaceae;Lutibacter;	2 regions, 1 usable
