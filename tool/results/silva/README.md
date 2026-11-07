@@ -730,7 +730,7 @@ The undigested index on the shared BWT (`%` separators), L = 30, the 8 aquatic f
 
 - **Index without tags:** Movi 2 is its index (546.6), ftab (33.6) and the row list (58.5). The RLCSAs' lookup table, 17.8 MB at k = 10, is built at load and isn't in a file.
 - **Labels at s = 4** include the bitvector of sampled runs.
-- **The Elias-Fano RLCSA is 3.5 times smaller than the explicit one** (185.3 against 565.2 MB) and 4.3 times slower with full tags. With grammar tags it makes the smallest index here, 634.9 MB, at 208.73 µs.
+- **The Elias-Fano RLCSA is 3.05 times smaller than the explicit one** (185.3 against 565.2 MB) and 4.3 times slower with full tags. With grammar tags it makes the smallest index here, 634.9 MB, at 208.73 µs.
 - **Movi 2 is 4% faster than the explicit RLCSA** with full tags, and 2% with grammar tags, at 73.6 MB more.
 - **With s = 4,** Movi 2 is 52% slower than the explicit RLCSA, because each LF step on Movi 2 adds a rank and an access on the row list.
 - **Elias-Fano costs much less with sampling, relatively:** s = 4 adds 31% to its time, against 29% on the explicit RLCSA and 105% on Movi 2.
