@@ -629,3 +629,29 @@ Aquatic reads, MSv1.1, from `find --preset silva` at L = 30 (`tie_rule.txt`, wit
 - **The rule matters most where credit doesn't discriminate,** and full-length credit ties most often. Ties reach 5.7% on V4 with exact listings.
 - **Our best schemes don't depend on the rule.** They hardly ever tie, so they can be quoted under either.
 - **These are MEMs at L = 30 with simulated lists,** not Cliffy's ZMPs and sampled profiles. They show the rule's effect, not Cliffy's own numbers. The small negative gap on the last row is rounding: `theirs` has 4 decimals.
+
+## Naive Bayes with an EM prior learned from a sample (2026-11-07)
+
+`score_silva.py --mode bayesem --em-sample N --em-smooth ... --em-seeds 1,2,3` (`em_sample.sh`, `em_sample.txt`). The prior is learned by EM, 20 iterations, from N random read pairs, then every read is classified with it. Smoothing: `p<c>` adds c pseudo-reads to every genus at each iteration; `m<w>` mixes the final prior with a flat one at weight w. ε = 10⁻⁶. Sets: the aquatic reads (MSv1.1, 4 regions), and the sparse dial's random and smallest genera (3 draws each). The range is over the 3 seeds.
+
+Strict genus accuracy, mean of the four regions, and the change against the full-set prior (aquatic 96.07, random genera 96.22, smallest genera 96.51):
+
+| reads | smoothing | aquatic | random genera | smallest genera |
+|---:|---|---:|---:|---:|
+| 1,000 | none | 96.87 (+0.80) | 96.99 (+0.78) | 96.43 (−0.08) |
+| 1,000 | 0.5 pseudo-reads | 95.63 (−0.44) | 95.86 (−0.35) | 96.07 (−0.44) |
+| 1,000 | 1 pseudo-read | 95.49 (−0.58) | 95.72 (−0.50) | 96.03 (−0.48) |
+| 1,000 | flat, 1% | 96.43 (+0.36) | 96.57 (+0.36) | 96.32 (−0.19) |
+| 1,000 | flat, 10% | 96.21 (+0.15) | 96.36 (+0.15) | 96.24 (−0.28) |
+| 10,000 | none | 96.33 (+0.27) | 96.37 (+0.16) | 96.44 (−0.07) |
+| 10,000 | 1 pseudo-read | 95.88 (−0.19) | 96.05 (−0.17) | 96.31 (−0.20) |
+| 10,000 | flat, 1% | 96.16 (+0.09) | 96.26 (+0.05) | 96.39 (−0.12) |
+| 100,000 | none | 96.09 (+0.02) | 96.20 (−0.01) | 96.49 (−0.02) |
+| 100,000 | flat, 1% | 96.06 (−0.01) | 96.19 (−0.03) | 96.48 (−0.03) |
+
+Every combination, with seed ranges, is in `em_sample.txt`. Seeds differ by at most 0.25 points at 1,000 reads and 0.1 at 10,000.
+
+- **A small sample is enough, and smoothing doesn't help.** Unsmoothed, 1,000 pairs gain about 0.8 points on the aquatic and random-genera sets and lose 0.08 on the smallest genera. 10,000 pairs are within 0.3 everywhere, and 100,000 within 0.02. Every smoothing setting is worse than none at the same size.
+- **Why fewer reads can do better:** the full-set prior keeps 3,709 genera above 0 on aquatic V1_V2, while 1,000 reads give 1,475 to 2,031. Spurious genera that the full set props up get no weight. Smoothing adds them back. This is one region; the others weren't counted.
+- **As the streaming default for `find --classify bayesem`:** yes. A prior from about 10,000 read pairs, unsmoothed, then every read classified in one pass, is within 0.3 points of the full-set prior on all three kinds of sample, and needs memory for 10,000 pairs instead of the whole set.
+- **The sample must be random.** These read files are grouped by genus (MicrobeMixer writes each genus's reads together), so the first 10,000 reads of a file would be a few genera only. A reservoir sample, or a first pass, is needed. That was not tested here.
