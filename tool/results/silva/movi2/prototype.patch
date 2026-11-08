@@ -1,22 +1,28 @@
 diff --git a/src/mem_finder.cpp b/src/mem_finder.cpp
-index 23ef7f4..2466266 100644
+index 23ef7f4..b70862d 100644
 --- a/src/mem_finder.cpp
 +++ b/src/mem_finder.cpp
-@@ -3,10 +3,152 @@
+@@ -3,10 +3,158 @@
  #include "move_structure.hpp"
  #include "utils.hpp"
  
 +#include <cstdio>
 +static FILE *g_out = nullptr;
 +#include <cstdlib>
-+extern uint64_t g_ext, g_walk1, g_walk2, g_walk3, g_steps;
-+static uint64_t g_cnt = 0, g_mems = 0;
++extern thread_local uint64_t g_ext, g_walk1, g_walk2, g_walk3, g_steps;
++static thread_local uint64_t g_cnt = 0, g_mems = 0;
++#include <mutex>
++#include <cstdarg>
++#include <string>
++// each thread writes a read's output to its own buffer, then appends it to KATKA_OUT under g_mx (reads in any order)
++static thread_local std::string g_buf; static std::mutex g_mx;
++static void bput(const char *fmt, ...) { char b[256]; va_list a; va_start(a, fmt); int n = vsnprintf(b, sizeof b, fmt, a); va_end(a); g_buf.append(b, n < (int)sizeof b ? n : (int)sizeof b - 1); }
 +static void g_print2();
 +static void g_print() { fprintf(stderr, "COUNTERS mems %lu count_runs %lu extend %lu walk1 %lu walk2 %lu walk3 %lu steps %lu\n", g_mems, g_cnt, g_ext, g_walk1, g_walk2, g_walk3, g_steps); if (g_out) fclose(g_out); g_print2(); }
 +#include "/home/travis/rz/MEM-finding/tool/src/tag_array.hpp"
 +#include <filesystem>
 +// The prototype's bridge to katka: rows from runs and offsets, and tags.  Environment: KATKA_TAG (a tag array), KATKA_OUT (the output),
-+// KATKA_MEMS=1 (a line per MEM: name, start, end, sp, ep; else katka's listing).  Single-threaded.
++// KATKA_MEMS=1 (a line per MEM: name, start, end, sp, ep; else katka's listing).  Thread-safe: with -t T, reads come out in any order.
 +static katka::EliasFano g_rows;
 +static katka::tag_array g_T;
 +static MoveStructure *g_mv = nullptr;
@@ -26,10 +32,11 @@ index 23ef7f4..2466266 100644
 +// BWT start first; E: the row of each entry of B.  They replace the row starts and the tag-run boundaries.
 +static katka::BitRank g_B;
 +static katka::EliasFano g_E;
-+static uint64_t g_nb = 0, g_points = 0, g_scanned = 0;
++static uint64_t g_nb = 0;
++static thread_local uint64_t g_points = 0, g_scanned = 0;
 +static inline uint64_t b_zero(uint64_t i) { return g_B.select0(i); }
 +static const uint64_t SCAN = 16;                        // entries scanned in turn before binary search
-+static uint64_t g_long = 0, g_probes = 0;
++static thread_local uint64_t g_long = 0, g_probes = 0;
 +// a cursor on E: one select, then each next entry from the next set bit of its high bits
 +struct ecur {
 +    uint64_t j, hp;
@@ -85,8 +92,8 @@ index 23ef7f4..2466266 100644
 +    const uint64_t js = point(i, os, r0), je = point(k, oe, r1), rs = r0 + os, re = r1 + oe + 1;
 +    out.clear();
 +    if (js == je) { out.push_back({g_T.tag(js), re - rs}); return; }
-+    static std::vector<uint32_t> cnt(1 << 16, 0);
-+    static std::vector<uint64_t> touched;
++    static thread_local std::vector<uint32_t> cnt(1 << 16, 0);
++    static thread_local std::vector<uint64_t> touched;
 +    uint64_t st = rs, pos = g_B.select1(js);
 +    ecur c; c.at(pos);
 +    g_T.tags_of(js, je, [&](uint64_t j, uint64_t t) {
@@ -112,9 +119,8 @@ index 23ef7f4..2466266 100644
 +    static bool once = (at_quick_exit(g_print), true); (void)once;
      int32_t min_mem_length = movi_options->get_min_mem_length();
      if (min_mem_length <= 1) return query_all_mems(mq);
-+    static bool bridge_ready = false;
-+    if (!bridge_ready) {
-+        bridge_ready = true;
++    static std::once_flag bridge_once;
++    std::call_once(bridge_once, [&]() {
 +        if (const char *o = getenv("KATKA_OUT")) {
 +            const double t0 = katka::now();
 +            g_bridge = true; g_out = fopen(o, "w"); g_memsfmt = getenv("KATKA_MEMS"); g_mv = this;
@@ -150,20 +156,21 @@ index 23ef7f4..2466266 100644
 +            g_setup = katka::now() - t0;
 +            fprintf(stderr, "bridge: setup %.3f s\n", g_setup);
 +        }
-+    }
-+    if (g_bridge && !g_memsfmt) fprintf(g_out, ">%s\n", mq.get_query_id().c_str());
++    });
++    if (g_bridge && !g_memsfmt) bput(">%s\n", mq.get_query_id().c_str());
  
      int32_t pos_on_r = 0; // MEM finding goes left to right
      std::string& query_seq = mq.query();
-@@ -20,6 +162,7 @@ uint64_t MoveStructure::query_mems(MoveQuery& mq) {
+@@ -20,6 +168,8 @@ uint64_t MoveStructure::query_mems(MoveQuery& mq) {
      do {
          mems_found += query_mem_bml(mq, pos_on_r, min_mem_length, query_seq, ftab_k);
      } while (pos_on_r < query_seq.length());
-+    if (g_bridge && !g_memsfmt) fputc('\n', g_out);
++    if (g_bridge && !g_memsfmt) g_buf += '\n';
++    if (g_bridge) { std::lock_guard<std::mutex> lk(g_mx); fwrite(g_buf.data(), 1, g_buf.size(), g_out); g_buf.clear(); }
  
      return mems_found;
  }
-@@ -36,6 +179,21 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -36,6 +186,21 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
      uint64_t match_len = 0;
      int32_t init_pos = pos_on_r + min_mem_length - 1;
      MoveBiInterval bi_interval;
@@ -185,7 +192,7 @@ index 23ef7f4..2466266 100644
      bi_interval = initialize_bidirectional_search(mq, init_pos, match_len);
      // If min_mem_length is at least ftab_k, we skip using BML
      bool ftab_skip = match_len <= 1 && ftab_k <= min_mem_length;
-@@ -65,8 +223,9 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -65,8 +230,9 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
          }
      }
  
@@ -196,7 +203,7 @@ index 23ef7f4..2466266 100644
      MoveInterval rc_interval_before_extension = rc_interval;
      size_t i;
      for (i = pos_on_r + min_mem_length; i < query_seq.length(); ++i) {
-@@ -78,7 +237,18 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
+@@ -78,7 +244,18 @@ bool MoveStructure::query_mem_bml(MoveQuery& mq, int32_t& pos_on_r, int32_t& min
          ++match_len;
      }
  
@@ -205,26 +212,26 @@ index 23ef7f4..2466266 100644
 +        uint64_t sp = 0, ep = 0;
 +        if (!g_sel) { sp = g_rows.access(rc_interval.run_start) + rc_interval.offset_start; ep = g_rows.access(rc_interval.run_end) + rc_interval.offset_end + 1; }
 +        else if (g_memsfmt) { sp = g_E.access(b_zero(rc_interval.run_start)) + rc_interval.offset_start; ep = g_E.access(b_zero(rc_interval.run_end)) + rc_interval.offset_end + 1; }
-+        if (g_memsfmt) fprintf(g_out, "%s\t%d\t%zu\t%lu\t%lu\n", mq.get_query_id().c_str(), pos_on_r, i, (unsigned long)sp, (unsigned long)ep);
++        if (g_memsfmt) bput("%s\t%d\t%zu\t%lu\t%lu\n", mq.get_query_id().c_str(), pos_on_r, i, (unsigned long)sp, (unsigned long)ep);
 +        else {
-+            static std::vector<std::pair<uint64_t, uint64_t>> tc;
-+            fprintf(g_out, "[%d,%zu] {", pos_on_r, i - 1);
-+            if (g_tags) { if (g_sel) sel_count(rc_interval.run_start, rc_interval.offset_start, rc_interval.run_end, rc_interval.offset_end, tc); else g_T.count(sp, ep, tc); for (size_t q = 0; q < tc.size(); ++q) fprintf(g_out, q ? ",%lu:%lu" : "%lu:%lu", (unsigned long)tc[q].first, (unsigned long)tc[q].second); }
-+            fputs("} ", g_out);
++            static thread_local std::vector<std::pair<uint64_t, uint64_t>> tc;
++            bput("[%d,%zu] {", pos_on_r, i - 1);
++            if (g_tags) { if (g_sel) sel_count(rc_interval.run_start, rc_interval.offset_start, rc_interval.run_end, rc_interval.offset_end, tc); else g_T.count(sp, ep, tc); for (size_t q = 0; q < tc.size(); ++q) bput(q ? ",%lu:%lu" : "%lu:%lu", (unsigned long)tc[q].first, (unsigned long)tc[q].second); }
++            g_buf += "} ";
 +        }
 +    } else mq.add_mem(pos_on_r, i, rc_interval.count(rlbwt));
  
      // Backward extension to find next left end of candidate MEM (inclusive)
      // TODO: if this extension is at least L, we can skip the first BML step in next recursion
 diff --git a/src/move_structure_search.cpp b/src/move_structure_search.cpp
-index 4c2900d..55f266b 100644
+index 4c2900d..d06a1d5 100644
 --- a/src/move_structure_search.cpp
 +++ b/src/move_structure_search.cpp
 @@ -1,5 +1,7 @@
  #include "move_structure.hpp"
  #include "classifier.hpp"
 +#include <cstdlib>
-+uint64_t g_ext = 0, g_walk1 = 0, g_walk2 = 0, g_walk3 = 0, g_steps = 0;
++thread_local uint64_t g_ext = 0, g_walk1 = 0, g_walk2 = 0, g_walk3 = 0, g_steps = 0;
  
  void MoveStructure::update_interval(MoveInterval& interval, char next_char) {
      if (!check_alphabet(next_char)) {
