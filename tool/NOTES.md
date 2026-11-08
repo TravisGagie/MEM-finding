@@ -3,7 +3,7 @@
 **For the paper, re-posting 2026-11-08 (items A1–A10).** Items still being measured say so; the rest is final.
 
 - **A1. Machine.** Intel Core i7-8700 (6 cores, 12 threads, 3.2 GHz base, 4.6 GHz turbo, 12 MiB L3), 15.7 GB of RAM (`MemTotal` 15,691,464 kB), Ubuntu 26.04.1 LTS, Linux 7.0.0-42. GCC 15.2.0 (Ubuntu 15.2.0-16ubuntu1). KATKA: `-std=c++17 -O3 -march=native -DNDEBUG -pthread`. Movi 2 (with our patches): CMake Release, `-O3 -DNDEBUG -std=c++20 -fopenmp`, no `-march=native`. Kraken 2 2.1.3 (Ubuntu package). Tagger 1927d05, its CMake defaults. Every run in an 11 GB memory cgroup without swap; single-thread runs pinned to one logical CPU.
-- **A2. 12 threads.** *Being measured* (rotation `t14`, ends about 04:00). Movi 2's bridge to our tag arrays was single-threaded; it now buffers each read's output per thread (`results/silva/movi2/prototype.patch`). With 12 threads its records are identical to one thread's, in another order. One trial on V3_V4_1 with RLE tags: 12.62 s wall with one thread, 3.69 s with 12, loading included.
+- **A2. 12 threads.** KATKA's default (Movi 2, RLE tags, L = 30): **170,600 reads per second** with 12 threads on 6 cores (median of 5 repeats, loading excluded: the wall time on all 1.6 million reads minus the wall time on one read). One thread: 43.66 µs per read. Movi 2's bridge to our tag arrays was single-threaded; it now buffers each read's output per thread (`results/silva/movi2/prototype.patch`), and its 12-thread records are identical to one thread's, in another order.
 - **A3. Naive Bayes with an EM prior (`bayesem`), exactly** (`scripts/score_silva.py --mode bayesem`, and `find --classify bayesem`, whose calls are identical). Notation: G = 9,118 genera; N_g = the number of g's sequences in the reference; a read pair R has the MEMs m_1, …, m_k of both mates (length ≥ L = 30), each counted once whatever its length; c_g(m) = the number of rows of m's BWT interval whose tag is g, i.e. m's occurrences in g's sequences on both strands.
   - Likelihood of a MEM: p_g(m) = c_g(m) / (2 N_g) if c_g(m) > 0, else ε, with ε = 10⁻⁶.
   - Likelihood of a read: L_g(R) = ∏_{i=1..k} p_g(m_i), for the genera g with c_g(m_i) > 0 for at least one i (the candidates). Others have no posterior. In logs: log L_g(R) = Σ_{i: c_g(m_i) > 0} log(c_g(m_i) / (2 N_g)) + (k − h_g(R)) log ε, where h_g(R) is the number of R's MEMs that occur in g.
@@ -12,7 +12,28 @@
   - Call: argmax over the candidates other than "uncultured" of log π_g + log L_g(R). A tie for the maximum is wrong under the strict rule; under Cliffy's rule it is correct if the true genus is among the tied.
 - **A4. Accuracy, naive Bayes with an EM prior.** Genus level, MSv1, 200,000 pairs × 4 regions × 3 simulations, ties counted as wrong: **95.94%** (per simulation 96.06, 96.00, 95.75), by region 96.35 (V1–V2), 97.26 (V3–V4), 94.60 (V4), 95.54 (V4–V5). Under Cliffy's tie rule the same, **95.94%**: there are no ties and no unclassified pairs. MSv3: 95.57% (95.48–95.65). **MSv1 − MSv3 = 0.37 points.**
 - **A5. The sampled prior is not in `find`.** It is only in `score_silva.py --mode bayesem --em-sample N`. There, on MSv1.1 (one simulation), 10,000 random pairs and no smoothing give 96.33% strict, against 96.06% with the prior from all the reads (`results/silva/em_sample.txt`).
-- **A6. Final time–space table.** *Being measured* (rotation `t14`, 5 repeats, ends about 04:00). Code: `tool/` at affd474 (Elias-Fano select samples every 64 ones, shared selects), Movi 2 at 9bc0acc with `prototype.patch`.
+- **A6. Final time–space table** (`results/silva/movi2/t14_table.txt`, `t14_table.py`, `timing14.sh`). One rotation, 5 repeats, medians (range), the 1.6 million reads of MSv1.1 (8 files of 200,000), L = 30. Every tool timed the same way: wall time on all the reads minus wall time on one read (loading and setup excluded); 1 thread pinned to one CPU, and 12 threads. Sizes in MB (10⁶ bytes) of the index in memory with its lookup table plus the tag array: RLCSAs include the 17.8 MB 10-mer table built at load, the Elias–Fano RLCSA its 8.5 MB of select samples built at load, Movi 2 its ftab (33.6 MB) and the 58.5 MB row list. Every KATKA output of the first repeat is identical to `find --preset silva`'s (Movi 2 checked MEM for MEM earlier). **Code:** `tool/` at affd474 (Elias–Fano with shared selects and select samples every 64 ones; the binary used for the whole rotation), Movi 2 at 9bc0acc with `prototype.patch`.
+
+  | index | tags | MB | µs per read, 1 thread | reads/s, 12 threads |
+  |---|---|---:|---:|---:|
+  | Movi 2 | RLE | 1,475.1 | **43.66** (43.43–44.79) | 170,576 |
+  | Movi 2 | SLP | 1,088.3 | 52.84 (51.82–53.46) | 150,235 |
+  | RLCSA | RLE | 1,419.4 | 46.96 (46.81–47.66) | 166,667 |
+  | RLCSA | s = 2 | 1,171.2 | 52.19 (51.93–52.76) | 149,115 |
+  | RLCSA | SLP | 1,032.6 | 54.36 (54.11–54.79) | 143,241 |
+  | RLCSA | s = 4 | 1,013.3 | 60.77 (60.54–61.61) | 126,683 |
+  | RLCSA | s = 8 | 934.2 | 79.79 (79.61–80.45) | 94,173 |
+  | Elias–Fano RLCSA | SLP | 619.5 | 111.79 (111.44–113.68) | 70,423 |
+  | Elias–Fano RLCSA | s = 4 | 600.2 | 135.79 (135.18–138.36) | 54,459 |
+  | Elias–Fano RLCSA | s = 8 | 521.1 | 180.05 (179.24–180.89) | 38,835 |
+  | Kraken 2 (standard SILVA build) | | 148.5 | 14.80 (14.74–15.80) | 361,174 |
+  | Tagger, L = 25 | | 822.9 | 75.34 (75.17–83.31) | 81,674 |
+  | Tagger, L = 30 | | 822.9 | 66.88 (66.66–72.96) | 88,741 |
+
+  - **The select samples help:** Elias–Fano with SLP tags 146.25 → 111.79 µs (−24%), s = 4 183.27 → 135.79, s = 8 246.77 → 180.05, for 8.5 MB more.
+  - **KATKA's own per-read timing agrees** with wall minus one read to within 0.2 µs on every RLCSA row.
+  - **Tagger's one-read baseline** ran with 1 thread in the 12-thread rows: with several threads it hangs on a one-read file. Loading doesn't depend on the threads.
+  - Kraken 2 counts a pair as two reads, as for the others.
 - **A7. Build, time and peak memory.** KATKA, Movi 2 with RLE tags: 684 s (11.4 min), peak 5.35 GB; with SLP tags (built-in RePair): 1,810 s (30.2 min), peak 9.03 GB. Big-BWT and KATKA's steps are single-threaded (`results/silva/README.md`, "Facts for the paper"). Kraken 2, standard SILVA build (510,508 sequences): 86.8 s wall with 12 threads (1,024 s CPU), peak 1.47 GB; its `hash.k2d` is identical to October's build. Kraken 2 on our 402,378 sequences: 67.4 s (793 s CPU), peak 1.44 GB. Tagger (PFP build with Big-BWT): 901.9 s, peak 3.72 GB (October; same commit, same machine).
 - **A8. Kraken 2 and Tagger accuracy, 200,000 pairs per region, 3 simulations** (genus level, mean of the 4 regions, mean over the 3 simulations, range over them; `results/silva/other_tools/a8.txt`). Same reads as our rows. Scored with our scorer on listings giving each mate its tool's genus (`experiments/other_tools/to_listings.py`, `accuracy.sh`); Kraken 2 also with Cliffy's own Kraken 2 scoring and by rank (`kraken2_ranks.py`). The October rows (5,000 pairs) are replaced.
   - **Kraken 2, standard SILVA build** (510,508 sequences): MSv1 strict **79.22%** (79.09–79.30); counting a call of a correct ancestor below the domain (phylum to family) **83.70%** (83.59–83.77); with Cliffy's "vague positives" (any correct ancestor, the domain too) 84.15%. MSv3: 78.73, 83.61, 84.06. Our strict number equals Cliffy's "without vague positives" in every region. Kraken 2 gives a pair one taxon, so it never ties; Cliffy's tie rule would only count its pairs assigned above the genus as correct, so it isn't reported.

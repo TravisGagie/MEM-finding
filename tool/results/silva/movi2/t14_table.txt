@@ -1,0 +1,15 @@
+index                    tags          MB  us/read, 1 thread          reads/s, 12 thr. KATKA's own timing, 1 thread
+Movi 2, row list         RLE       1475.1    43.66 (43.43-44.79) n=5    170576 n=5     
+Movi 2, row list         SLP       1088.3    52.84 (51.82-53.46) n=5    150235 n=5     
+explicit RLCSA           RLE       1419.4    46.96 (46.81-47.66) n=5    166667 n=5       46.93 us
+explicit RLCSA           s = 2     1171.2    52.19 (51.93-52.76) n=5    149115 n=5       52.24 us
+explicit RLCSA           SLP       1032.6    54.36 (54.11-54.79) n=5    143241 n=5       54.34 us
+explicit RLCSA           s = 4     1013.3    60.77 (60.54-61.61) n=5    126683 n=5       60.96 us
+explicit RLCSA           s = 8      934.2    79.79 (79.61-80.45) n=5     94173 n=5       79.77 us
+Elias-Fano RLCSA         SLP        619.5   111.79 (111.44-113.68) n=5    70423 n=5      111.81 us
+Elias-Fano RLCSA         s = 4      600.2   135.79 (135.18-138.36) n=5    54459 n=5      135.77 us
+Elias-Fano RLCSA         s = 8      521.1   180.05 (179.24-180.89) n=5    38835 n=5      180.03 us
+Kraken 2 (SILVA build)              148.5    14.80 (14.74-15.80) n=5    361174 n=5     
+Tagger, L = 25                      822.9    75.34 (75.17-83.31) n=5     81674 n=5     
+Tagger, L = 30                      822.9    66.88 (66.66-72.96) n=5     88741 n=5     
+
