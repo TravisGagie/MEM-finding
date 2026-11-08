@@ -1,0 +1,8 @@
+SILVA_138.1_SSURef_NR99_tax_silva.fasta: 510508 sequences, 747391099 bases
+work/ref/rna/doc_*_seq.fa (write_silva_genera.py -n 10000): 402378 sequences (all headers distinct), 586483400 bases, 171854 not ACGT
+excluded: 108130 sequences, 160907699 bases
+by domain   included   excluded
+Archaea         9975      10414
+Bacteria      363003      68572
+Eukaryota      29400      29144
+index text: 1173771556 = 2 * (586483400 + 402378)

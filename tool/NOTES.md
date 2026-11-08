@@ -1,5 +1,7 @@
 # Notes on the tool
 
+**Reference counts (2026-11-07).** 402,378 sequences included (586,483,400 bases) and 108,130 excluded (160,907,699 bases), of SILVA 138.1 NR99's 510,508 (747,391,099 bases). The log doesn't record them, so they were counted from the script's input and output (`results/silva/reference_counts.txt`). The index's 1,173,771,556 characters are exactly both strands plus one separator per sequence.
+
 **Elias-Fano RLCSA, steps 1–2 (2026-11-07).** Profile: 395 ns per step against 71 on the explicit RLCSA, 46% the predecessor search over c's run starts (the counterpart of the paper's rank on B_L) and 49% selects. Two changes: per-character first runs (5 KB), and `KS` keyed over the characters that occur instead of 256 (buckets of 2.6 runs, not 81): 267 ns per step, and 143.6 MB instead of 185.3. The search is now 34%, the remaining selects 65%; the gap is 3.8×. Interpolative coding of the same lists: 6.2 and 3.3 bits per value against Elias-Fano's 8.1 and 6.0; midpoint deviation, with γ or Rice, is worse than plain interpolative coding.
 
 **Overnight batch (2026-11-07), for the morning.** Each item is in `results/silva/README.md`; this is the short version.
