@@ -1,5 +1,7 @@
 # Notes on the tool
 
+**Reads packaged for Zenodo (2026-11-08), not uploaded.** `~/rz/zenodo/` (1.8 GB): `MSv1.1.tar` … `MSv3.3.tar` (each 8 gzipped FASTQ files of 200,000 reads, checked, and the 4 truth files), `README.md` (how they were made, layout, truth format, the paper) and `SHA256SUMS`. MSv1.1 is `~/rz/silva/work/reads/sample50` (identical to `reads_every50`, and its truth files to the ones the scoring used), renamed `<region>_<mate>.fq.gz`. The held-out repeats were not run: the held-out test is out of the paper.
+
 **New KATKA repository (2026-11-08), ready for review, not pushed.** Local clone of github.com/TravisGagie/KATKA at `~/rz/KATKA-gh`, branch `new-main`; the old main is tagged `archive/rz-index-2026-11-04` (local tag). Contents: `src/` (index, search, tags, classify; 2,746 lines, from `tool/`'s 6,408), `movi/` (two patches against Movi 2 9bc0acc and `build_movi.sh`), `scripts/build`, `run`, `score`, `reproduce` (00–07, every number of the paper's table and text), `tests/`, `docs/` (formats, configurations with the final table, credit schemes, limitations), `paper/` (empty: the source is with the chat session). Checks: selftest passes; `find` outputs and index files byte-identical to `tool/`'s on SILVA and the toy data; the patched Movi 2 rebuilt from `movi/` with 12 threads gives, merged, the paper's `find` output with RLE, SLP and s = 4 tags; `scripts/run/toy.sh` runs end to end. MEM-finding is unchanged as the archive.
 
 **For the paper, re-posting 2026-11-08 (items A1–A10).** All final (A9 skipped at the chat session's request).
