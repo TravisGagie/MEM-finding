@@ -28,6 +28,22 @@ int main(int argc, char **argv) {
         printf("  %-62s %7.1f ns per step%s\n", name, best / N * 1e9, base_ns > 0 ? "" : "");
         return best / N * 1e9;
     };
+    {   // every step's answers against the explicit RLCSA's, and how often the two positions' runs, or their keys' buckets, coincide
+        uint64_t bad = 0, same = 0, next = 0, hsame = 0, hnext = 0, both = 0;
+        for (uint64_t i = 0; i < N; ++i) {
+            const st &x = S[i]; uint64_t a, b; Y.er.rank2(x.c, x.sp, x.ep, a, b);
+            if (a != X.rr.rank(x.c, x.sp) || b != X.rr.rank(x.c, x.ep)) ++bad;
+            const EFRank &F = Y.er; uint64_t base = F.base_of(x.c), bb = F.first[x.c];
+            uint64_t a1 = x.sp ? F.KS.count_less(base + x.sp) : bb, a2 = x.ep ? F.KS.count_less(base + x.ep) : bb;
+            if (a1 == bb) continue;
+            ++both; same += a1 == a2; next += a2 == a1 + 1;
+            uint64_t h1 = (base + x.sp) >> F.KS.l, h2 = (base + x.ep) >> F.KS.l; hsame += h1 == h2; hnext += h2 == h1 + 1;
+        }
+        printf("check: %lu steps whose ranks differ from the explicit RLCSA's\n", (unsigned long)bad);
+        printf("pairs (both positions past c's first run, %lu steps): same run %.1f%%, next run %.1f%%; keys in the same bucket %.1f%%, the next %.1f%%\n",
+               (unsigned long)both, 100.0 * same / both, 100.0 * next / both, 100.0 * hsame / both, 100.0 * hnext / both);
+        printf("fine select samples: every %lu ones, KS %.2f MB, FP %.2f MB\n", (unsigned long)EliasFano::SAMPLE1, Y.er.KS.f1.size() * 4 / 1e6, Y.er.FP.f1.size() * 4 / 1e6);
+    }
     printf("Elias-Fano RLCSA (%.1f MB)\n", Y.bytes() / 1e6);
     double t_all = rep("whole step (rank2)", [&](const st &x) { uint64_t a, b; E.rank2(x.c, x.sp, x.ep, a, b); return a + b; });
     const bool cached = !E.first.empty();

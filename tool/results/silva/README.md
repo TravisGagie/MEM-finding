@@ -789,3 +789,59 @@ Two changes (`src/bits.hpp` `EFRank`, `src/rlcsa.hpp`), each profiled on the sam
 - **Centred codes help slightly on run starts** (−0.05 bits) and hurt slightly on F positions (+0.05).
 - **Midpoint deviation is worse than plain interpolative coding** with either code. With γ it's worse even than Elias-Fano on run starts. Values don't sit close enough to the linear interpolation: the deviations are about as large as the range allows, so a code that favours small deviations pays for it.
 - **Random access:** interpolative coding gives none by itself, so it would need blocks with sampled values. These counts leave that cost out.
+
+## Time and space, eleven configurations, the faster Elias-Fano RLCSA (2026-11-07)
+
+`movi2/ef_table2.py`, `movi2/ef_table2.txt`; script `~/tool/silva/movi13.sh` (as `movi12.sh`, with more configurations). One rotation, 5 repeats, the 8 files of the aquatic reads (1.6 million reads), one thread, pinned to CPU 9, setup excluded. The Elias-Fano RLCSA is the 143.6 MB file of "The Elias-Fano RLCSA, made faster", before the select changes below. **Index sizes now include each index's lookup table:** the RLCSAs' 17.8 MB table (`-F 10`, built at load) and Movi 2's ftab (k = 10) and 58.5 MB row list. Every configuration has the same 207.5 MB of tag boundaries; the labels differ. Every output of the first repeat (88 files) is identical to `find --preset silva`'s.
+
+| index | tags | whole (MB) | µs per read, median (range) | Pareto |
+|---|---|---:|---:|:-:|
+| explicit RLCSA (583.0) | full | 1,419.3 | 47.13 (46.90–47.58) | * |
+| | s2 | 1,171.2 | 52.00 (51.81–52.46) | * |
+| | grammar | 1,032.5 | 54.42 (54.31–54.71) | * |
+| | s4 | 1,013.2 | 60.84 (60.65–61.07) | * |
+| | s8 | 934.2 | 79.69 (79.55–80.38) | * |
+| Elias-Fano RLCSA (161.4) | full | 997.7 | 137.64 (137.33–138.42) | |
+| | grammar | 610.9 | 146.25 (145.75–147.29) | * |
+| | s4 | 591.6 | 183.27 (183.22–184.98) | * |
+| | s8 | 512.6 | 246.77 (246.50–248.25) | * |
+| Movi 2, row list (638.7) | full | 1,475.1 | 44.80 (44.75–44.88) | * |
+| | grammar | 1,088.3 | 53.29 (53.08–53.73) | * |
+
+- **Against the old Elias-Fano RLCSA** (movi12, 185.3 MB): grammar tags 208.73 → 146.25 µs (−30%), full 199.87 → 137.64, s4 262.02 → 183.27.
+- **Elias-Fano with full tags is off the frontier:** the explicit RLCSA with s8 tags is smaller (934 MB) and faster (80 µs).
+- **The gap is still over 2×:** Elias-Fano with grammar tags is 2.7 times slower per read than the explicit RLCSA with grammar tags, for 41% less space.
+
+## Elias-Fano selects: shared and finer samples (2026-11-07)
+
+`src/bits.hpp` (`EliasFano`, `EFRank::rank_pair`); `ef_selects/*.txt`, from `experiments/rlcsa_profile.cpp` on the same 11.2 million recorded steps, best of 3, CPU 9, each variant compiled separately (`-DKATKA_EF_PAIR=0/1 -DKATKA_EF_SAMPLE1=0/64/128/256/512`). In every variant, every step's two ranks equal the explicit RLCSA's (the profile now checks them all).
+
+- **Shared selects (`KATKA_EF_PAIR`):** a step ranks sp and ep. In 42.2% of the steps both lie in the same run of c, and in 11.6% in neighbouring runs. `rank2` then reads both runs' starts and F positions from one select in KS and one in FP (`access3`: the next values come from scanning to the next one-bits), instead of two each. The two predecessor searches share their select-zero when both keys are in the same high bucket (43.3%) or neighbouring ones (8.8%) (`count_less2`). `FP.access2` already read F's next value from the first select.
+- **Finer samples (`KATKA_EF_SAMPLE1`):** the position of every k-th one of the high bits, 32 bits each, built at load (the file format is unchanged; not used if the high bits pass 2³²). Select-one starts from the sample's word and scans, with no binary search over the 512-bit blocks' counts. The old 256-one samples (64 bits each, followed by that binary search) are still used for select-zero.
+
+| variant | ns per step | extra space (KS + FP) | Elias-Fano RLCSA |
+|---|---:|---:|---:|
+| before | 265.6 | | 143.6 MB |
+| shared selects | 232.2 | 0 | 143.6 MB |
+| samples every 512 | 259.6 | 1.1 MB | 144.6 MB |
+| samples every 256 | 244.4 | 2.1 MB | 145.7 MB |
+| shared + every 512 | 222.8 | 1.1 MB | 144.6 MB |
+| shared + every 256 | 211.3 | 2.1 MB | 145.7 MB |
+| shared + every 128 | 200.6 | 4.3 MB | 147.8 MB |
+| **shared + every 64 (the default now)** | **193.6** | **8.5 MB** | **152.1 MB** |
+
+The explicit RLCSA takes 70–73 ns per step in the same runs, so the gap per step is now 2.7×, down from 3.7×. `find --efcsa` gives `find --preset silva`'s output on V3_V4_1 and V1_V2_2 (`-T g.tag`), and the self-test passes. These have not yet been timed per read: that waits for the next rotation.
+
+## Blocked interpolative coding, bits per value (2026-11-07)
+
+`experiments/blocked_interp.cpp`, `blocked_interp.txt`: code lengths only, on the same lists as "Interpolative coding, bits per value". Each character's list is cut into blocks of B values. Each block's first value (its head) is in an Elias-Fano list over the list's universe. The other B − 1 values are coded by BIC between the block's head and the next head, in preorder (middle, left half, right half). "Pointers" are an Elias-Fano list of each block's first bit, needed to jump to a block. Per value:
+
+| list | B | heads | BIC (centred) | pointers | total | MB | values decoded, access | values decoded, search |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| run starts | 64 | 0.221 | 6.000 (5.952) | 0.164 | 6.385 | 54.5 | 31.50 | 31.50 |
+| F positions | 64 | 0.188 | 3.094 (3.142) | 0.149 | 3.432 | 29.3 | 31.50 | 34.51 |
+| run starts | 128 | 0.118 | 6.096 (6.046) | 0.090 | 6.305 | 53.8 | 63.50 | 61.17 |
+| F positions | 128 | 0.102 | 3.168 (3.215) | 0.083 | 3.353 | 28.6 | 63.50 | 67.06 |
+
+- **Space:** blocks cost almost nothing. 6.39 and 3.43 bits per value at B = 64, against 6.21 and 3.26 for BIC on whole lists and 8.14 and 6.05 for Elias-Fano. Both lists together are 83.8 MB (B = 64) or 82.4 MB (B = 128), against 143.5 MB in Elias-Fano (152.1 MB with the new samples): 42% less.
+- **Values decoded per lookup:** access(j), for j uniform over the values (a head costs nothing), decodes every value before j's in preorder. Skipping a left half means decoding it, since its code lengths depend on its values. That is (B − 1)/2 on average: 31.5 at B = 64, 63.5 at B = 128. A search for x (count_less, x uniform over the universe, inside the block the heads select) decodes until x's gap is known: 31.5–34.5 at B = 64, 61–67 at B = 128. A step needs two searches in run starts and two accesses in F positions, so about 130 decoded values per step at B = 64, where the Elias-Fano RLCSA now does 3 to 6 selects. Storing each left half's code length would cut this to about log₂ B per lookup, for more bits per value; that was not estimated.

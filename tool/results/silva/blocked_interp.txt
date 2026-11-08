@@ -1,0 +1,5 @@
+B     list             values   heads     BIC centred     ptr    h+BIC  h+BIC+p  access   search
+64    run starts     68319378   0.221   6.000   5.952   0.164    6.221    6.385   31.50    31.50   (MB h+BIC 53.1, h+BIC+p 54.5)
+64    F positions    68319378   0.188   3.094   3.142   0.149    3.283    3.432   31.50    34.51   (MB h+BIC 28.0, h+BIC+p 29.3)
+128   run starts     68319378   0.118   6.096   6.046   0.090    6.214    6.305   63.50    61.17   (MB h+BIC 53.1, h+BIC+p 53.8)
+128   F positions    68319378   0.102   3.168   3.215   0.083    3.270    3.353   63.50    67.06   (MB h+BIC 27.9, h+BIC+p 28.6)

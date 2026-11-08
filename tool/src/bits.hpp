@@ -34,6 +34,25 @@ struct EliasFano {
     std::vector<uint64_t> s0, s1;       // positions of every SAMPLE-th zero and one in high
     std::vector<uint64_t> ones;         // ones before each 512-bit block of high
     static constexpr uint64_t SAMPLE = 256;
+#ifndef KATKA_EF_SAMPLE1
+#define KATKA_EF_SAMPLE1 64
+#endif
+    // finer samples for select-one, built at load (not saved): the position of every SAMPLE1-th one, 32 bits each
+    std::vector<uint32_t> f1;
+    static constexpr uint64_t SAMPLE1 = KATKA_EF_SAMPLE1;
+    void build_fine() {
+        f1.clear();
+        if (!SAMPLE1 || hbits >= (1ull << 32)) return;
+        f1.reserve(n / SAMPLE1 + 1);
+        uint64_t c1 = 0;
+        for (uint64_t w = 0; w < high.size(); ++w) {
+            uint64_t word = high[w], pc = __builtin_popcountll(word);
+            while (f1.size() * SAMPLE1 < c1 + pc) {
+                f1.push_back((uint32_t)((w << 6) + select_in_word(word, f1.size() * SAMPLE1 - c1)));
+            }
+            c1 += pc;
+        }
+    }
 
     void build(const std::vector<uint64_t> &v, uint64_t universe) {
         begin(v.size(), universe);
@@ -73,6 +92,7 @@ struct EliasFano {
             if (hbit(p)) { if (c1 % SAMPLE == 0) s1.push_back(p); ++c1; }
             else { if (c0 % SAMPLE == 0) s0.push_back(p); ++c0; }
         }
+        build_fine();
     }
     inline void set_low(uint64_t j, uint64_t x) {
         uint64_t b = j * l;
@@ -88,6 +108,15 @@ struct EliasFano {
     inline bool hbit(uint64_t p) const { return (high[p >> 6] >> (p & 63)) & 1; }
 
     template <bool ONE> inline uint64_t select_(uint64_t k) const {
+        if (ONE && !f1.empty()) {
+            uint64_t i = k / SAMPLE1, p = f1[i], rem = k - i * SAMPLE1, w = p >> 6;
+            uint64_t word = high[w] & (~0ull << (p & 63));
+            for (;;) {
+                uint64_t c = __builtin_popcountll(word);
+                if (rem < c) return (w << 6) + select_in_word(word, rem);
+                rem -= c; word = high[++w];
+            }
+        }
         const std::vector<uint64_t> &smp = ONE ? s1 : s0;
         uint64_t i = k / SAMPLE;
         uint64_t lo = smp[i] >> 9;
@@ -113,19 +142,26 @@ struct EliasFano {
         while (!hbit(q)) ++q;
         b = ((q - j - 1) << l) | get_low(j + 1);
     }
-    // number of elements < x
-    inline uint64_t count_less(uint64_t x) const {
-        if (x >= u) return n;
-        uint64_t h = x >> l, xl = x & ((1ull << l) - 1);
-        uint64_t lo, hi;
+    inline uint64_t next_one(uint64_t q) const {             // first one at or after position q
+        uint64_t w = q >> 6, word = high[w] & (~0ull << (q & 63));
+        while (!word) word = high[++w];
+        return (w << 6) + __builtin_ctzll(word);
+    }
+    inline uint64_t next_zero(uint64_t q) const {
+        uint64_t w = q >> 6, word = ~high[w] & (~0ull << (q & 63));
+        while (!word) word = ~high[++w];
+        return (w << 6) + __builtin_ctzll(word);
+    }
+    // the indices [lo, hi) whose high part is h
+    inline void bucket(uint64_t h, uint64_t &lo, uint64_t &hi) const {
         if (h == 0) { lo = 0; hi = select_<false>(0); }
         else {                                   // the bucket ends at the next zero after the (h-1)-th
             uint64_t p = select_<false>(h - 1);
             lo = p - (h - 1);
-            uint64_t q = p + 1, w = q >> 6, word = ~high[w] & (~0ull << (q & 63));
-            while (!word) word = ~high[++w];
-            hi = ((w << 6) + __builtin_ctzll(word)) - h;
+            hi = next_zero(p + 1) - h;
         }
+    }
+    inline uint64_t in_bucket(uint64_t lo, uint64_t hi, uint64_t xl) const {
         while (hi - lo > 8) {
             uint64_t mid = (lo + hi) >> 1;
             if (get_low(mid) < xl) lo = mid + 1; else hi = mid;
@@ -133,12 +169,36 @@ struct EliasFano {
         while (lo < hi && get_low(lo) < xl) ++lo;
         return lo;
     }
+    // number of elements < x
+    inline uint64_t count_less(uint64_t x) const {
+        if (x >= u) return n;
+        uint64_t lo, hi; bucket(x >> l, lo, hi);
+        return in_bucket(lo, hi, x & ((1ull << l) - 1));
+    }
+    // count_less at x1 <= x2: one select-zero when their high parts are equal or adjacent
+    inline void count_less2(uint64_t x1, uint64_t x2, uint64_t &r1, uint64_t &r2) const {
+        const uint64_t h1 = x1 >> l, h2 = x2 >> l, m = (1ull << l) - 1;
+        if (x2 >= u || h2 > h1 + 1) { r1 = count_less(x1); r2 = count_less(x2); return; }
+        uint64_t lo, hi; bucket(h1, lo, hi);
+        r1 = in_bucket(lo, hi, x1 & m);
+        if (h2 == h1) { r2 = in_bucket(r1, hi, x2 & m); return; }
+        r2 = in_bucket(hi, next_zero(hi + h1 + 1) - h2, x2 & m);   // bucket h1 ends with the zero at hi + h1
+    }
+    // access(j), access(j + 1), access(j + 2) (b, c = u if past the end): one select
+    inline void access3(uint64_t j, uint64_t &a, uint64_t &b, uint64_t &c) const {
+        uint64_t p = select_<true>(j);
+        a = ((p - j) << l) | get_low(j);
+        if (j + 1 >= n) { b = c = u; return; }
+        p = next_one(p + 1); b = ((p - j - 1) << l) | get_low(j + 1);
+        if (j + 2 >= n) { c = u; return; }
+        p = next_one(p + 1); c = ((p - j - 2) << l) | get_low(j + 2);
+    }
     // as a bitvector over [0, u) with ones at the values (distinct values)
     inline uint64_t rank1(uint64_t i) const { return count_less(i); }      // ones in [0, i)
     inline uint64_t select1(uint64_t k) const { return access(k); }         // position of the k-th one, 0-based
     inline uint64_t pred_index(uint64_t x) const { return count_less(x + 1) - 1; }   // last element <= x (exists)
 
-    uint64_t bytes() const { return (low.size() + high.size() + s0.size() + s1.size() + ones.size()) * 8 + 40; }
+    uint64_t bytes() const { return (low.size() + high.size() + s0.size() + s1.size() + ones.size()) * 8 + f1.size() * 4 + 40; }
     void save(FILE *f) const {
         wr(f, n); wr(f, u); wr(f, l); wr(f, hbits);
         wvec(f, low); wvec(f, high); wvec(f, s0); wvec(f, s1); wvec(f, ones);
@@ -146,6 +206,7 @@ struct EliasFano {
     void load(FILE *f) {
         rd(f, n); rd(f, u); rd(f, l); rd(f, hbits);
         rvec(f, low); rvec(f, high); rvec(f, s0); rvec(f, s1); rvec(f, ones);
+        build_fine();
     }
 };
 
@@ -320,15 +381,37 @@ struct EFRank {
         uint64_t len = fn - f, d = i - start;
         return f - fb + (d < len ? d : len);
     }
+#ifndef KATKA_EF_PAIR
+#define KATKA_EF_PAIR 1
+#endif
+    // r1, r2 for positions i1 <= i2 whose runs are a1 - 1 and a2 - 1 (a1, a2 > b): when the runs are the same or
+    // neighbours, one select in KS and one in FP serve both
+    inline void rank_pair(uint64_t fb, uint64_t a1, uint64_t a2, uint64_t base, uint64_t i1, uint64_t i2, uint64_t &r1, uint64_t &r2) const {
+        if (KATKA_EF_PAIR && a2 == a1) {
+            uint64_t j = a1 - 1, start = KS.access(j) - base, f, fn;
+            if (j + 1 < nruns) FP.access2(j, f, fn); else { f = FP.access(j); fn = n; }
+            uint64_t len = fn - f, d1 = i1 - start, d2 = i2 - start;
+            r1 = f - fb + (d1 < len ? d1 : len); r2 = f - fb + (d2 < len ? d2 : len);
+        } else if (KATKA_EF_PAIR && a2 == a1 + 1) {
+            uint64_t j = a1 - 1, s1, s2, f1, f2, f3, x;
+            KS.access3(j, s1, s2, x); FP.access3(j, f1, f2, f3);
+            if (j + 2 >= nruns) f3 = n;
+            uint64_t d1 = i1 - (s1 - base), d2 = i2 - (s2 - base), l1 = f2 - f1, l2 = f3 - f2;
+            r1 = f1 - fb + (d1 < l1 ? d1 : l1); r2 = f2 - fb + (d2 < l2 ? d2 : l2);
+        } else { r1 = rank_from(fb, a1, base, i1); r2 = rank_from(fb, a2, base, i2); }
+    }
     // rank_c at two positions, finding c's first run once
     inline void rank2(uint32_t c, uint64_t i1, uint64_t i2, uint64_t &r1, uint64_t &r2) const {
         if (c >= sigma) { r1 = r2 = 0; return; }
         const uint64_t base = base_of(c), b = first.empty() ? KS.count_less(base) : first[c];
-        uint64_t a1 = i1 ? KS.count_less(base + i1) : b, a2 = i2 ? KS.count_less(base + i2) : b;
+        uint64_t a1, a2;
+        if (KATKA_EF_PAIR && i1 && i1 <= i2) KS.count_less2(base + i1, base + i2, a1, a2);
+        else { a1 = i1 ? KS.count_less(base + i1) : b; a2 = i2 ? KS.count_less(base + i2) : b; }
         if (a1 == b && a2 == b) { r1 = r2 = 0; return; }
         const uint64_t fb = first.empty() ? FP.access(b) : ffirst[c];
-        r1 = a1 == b ? 0 : rank_from(fb, a1, base, i1);
-        r2 = a2 == b ? 0 : rank_from(fb, a2, base, i2);
+        if (a1 == b) { r1 = 0; r2 = rank_from(fb, a2, base, i2); }
+        else if (i1 <= i2) rank_pair(fb, a1, a2, base, i1, i2, r1, r2);
+        else { r1 = rank_from(fb, a1, base, i1); r2 = rank_from(fb, a2, base, i2); }
     }
     // rank2, knowing that both positions' runs lie among runs rl..rh (positions in KS): binary search over KS within them
     inline uint64_t count_less_in(uint64_t x, uint64_t lo, uint64_t hi) const {
@@ -342,9 +425,11 @@ struct EFRank {
         if (c >= sigma) { r1 = r2 = 0; return; }
         const uint64_t base = base_of(c), b = first.empty() ? KS.count_less(base) : first[c];
         uint64_t a1 = i1 ? count_less_in(base + i1, rl, rh) : b, a2 = i2 ? count_less_in(base + i2, rl, rh) : b;
-        const uint64_t fb = (a1 == b && a2 == b) ? 0 : first.empty() ? FP.access(b) : ffirst[c];
-        r1 = a1 == b ? 0 : rank_from(fb, a1, base, i1);
-        r2 = a2 == b ? 0 : rank_from(fb, a2, base, i2);
+        if (a1 == b && a2 == b) { r1 = r2 = 0; return; }
+        const uint64_t fb = first.empty() ? FP.access(b) : ffirst[c];
+        if (a1 == b) { r1 = 0; r2 = rank_from(fb, a2, base, i2); }
+        else if (i1 <= i2) rank_pair(fb, a1, a2, base, i1, i2, r1, r2);
+        else { r1 = rank_from(fb, a1, base, i1); r2 = rank_from(fb, a2, base, i2); }
     }
     // LF without a C array: C[c] + rank_c(i)
     inline uint64_t lf_one(uint64_t base, uint64_t b, uint64_t i) const {

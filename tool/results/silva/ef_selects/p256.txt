@@ -1,0 +1,17 @@
+11178024 steps (characters present)
+check: 0 steps whose ranks differ from the explicit RLCSA's
+pairs (both positions past c's first run, 11178024 steps): same run 42.2%, next run 11.6%; keys in the same bucket 43.3%, the next 8.8%
+fine select samples: every 256 ones, KS 1.07 MB, FP 1.07 MB
+Elias-Fano RLCSA (145.7 MB)
+  whole step (rank2)                                               211.3 ns per step
+  first run of c and its F position: stored per character            2.2 ns per step
+  runs of sp and ep: 2 KS.count_less (predecessor search)           88.6 ns per step
+  from the runs: 2 rank_from (KS.access, FP.access2)               153.8 ns per step
+  sum of the parts 244.6 ns against 211.3 for the whole step
+  per search: 2.62 entries in the high bucket, 2.32 low-bit reads; KS: l = 6, 68319378 runs over universe 8216400899
+Explicit RLCSA (565.2 MB)
+  whole step (2 run_lists::rank)                                    71.4 ns per step
+  runs of sp and ep: 2 first_run (jump table, binary search)        68.7 ns per step
+  rest (rank from the run): 2.7 ns
+KS 86.1 MB, FP 59.6 MB, per-character values 0.005 MB
+summary: Elias-Fano 211.3 ns per step (first run of c 1%, predecessor search 36%, from the runs 63%); explicit 71.4 ns (search 96%)

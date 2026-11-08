@@ -1,0 +1,12 @@
+explicit RLCSA     full     index   583.0  boundaries  207.5  labels  628.8  whole  1419.3 MB     47.13 (46.90-47.58) us  n=5 *
+explicit RLCSA     grammar  index   583.0  boundaries  207.5  labels  242.0  whole  1032.5 MB     54.42 (54.31-54.71) us  n=5 *
+explicit RLCSA     s2       index   583.0  boundaries  207.5  labels  380.6  whole  1171.2 MB     52.00 (51.81-52.46) us  n=5 *
+explicit RLCSA     s4       index   583.0  boundaries  207.5  labels  222.7  whole  1013.2 MB     60.84 (60.65-61.07) us  n=5 *
+explicit RLCSA     s8       index   583.0  boundaries  207.5  labels  143.7  whole   934.2 MB     79.69 (79.55-80.38) us  n=5 *
+Elias-Fano RLCSA   full     index   161.4  boundaries  207.5  labels  628.8  whole   997.7 MB    137.64 (137.33-138.42) us  n=5 
+Elias-Fano RLCSA   grammar  index   161.4  boundaries  207.5  labels  242.0  whole   610.9 MB    146.25 (145.75-147.29) us  n=5 *
+Elias-Fano RLCSA   s4       index   161.4  boundaries  207.5  labels  222.7  whole   591.6 MB    183.27 (183.22-184.98) us  n=5 *
+Elias-Fano RLCSA   s8       index   161.4  boundaries  207.5  labels  143.7  whole   512.6 MB    246.77 (246.50-248.25) us  n=5 *
+Movi 2, row list   full     index   638.7  boundaries  207.5  labels  628.8  whole  1475.1 MB     44.80 (44.75-44.88) us  n=5 *
+Movi 2, row list   grammar  index   638.7  boundaries  207.5  labels  242.0  whole  1088.3 MB     53.29 (53.08-53.73) us  n=5 *
+* on the Pareto frontier (no other row is both smaller and faster)
