@@ -1,6 +1,6 @@
 # Notes on the tool
 
-**For the paper, re-posting 2026-11-08 (items A1–A10).** Items still being measured say so; the rest is final.
+**For the paper, re-posting 2026-11-08 (items A1–A10).** All final (A9 skipped at the chat session's request).
 
 - **A1. Machine.** Intel Core i7-8700 (6 cores, 12 threads, 3.2 GHz base, 4.6 GHz turbo, 12 MiB L3), 15.7 GB of RAM (`MemTotal` 15,691,464 kB), Ubuntu 26.04.1 LTS, Linux 7.0.0-42. GCC 15.2.0 (Ubuntu 15.2.0-16ubuntu1). KATKA: `-std=c++17 -O3 -march=native -DNDEBUG -pthread`. Movi 2 (with our patches): CMake Release, `-O3 -DNDEBUG -std=c++20 -fopenmp`, no `-march=native`. Kraken 2 2.1.3 (Ubuntu package). Tagger 1927d05, its CMake defaults. Every run in an 11 GB memory cgroup without swap; single-thread runs pinned to one logical CPU.
 - **A2. 12 threads.** KATKA's default (Movi 2, RLE tags, L = 30): **170,600 reads per second** with 12 threads on 6 cores (median of 5 repeats, loading excluded: the wall time on all 1.6 million reads minus the wall time on one read). One thread: 43.66 µs per read. Movi 2's bridge to our tag arrays was single-threaded; it now buffers each read's output per thread (`results/silva/movi2/prototype.patch`), and its 12-thread records are identical to one thread's, in another order.
