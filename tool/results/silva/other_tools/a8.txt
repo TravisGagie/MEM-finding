@@ -1,0 +1,8 @@
+kraken2_std   MSv1: strict 79.22 (79.09-79.30); with vague positives 84.15 (84.05-84.22); genus or an ancestor below the domain 83.70 (83.59-83.77)
+kraken2_std   MSv3: strict 78.73 (78.70-78.78); with vague positives 84.06 (84.00-84.10); genus or an ancestor below the domain 83.61 (83.58-83.63)
+kraken2_ours  MSv1: strict 80.10 (79.95-80.23); with vague positives 84.34 (84.24-84.46); genus or an ancestor below the domain 84.14 (84.02-84.27)
+kraken2_ours  MSv3: strict 79.75 (79.68-79.83); with vague positives 84.31 (84.29-84.34); genus or an ancestor below the domain 84.12 (84.10-84.15)
+tagger_L25    MSv1: strict 82.23 (82.19-82.31); Cliffy's rule 93.77 (93.62-93.85)
+tagger_L25    MSv3: strict 84.13 (83.93-84.31); Cliffy's rule 93.52 (93.36-93.59)
+tagger_L30    MSv1: strict 81.57 (81.52-81.67); Cliffy's rule 93.67 (93.55-93.73)
+tagger_L30    MSv3: strict 83.71 (83.57-83.89); Cliffy's rule 93.42 (93.27-93.53)
