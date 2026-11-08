@@ -8,7 +8,7 @@
 # timed (DB/build.time: wall s, user s, sys s, peak KB), with THREADS threads (default 12), in an 11 GB cgroup.
 # K2DATA: SILVA's SILVA_138.1_SSURef_NR99_tax_silva.fasta.gz, tax_slv_ssu_138.1.acc_taxid.gz, tax_slv_ssu_138.1.txt.gz.
 set -euo pipefail
-DB=$1; SRC=$2; EX=${3:-}; T=${THREADS:-12}; D=${K2DATA:-$HOME/tool/silva/k2/data}
+DB=$1; SRC=$2; EX=${3:-}; T=${THREADS:-12}; D=${K2DATA:-$HOME/research/katka/work/k2/data}
 S=$(cd "$(dirname "$0")/../../../katka/silva" && pwd)
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 rm -rf "$DB"; mkdir -p "$DB/taxonomy" "$DB/library"; DB=$(cd "$DB" && pwd)

@@ -1,7 +1,7 @@
 #!/bin/bash
 # chr19 with the new tool (tool/NOTES.md, "Chromosome 19"), one collection size: $1 = 33, 65 or 129 sequences
 set -o pipefail
-n=$1; H=$HOME/shortcuts/chr19_scaling/hprc_chr19; cd ~/tool/chr19; K=~/rz/MEM-finding/tool/bin/katka; BB=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt
+n=$1; H=$HOME/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19; cd ~/research/rlbwt-tricks/chr19; K=~/research/mem-finding/tool/bin/katka; BB=~/research/mem-finding/katka/deps/Big-BWT/bigbwt
 step() { local name=$1; shift; echo "== $name $(date +%T)"
   systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "$name: %e s wall, %U s user, peak %M KB" "$@" > $name.$n.err 2>&1
   local rc=$?; grep -vE '^\s*$' $name.$n.err | tail -4; echo "$name exit $rc"; [ $rc = 0 ] || { echo "== STOPPED at $name"; exit 1; }; }

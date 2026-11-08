@@ -2,7 +2,7 @@
 # KeBaB Section 5.1 setting on Zymo's positive reads (no homopolymer compression, no low-complexity filter): KeBaB
 # k = 20, one hash function, L = 40; ropebwt3 3.10 unmodified, one thread (kebab leaks every read with more than one thread; the paper also timed with one thread). (a) t longest pseudo-MEMs only;
 # (b) T = 2t longest, whole-read fallback if fewer than t MEMs reach the (T+1)st pseudo-MEM; (c) whole reads.
-cd ~/zymo/rb; B=bin; R=~/zymo/all.fq; S=~/rz/MEM-finding/tool/results/kebab_revision; L=40
+cd ~/zymo/rb; B=bin; R=~/zymo/all.fq; S=~/research/mem-finding/tool/results/kebab_revision; L=40
 cap() { systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 "$@"; }
 tm() { local name=$1; shift; echo "== $name $(date +%T)"; /usr/bin/time -f "$name: %e s wall, %U s user, peak %M KB" "$@"; }
 # the Section 5.1 check rule (b) with T = t + 1 and T = t + 2 (t = 1, T = 2 is the T = 2t run of run.sh)

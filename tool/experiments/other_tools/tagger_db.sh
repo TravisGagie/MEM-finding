@@ -2,11 +2,11 @@
 # Tagger's index (https://github.com/biointec/tagger, at deps/tagger) on KATKA's reference, as run_tagger.sh builds it:
 # one FASTA whose headers carry the genus as a tag G00000..G09117 (KATKA's document numbers, from 0), its categories
 # file, and Tagger's PFP build script (with Big-BWT).  Tagger handles reverse complements at query time, so one strand.
-#   tagger_db.sh DIR [LIST.tsv]     LIST.tsv: genus i's FASTA in line i, second column (default ~/tool/silva/list.tsv,
+#   tagger_db.sh DIR [LIST.tsv]     LIST.tsv: genus i's FASTA in line i, second column (default ~/research/katka/work/list.tsv,
 #                                   the full reference; a held-out split's list.tsv for its reduced reference)
 # Timed: DIR/build.time (wall s, user s, sys s, peak KB), in an 11 GB cgroup.  The index is DIR/silva*.
 set -euo pipefail
-DIR=$1; LIST=${2:-$HOME/tool/silva/list.tsv}; TG=${TG:-$HOME/rz/deps/tagger}
+DIR=$1; LIST=${2:-$HOME/research/katka/work/list.tsv}; TG=${TG:-$HOME/research/deps/tagger}
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 rm -rf "$DIR"; mkdir -p "$DIR"; DIR=$(cd "$DIR" && pwd)
 i=0; cut -f2 "$LIST" | while read -r f; do

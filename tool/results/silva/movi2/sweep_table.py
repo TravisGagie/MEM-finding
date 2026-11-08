@@ -2,7 +2,7 @@
 """Summarises the sweep's logs (movi7.sh): t/<config>.r<rep>/<file>.log.  Time per read is the whole processing time over the
 200,000 reads of each of the 8 files, for both tools (Movi 2's own figure, and katka's total time), excluding loading."""
 import glob, os, re, statistics as st, sys
-D = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/pc"); M = D + "/movi"
+D = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/pc"); M = D + "/movi"
 Z = lambda f: os.path.getsize(f) / 1e6
 I = Z(M + "/idx/index.movi"); F = Z(M + "/idx/ftab.10.bin"); C = Z(D + "/bac.csa"); ROW = 58.518
 print("Movi 2 index %.1f MB, ftab %.1f MB, row starts %.1f MB; RLCSA %.1f MB" % (I, F, ROW, C))

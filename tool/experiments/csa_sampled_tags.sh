@@ -6,12 +6,12 @@
 #
 #   csa_sampled_tags.sh OUT
 #
-# Environment: IDX (~/tool/silva/bac; IDX.s<s>.tag for s = 2, 4, 8: see tag_sampling.sh), GRAMMAR (~/tool/silva/queue/grammar,
+# Environment: IDX (~/research/katka/work/bac; IDX.s<s>.tag for s = 2, 4, 8: see tag_sampling.sh), GRAMMAR (~/research/katka/work/queue/grammar,
 # with g.tag and bg.tag), READS, REPEATS (5), PIN (9), MEMMAX (11G).
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
 OUT=$1; mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
-IDX=${IDX:-$HOME/tool/silva/bac}; G=${GRAMMAR:-$HOME/tool/silva/queue/grammar}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
+IDX=${IDX:-$HOME/research/katka/work/bac}; G=${GRAMMAR:-$HOME/research/katka/work/queue/grammar}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
 REGIONS="V1_V2 V3_V4 V4_V4 V4_V5"
 CAP="systemd-run --user --scope -q -p MemoryMax=${MEMMAX:-11G} -p MemorySwapMax=0"
 for rep in $(seq 1 "$REPEATS"); do

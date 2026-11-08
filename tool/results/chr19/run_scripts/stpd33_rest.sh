@@ -3,12 +3,12 @@
 # (--fb), which ran for 54 min without finishing on L = 1000 (their BML took 45 s): the same commands for the other
 # runs, and the script's comparison code, extracted verbatim (stpd33_compare.part). Their index is reused.
 set -uo pipefail
-W=$HOME/tool/chr19/stpd33; cd $W; K=$HOME/rz/MEM-finding/tool/bin/katka; DRV=$HOME/rz/MEM-finding/tool/bin/stpd-index-mems
-OURS=$HOME/tool/chr19/c33; PAT=$HOME/tool/chr19/queries.fa; RUN="taskset -c 9"
+W=$HOME/research/rlbwt-tricks/chr19/stpd33; cd $W; K=$HOME/research/mem-finding/tool/bin/katka; DRV=$HOME/research/mem-finding/tool/bin/stpd-index-mems
+OURS=$HOME/research/rlbwt-tricks/chr19/c33; PAT=$HOME/research/rlbwt-tricks/chr19/queries.fa; RUN="taskset -c 9"
 for L in 1000 100; do
   SUM=$W/summary.L$L.txt; note() { echo "$*" | tee -a "$SUM"; }
   if [ $L = 1000 ]; then cp summary.L1000.partial.txt $SUM; else
-    : > $SUM; note "STPD-index ($(git -C $HOME/rz/STPD-index log --oneline -1)) against katka ($(git -C $HOME/rz/MEM-finding log --oneline -1)); L = $L; patterns $PAT"
+    : > $SUM; note "STPD-index ($(git -C $HOME/research/rlbwt-tricks/STPD-index log --oneline -1)) against katka ($(git -C $HOME/research/mem-finding log --oneline -1)); L = $L; patterns $PAT"
     note "their index: $(ls -l st.stpdi | awk '{printf "%.1f MiB", $5 / 1048576}') (built for L = 1000, reused)"
     for name in bml bml-locate; do opt=""; [ $name = bml-locate ] && opt=--locate
       echo "[$(date +%T)] theirs: $name"; /usr/bin/time -f "%e s wall, peak %M KB" $RUN $DRV st.stpdi $PAT $L $opt --pieces st.pieces > theirs.$name.tsv 2> theirs.$name.log
@@ -20,6 +20,6 @@ for L in 1000 100; do
     /usr/bin/time -f "%e s wall, peak %M KB" $RUN $K find -L $L --format mems --stats "$@" $OURS $PAT ours.$name.tsv 2> ours.$name.log
     note "ours $name: $(grep -o 'reads=[0-9]* MEMs=[0-9]*' ours.$name.log), $(grep -o 'wall [0-9.]* s' ours.$name.log); $(grep searches ours.$name.log) | $(tail -1 ours.$name.log)"
   done
-  python3 - "$SUM" < $HOME/tool/chr19/stpd33_compare.py | tee -a "$SUM"
+  python3 - "$SUM" < $HOME/research/rlbwt-tricks/chr19/stpd33_compare.py | tee -a "$SUM"
   mkdir -p L$L; cp theirs.*.tsv theirs.*.log ours.*.tsv ours.*.log L$L/
 done; echo "== done $(date +%T)"

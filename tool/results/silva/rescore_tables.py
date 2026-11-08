@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Every SILVA scheme, all reads and excluding reads from genera with ambiguous names; the scoring CSVs only.
 
-    rescore_tables.py [Q]        Q: the queue directory (default ~/tool/silva/queue)
+    rescore_tables.py [Q]        Q: the queue directory (default ~/research/katka/work/queue)
 
 A read whose true genus name is missing from SILVA's genus rank, or sits at more than one node of it, counts as
 correct in the scorer (as in Cliffy's) and is counted in ambiguous_truth.  So, per region:
@@ -10,7 +10,7 @@ correct in the scorer (as in Cliffy's) and is counted in ambiguous_truth.  So, p
 A table entry is the mean of the four regions.
 """
 import glob, math, os, re, sys
-Q = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/queue")
+Q = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/queue")
 REGIONS = "V1_V2 V3_V4 V4_V4 V4_V5".split()
 NAMES = [("lca", "range (Cliffy's LCA query)"), ("one", "one label per MEM"), ("cliffs", "sample (simulated cliffs)"),
          ("list", "even"), ("norm", "normalised"), ("freq", "proportional"),

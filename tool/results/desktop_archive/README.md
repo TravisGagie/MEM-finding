@@ -5,7 +5,7 @@ the `.lvl` indexes). Nothing here was rerun.
 
 ## `shortcuts_chr19/`: Reportable Shortcuts on chr19
 
-From `~/shortcuts/` (`run_chr19_scaling.sh`, its log) and `~/shortcuts/chr19_scaling/hprc_chr19/`:
+From `~/research/rlbwt-tricks/shortcuts/` (`run_chr19_scaling.sh`, its log) and `~/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19/`:
 - `summary_scaling.tsv`: all sizes together; `n16/`, `n32/`, `n64/summary.tsv`: each size;
 - `n*/mems/t<tau>_ell<ell>_{bml,fb}.csv`: the MEM CSVs;
 - `manifest.tsv`: the sequences.
@@ -20,7 +20,7 @@ produced `results.csv` elsewhere.)
   `overnight.log`, `final/summary*.txt`, and `final/n*/{bml,fb}.{csv,txt}`, from `~/twolevel_runs/twolevel/`
   (on the external drive).
 - **The most frequent successor:** `continuation.log` and `continuation/` (build log; `q_{smallest,frequent}_{bml,fb}`),
-  from `~/Hybrid-FM-CSA/twolevel/`, where `run_continuation.sh` was run on Oct 28 at n16 (it was not in
+  from `~/research/hybrid-fm-csa/twolevel/`, where `run_continuation.sh` was run on Oct 28 at n16 (it was not in
   `~/twolevel_runs`).
 - **The simulated noisy reads:** `reads.log`, `reads/summary.txt`, `reads/n{16,64}/e{1,5}/*.txt`, `sim_reads.py` and
   `run_reads.sh`. The fragment files `frag_L*.txt` (1–20 MB each) stay on the external drive, in

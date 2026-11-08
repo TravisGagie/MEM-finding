@@ -5,12 +5,12 @@
 #   silva_queue.sh STEP [STEP ...]        STEP: timing credit blam grammar digests uniform (or all), dial, collect
 #
 # Environment (defaults for the desktop):
-#   Q       the output directory (default ~/tool/silva/queue).  The finds' outputs (*.out) are large; everything
+#   Q       the output directory (default ~/research/katka/work/queue).  The finds' outputs (*.out) are large; everything
 #           else (logs, scores, summaries, sizes.txt) is small, and is all scripts/silva_tables.py reads:
 #           the step `collect` copies them to OUT (default tool/results/silva_queue), to commit
 #   S       katka/silva (the reference in $S/work/ref, the taxonomy in $S/exp1_data)
-#   IDX     the undigested index (default ~/tool/silva/bac: katka index --preset silva, see NOTES "SILVA")
-#   DG      the digested index prefix (default ~/tool/silva/dg; built by the digests step if missing)
+#   IDX     the undigested index (default ~/research/katka/work/bac: katka index --preset silva, see NOTES "SILVA")
+#   DG      the digested index prefix (default ~/research/katka/work/dg; built by the digests step if missing)
 #   READS   the reads: READS/<region>_{1,2}.fq (default $S/work/compare/reads_every50, 200,000 pairs per region)
 #   TRUTH   the truth files: TRUTH/<region>/<region>_seqtax.txt (default $S/work/reads/aquatic)
 #   EXP     cliffy-experiments/src (default katka/cliffy-experiments/src), for the scoring
@@ -24,7 +24,7 @@
 # over the number of reads; reads per second with THREADS threads is the number of reads over the total time.
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
-Q=${Q:-$HOME/tool/silva/queue}; S=${S:-$TOP/katka/silva}; IDX=${IDX:-$HOME/tool/silva/bac}; DG=${DG:-$HOME/tool/silva/dg}
+Q=${Q:-$HOME/research/katka/work/queue}; S=${S:-$TOP/katka/silva}; IDX=${IDX:-$HOME/research/katka/work/bac}; DG=${DG:-$HOME/research/katka/work/dg}
 READS=${READS:-$S/work/compare/reads_every50}; TRUTH=${TRUTH:-$S/work/reads/aquatic}
 EXP=${EXP:-$TOP/katka/cliffy-experiments/src}; TAX=${TAX:-$S/exp1_data/tax_slv_ssu_138.1.txt}
 D2T=${D2T:-$S/work/ref/rna/doc_to_traversal.txt}; T2L=${T2L:-$S/work/ref/trav_to_length.txt}

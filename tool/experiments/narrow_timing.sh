@@ -8,11 +8,11 @@
 #
 #   narrow_timing.sh OUT [k ...]        (default k: 8 10 11 12)
 #
-# Environment: IDX (~/tool/silva/bac), READS (katka/silva/work/compare/reads_every50), REPEATS (5), PIN (9), MEMMAX (11G), PROBES.
+# Environment: IDX (~/research/katka/work/bac), READS (katka/silva/work/compare/reads_every50), REPEATS (5), PIN (9), MEMMAX (11G), PROBES.
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
 OUT=$1; shift; KS=${*:-8 10 11 12}; mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
-IDX=${IDX:-$HOME/tool/silva/bac}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
+IDX=${IDX:-$HOME/research/katka/work/bac}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
 REGIONS="V1_V2 V3_V4 V4_V4 V4_V5"
 CAP="systemd-run --user --scope -q -p MemoryMax=${MEMMAX:-11G} -p MemorySwapMax=0"
 one() { # binary name rep find-options...

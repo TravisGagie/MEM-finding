@@ -6,7 +6,7 @@
 10-mer table built at load; Movi 2: its ftab and the 58.5 MB row list), plus the tag array; Kraken 2: its .k2d files;
 Tagger: its index files.  Also: KATKA's own timing (find's "timing:" total, setup excluded) for the RLCSA rows."""
 import glob, os, re, statistics as st, sys
-H = os.path.expanduser("~/tool/silva"); P = H + "/pc"; M = P + "/movi"; T14 = sys.argv[1] if len(sys.argv) > 1 else H + "/t14"
+H = os.path.expanduser("~/research/katka/work"); P = H + "/pc"; M = P + "/movi"; T14 = sys.argv[1] if len(sys.argv) > 1 else H + "/t14"
 Z = lambda *f: sum(os.path.getsize(x) for x in f) / 1e6
 NREADS = 1_600_000
 base = {"csa": Z(P + "/bac.csa") + 17.826, "ef": Z(P + "/bac.efcsa") + 8.54 + 17.826,   # + the select samples built at load (KS 4.27, FP 4.27 MB)

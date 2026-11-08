@@ -7,7 +7,7 @@ An entry is strict genus accuracy, the mean of the four regions, for each set; a
 draws; the range is over the 3 sampling seeds (for uniform and small, the seed's mean over the draws).  Also the loss against the full-set prior.
 """
 import glob, os, re, sys, statistics as st
-D = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/emsample")
+D = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/emsample")
 R = "V1_V2 V3_V4 V4_V4 V4_V5".split(); T = {}
 for f in glob.glob(D + "/*.csv"):
     s, k, r = os.path.basename(f)[:-4].split(".")

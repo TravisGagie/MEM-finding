@@ -1,8 +1,8 @@
 #!/bin/bash
 # zymo preset: KeBaB's pipeline at the journal's fixed L = 25 for t = 10, 20, 30 (every MEM votes); and the check rule
 # t = 1, T = 2 (runs e.2.1 / es.2.1 from 2026-11-03, rescored here with every MEM voting too)
-cd ~/zymo/kebab2; K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
-KR=~/rz/MEM-finding/katka-readable/scripts; T=~/zymo/all.truth; B=~/zymo/hpc/zy.tbl
+cd ~/zymo/kebab2; K=~/research/mem-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+KR=~/research/mem-finding/katka-readable/scripts; T=~/zymo/all.truth; B=~/zymo/hpc/zy.tbl
 cap() { systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 "$@"; }
 for t in 10 20 30; do
   echo "== f.$t $(date +%T)"

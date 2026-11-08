@@ -10,7 +10,7 @@
 # 65 and 129 for 16, 32 and 64 individuals; synthetic: 1 + N for N haplotypes).  L: the MEM length (default 1000).
 #
 # For each n, under WORK/c<n>: prep, the BWT (Big-BWT with BIGBWT=..., else katka bwt), index --csa --twolevel
-# (the smallest successor) -- or, with EXISTING=<prefix pattern, %d for n> (e.g. ~/tool/chr19/c%d), links to an
+# (the smallest successor) -- or, with EXISTING=<prefix pattern, %d for n> (e.g. ~/research/rlbwt-tricks/chr19/c%d), links to an
 # index built already --; then the two-level index with the most frequent successor under WORK/c<n>f (links to
 # the same text, BWT and RLCSA; only PREFIX.lvl is rebuilt).  For each rule, `find -L L --format mems --csa
 # --twolevel --stats` on the queries, with and without block steps (--no-jumps), single-threaded, pinned to PIN

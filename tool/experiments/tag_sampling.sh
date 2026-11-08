@@ -6,11 +6,11 @@
 #
 #   tag_sampling.sh OUT [s ...]        (default s: 1 2 4 8; 1 is the full tag array, IDX.tag)
 #
-# Environment: IDX (~/tool/silva/bac), L (30), F (10), READS (katka/silva/work/compare/reads_every50), REPEATS (5), PIN (9), MEMMAX (11G).
+# Environment: IDX (~/research/katka/work/bac), L (30), F (10), READS (katka/silva/work/compare/reads_every50), REPEATS (5), PIN (9), MEMMAX (11G).
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
 OUT=$1; shift; SS=${*:-1 2 4 8}; mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd)
-DG=${IDX:-$HOME/tool/silva/bac}; L=${L:-30}; F=${F:-10}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
+DG=${IDX:-$HOME/research/katka/work/bac}; L=${L:-30}; F=${F:-10}; READS=${READS:-$TOP/katka/silva/work/compare/reads_every50}; REPEATS=${REPEATS:-5}; PIN=${PIN:-9}
 REGIONS="V1_V2 V3_V4 V4_V4 V4_V5"
 CAP="systemd-run --user --scope -q -p MemoryMax=${MEMMAX:-11G} -p MemorySwapMax=0"
 for s in $SS; do

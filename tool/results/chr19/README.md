@@ -1,7 +1,7 @@
 # Chromosome 19 (Section 5), new tool, desktop
 
 Desktop (i7-8700, 14 GiB), 2026-11-02/03. The tool was at commits 5a3d161 (blocks runs) and c09732c (STPD).
-Data: `~/shortcuts/chr19_scaling/hprc_chr19` (CHM13 plus the HPRC haplotypes; the first 33 or 65 lines are 16 or
+Data: `~/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19` (CHM13 plus the HPRC haplotypes; the first 33 or 65 lines are 16 or
 32 individuals) and its `queries.txt`: 4 patterns, 122,434,624 characters once split at runs of N.
 Each step ran on its own, in a cgroup capped at 11 GB with no swap. Queries ran single-threaded, pinned to CPU 9
 (as the old `chr19/twolevel/run_final.sh` runs were). Times are one run each; the old runs used the median of 5.

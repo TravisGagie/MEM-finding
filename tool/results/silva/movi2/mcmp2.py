@@ -1,5 +1,5 @@
 import glob,os,re
-os.chdir(os.path.expanduser('~/tool/silva/pc/movi')); tot=bad=0; cb=ct=0
+os.chdir(os.path.expanduser('~/research/katka/work/pc/movi')); tot=bad=0; cb=ct=0
 for f in sorted(glob.glob('ours.*.tsv')):
     b=f[5:-4]
     O=set(tuple(l.rstrip('\n').split('\t')[:5]) for l in open(f))

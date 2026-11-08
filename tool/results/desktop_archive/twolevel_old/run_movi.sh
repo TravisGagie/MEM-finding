@@ -12,7 +12,7 @@
 set -euo pipefail
 export LC_ALL=C
 HERE=$(cd "$(dirname "$0")" && pwd)
-DATA=${DATA:-$HOME/shortcuts/chr19_scaling/hprc_chr19/n16}
+DATA=${DATA:-$HOME/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19/n16}
 MODE=${MODE:-quick}
 FTAB_K=${FTAB_K:-10}
 SIZE=$(basename "$DATA")

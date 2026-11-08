@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Summarises movi12.sh's logs (t5/<config>.r<rep>/<file>.log): µs per read over the 8 files, one thread, setup excluded."""
 import glob, os, re, statistics as st, sys
-D = os.path.expanduser("~/tool/silva/pc"); M = D + "/movi"
+D = os.path.expanduser("~/research/katka/work/pc"); M = D + "/movi"
 Z = lambda f: os.path.getsize(f) / 1e6
 base = {"csa": Z(D + "/bac.csa"), "ef": Z(D + "/bac.efcsa"), "movi": Z(M + "/idx/index.movi") + Z(M + "/idx/ftab.10.bin") + 58.518}
 tags = {"full": D + "/bac.tag", "grammar": D + "/g.tag", "s4": D + "/bac.s4.tag"}

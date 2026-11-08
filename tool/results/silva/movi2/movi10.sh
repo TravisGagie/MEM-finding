@@ -1,6 +1,6 @@
 #!/bin/bash
 while systemctl --user is-active -q movi9; do sleep 30; done
-P=~/tool/silva/pc; D=$P/movi; cd $D; M=~/tool/movi_build/bin/movi-regular; K=~/rz/MEM-finding/tool/bin/katka; R=~/rz/MEM-finding/katka/silva/work/compare/reads_every50; mkdir -p t4; export MV_PLAIN=1; TMP=/tmp/mv.out
+P=~/research/katka/work/pc; D=$P/movi; cd $D; M=~/research/deps/movi_build/bin/movi-regular; K=~/research/mem-finding/tool/bin/katka; R=~/research/mem-finding/katka/silva/work/compare/reads_every50; mkdir -p t4; export MV_PLAIN=1; TMP=/tmp/mv.out
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 one() { name=$1; kind=$2; tag=$3; rep=$4; d=t3/$name.r$rep; mkdir -p $d
   for r in V1_V2 V3_V4 V4_V4 V4_V5; do for m in 1 2; do f=${r}_$m

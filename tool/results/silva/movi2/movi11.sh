@@ -1,6 +1,6 @@
 #!/bin/bash
 while systemctl --user is-active -q st5; do sleep 20; done
-P=~/tool/silva/pc; D=$P/movi; cd $D; M=~/tool/movi_build/bin/movi-regular; K=~/rz/MEM-finding/tool/bin/katka; R=~/rz/MEM-finding/katka/silva/work/compare/reads_every50; export MV_PLAIN=1; TMP=/tmp/mv.out
+P=~/research/katka/work/pc; D=$P/movi; cd $D; M=~/research/deps/movi_build/bin/movi-regular; K=~/research/mem-finding/tool/bin/katka; R=~/research/mem-finding/katka/silva/work/compare/reads_every50; export MV_PLAIN=1; TMP=/tmp/mv.out
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 # oldfull, csafull: the same binary for the row list, as anchors for this rotation (names a*)
 one() { name=$1; kind=$2; tag=$3; rep=$4; d=t3/$name.r$rep; mkdir -p $d
@@ -12,7 +12,7 @@ one() { name=$1; kind=$2; tag=$3; rep=$4; d=t3/$name.r$rep; mkdir -p $d
     esac
     if [ $rep = 1 ]; then
       if [ "$name" = acsa ]; then cp $TMP ref.$f
-      else python3 ~/tool/silva/mcmp3.py ref.$f $TMP $name $f; fi
+      else python3 ~/research/katka/work/mcmp3.py ref.$f $TMP $name $f; fi
     fi
   done; done; }
 for rep in 1 2 3 4 5; do echo "repeat $rep $(date +%T)"

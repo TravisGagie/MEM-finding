@@ -1,6 +1,6 @@
 #!/bin/bash
 # --check-seed reruns (tool/NOTES.md): t = 3 and 5, T = 2t, with and without --strict; each cmp'd with its unseeded run
-cd ~/zymo/kebab2; K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+cd ~/zymo/kebab2; K=~/research/mem-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
 for t in 3 5; do TT=$((2 * t))
   for v in "ec e" "ecs es"; do set -- $v; new=$1.$TT.$t; old=$2.$TT.$t; extra=""; [ $1 = ecs ] && extra=--strict
     echo "== $new $(date +%T)"

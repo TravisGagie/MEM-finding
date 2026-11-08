@@ -12,7 +12,7 @@ The new tool can reuse `zp.bwt` once its text is shown to be identical to a fres
 for `zy.bwt`.
 
 ```bash
-K=~/rz/MEM-finding/tool/bin/katka; X="/run/media/travis/Travis backup/spu2_plain"; W="/run/media/travis/Travis backup/zymo_plain_new"
+K=~/research/mem-finding/tool/bin/katka; X="/run/media/travis/Travis backup/spu2_plain"; W="/run/media/travis/Travis backup/zymo_plain_new"
 cap() { systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "%e s wall, peak %M KB" "$@"; }
 mkdir -p "$W" && cd "$W"
 # 1. The text without -U, checked against KATKA's zp.S without writing it twice. The per-dataset files go to
@@ -43,9 +43,9 @@ cap $K find -L 30 -D 16 -c -j 12 zp ~/zymo/pfx/p720.fq p720.L30.plain     # pref
 #    H and B pointing at this zp and zp.tbl: "$W" has a space, so quote $H and $B in those scripts or use a
 #    symlink without one (e.g. ln -s "$W" ~/zymo/plain; H=~/zymo/plain/zp); and see the scoring notes below
 # 4. Scoring (as in results/zymo/, with the paths of this run)
-KR=~/rz/MEM-finding/katka-readable/scripts; T=~/zymo/all.truth; B=zp.tbl    # in "$W"; its path has a space
+KR=~/research/mem-finding/katka-readable/scripts; T=~/zymo/all.truth; B=zp.tbl    # in "$W"; its path has a space
 python3 -I $KR/credit_schemes.py L30.plain $T $B
-python3 -I ~/rz/MEM-finding/tool/results/zymo/run_scripts/score_spu2.py L30.plain $T $B
+python3 -I ~/research/mem-finding/tool/results/zymo/run_scripts/score_spu2.py L30.plain $T $B
 python3 -I $KR/maxmem_roc.py X.plain $T $B  | head -8    # no reads argument: MEM lengths in bases
 python3 -I $KR/maxmem_roc.py X1.plain $T $B | head -8
 python3 -I - ~/zymo/pfx/truth p720.L30.plain <<'PY'

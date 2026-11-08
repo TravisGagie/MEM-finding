@@ -11,7 +11,7 @@
 set -uo pipefail
 OUT=$1; TOOL=$2; IDX=$3; shift 3
 HERE=$(cd "$(dirname "$0")" && pwd); TOP=$(cd "$HERE/../../.." && pwd); S=$TOP/katka/silva; EXP=$TOP/katka/cliffy-experiments/src
-TH=${THREADS:-12}; X=$HOME/ext/moved_2026-11-05; TG=${TG:-$HOME/rz/deps/tagger}; TAX=$S/exp1_data/tax_slv_ssu_138.1.txt
+TH=${THREADS:-12}; X=$HOME/ext/moved_2026-11-05; TG=${TG:-$HOME/research/deps/tagger}; TAX=$S/exp1_data/tax_slv_ssu_138.1.txt
 D2T=$S/work/ref/rna/doc_to_traversal.txt; T2L=$S/work/ref/trav_to_length.txt
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 TMP=${TMPDIR:-/tmp}/other_tools.$$; mkdir -p "$TMP"; trap 'rm -rf "$TMP"' EXIT
@@ -25,9 +25,9 @@ reads() {   # set region mate -> path
 truth() {
   case $1 in
     MSv1.1) echo $S/work/reads/aquatic/$2/${2}_seqtax.txt ;;
-    MSv*) echo $HOME/tool/silva/art_profiles/$1/$2/${2}_seqtax.txt ;;
-    heldout1) echo $HOME/tool/silva/heldout/runs/MSv1.1/$2/${2}_seqtax.txt ;;
-    heldout*) echo $HOME/tool/silva/heldout${1#heldout}/runs/MSv1.1/$2/${2}_seqtax.txt ;;
+    MSv*) echo $HOME/research/katka/work/art_profiles/$1/$2/${2}_seqtax.txt ;;
+    heldout1) echo $HOME/research/katka/work/heldout/runs/MSv1.1/$2/${2}_seqtax.txt ;;
+    heldout*) echo $HOME/research/katka/work/heldout${1#heldout}/runs/MSv1.1/$2/${2}_seqtax.txt ;;
   esac; }
 for set in "$@"; do for r in V1_V2 V3_V4 V4_V4 V4_V5; do
   d=$OUT/$set/$r; [ -s $d/list.csv ] && continue; mkdir -p $d

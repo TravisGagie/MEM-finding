@@ -8,8 +8,8 @@ is the mean of the four regions; each table shows the profile's mean over repeat
 strict: a tie for the top counts as wrong.  theirs: Cliffy's scoring, as in its classify_silva_readset.py.
 """
 import glob, os, re, sys
-A = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/art_profiles")
-Q = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/tool/silva/queue")
+A = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/art_profiles")
+Q = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/research/katka/work/queue")
 REGIONS = "V1_V2 V3_V4 V4_V4 V4_V5".split()
 NAMES = [("lca", "range (Cliffy's LCA query)"), ("one", "one label per MEM"), ("cliffs", "sample (simulated cliffs)"), ("list", "even"),
          ("norm", "normalised"), ("freq", "proportional"), ("prior0.5", "prior mixture, beta = 0.5"), ("mix0.5", "proportional/even mix, beta = 0.5"),

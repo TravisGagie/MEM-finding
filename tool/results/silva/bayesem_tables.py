@@ -7,7 +7,7 @@ An accuracy is strict, at genus level, the mean of the four regions; an entry is
 The dial's second block excludes reads from genera with ambiguous names; the other sets have none.
 """
 import glob, os, re, sys
-Q = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/queue"); A = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/tool/silva")
+Q = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/queue"); A = os.path.expanduser(sys.argv[2] if len(sys.argv) > 2 else "~/research/katka/work")
 R = "V1_V2 V3_V4 V4_V4 V4_V5".split()
 def load(ds):
     T = {}

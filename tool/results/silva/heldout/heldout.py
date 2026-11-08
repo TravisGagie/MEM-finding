@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """The held-out split: for each aquatic genus, a random 10% of its sequences, at least 1, go to the simulation and the rest to the index."""
 import math, os, random
-H = os.path.expanduser("~/tool/silva/heldout"); os.makedirs(H + "/docs", exist_ok=True)
-S = os.path.expanduser("~/rz/MEM-finding/katka/silva"); rnd = random.Random(20261107)
+H = os.path.expanduser("~/research/katka/work/heldout"); os.makedirs(H + "/docs", exist_ok=True)
+S = os.path.expanduser("~/research/mem-finding/katka/silva"); rnd = random.Random(20261107)
 d2t = [l.split(None, 1)[1].strip() for l in open(S + "/work/ref/rna/doc_to_traversal.txt") if l.strip()]
 aq = [l.split("\t")[0] for l in list(open(S + "/work/abundance/aquatic.tsv"))[1:]]
 docs = {g: i + 1 for i, g in enumerate(d2t)}
-held = {}; nseq = [int(l) for l in open(os.path.expanduser("~/tool/silva/queue/nseq.txt"))]
-lst = [l.rstrip("\n").split("\t") for l in open(os.path.expanduser("~/tool/silva/list.tsv"))]
+held = {}; nseq = [int(l) for l in open(os.path.expanduser("~/research/katka/work/queue/nseq.txt"))]
+lst = [l.rstrip("\n").split("\t") for l in open(os.path.expanduser("~/research/katka/work/list.tsv"))]
 def records(f):
     h = None; b = []
     for l in open(f):

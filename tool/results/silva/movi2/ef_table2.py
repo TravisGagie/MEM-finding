@@ -2,7 +2,7 @@
 """Summarises movi13.sh's logs (t6/<config>.r<rep>/<file>.log): µs per read over the 8 files, one thread, setup excluded.
 RLCSA index sizes include the 17.8 MB lookup table (-F 10, built at load); Movi's include its ftab (k = 10) and the row list."""
 import glob, os, re, statistics as st, sys
-D = os.path.expanduser("~/tool/silva/pc"); M = D + "/movi"; T = sys.argv[1] if len(sys.argv) > 1 else "t6"
+D = os.path.expanduser("~/research/katka/work/pc"); M = D + "/movi"; T = sys.argv[1] if len(sys.argv) > 1 else "t6"
 Z = lambda f: os.path.getsize(f) / 1e6
 LT = 17.8
 base = {"csa": Z(D + "/bac.csa") + LT, "ef": Z(D + "/bac.efcsa") + LT, "movi": Z(M + "/idx/index.movi") + Z(M + "/idx/ftab.10.bin") + 58.518}

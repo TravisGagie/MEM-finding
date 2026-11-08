@@ -1,5 +1,5 @@
 #!/bin/bash
-P=~/tool/silva/pc; D=$P/movi; cd $D; M=~/tool/movi_build/bin/movi-regular; K=~/rz/MEM-finding/tool/bin/katka; R=~/rz/MEM-finding/katka/silva/work/compare/reads_every50; export MV_PLAIN=1; mkdir -p t2
+P=~/research/katka/work/pc; D=$P/movi; cd $D; M=~/research/deps/movi_build/bin/movi-regular; K=~/research/mem-finding/tool/bin/katka; R=~/research/mem-finding/katka/silva/work/compare/reads_every50; export MV_PLAIN=1; mkdir -p t2
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 for rep in 1 2 3 4 5; do
  for c in search rows ours; do d=t2/$c.r$rep; mkdir -p $d

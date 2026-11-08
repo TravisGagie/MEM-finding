@@ -2,7 +2,7 @@
 # Full-scale regression on Zymo: KATKA (katka-readable's katka-classify on KATKA's laptop index files)
 # against the new tool (katka find on the new index), same reads, same options, 12 threads, one at a time.
 H=~/zymo/hpc; R=~/zymo/all.fq; O=~/zymo/newrun/reg; cd $O
-OLD=~/rz/MEM-finding/katka-readable/bin/katka-classify; NEW=~/rz/MEM-finding/tool/bin/katka
+OLD=~/research/mem-finding/katka-readable/bin/katka-classify; NEW=~/research/mem-finding/tool/bin/katka
 step() { local name=$1; shift; echo "== $name $(date +%T)"
   systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "$name: %e s wall, %U s user, peak %M KB" "$@" > $name.err 2>&1
   local rc=$?; tail -4 $name.err; echo "$name exit $rc"; [ $rc = 0 ] || { echo "== STOPPED at $name"; exit 1; }; }

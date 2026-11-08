@@ -3,13 +3,13 @@
 # the parse oracle; two-level with blocks; plain search), plus katka's STPD over the text (PREFIX.S in memory) with
 # the same binary and sample, in the same way (pinned to CPU 9, 11 GB cgroup, MEMs compared with plain search).
 set -uo pipefail
-cd ~/tool/chr19; K=~/rz/MEM-finding/tool/bin/katka; W=$HOME/tool/chr19/stpd_parse65; PAT=$HOME/tool/chr19/queries.fa
+cd ~/research/rlbwt-tricks/chr19; K=~/research/mem-finding/tool/bin/katka; W=$HOME/research/rlbwt-tricks/chr19/stpd_parse65; PAT=$HOME/research/rlbwt-tricks/chr19/queries.fa
 [ -s c65.stpd ] && mv c65.stpd c65.stpd.old          # rebuilt by the script with the current binary
 rm -f c65.ptxt c65.pstpd c65.rptxt
 mkdir -p $W; echo "== index --parse-oracle c65 (the dictionary at 2 bits per base) $(date +%T)"
 systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "parse-oracle: %e s wall, peak %M KB" $K index --parse-oracle c65 > $W/build_ptxt.log 2>&1; echo "exit $?"
 grep -iE "parse oracle|dictionary|exception|wall" $W/build_ptxt.log; ls -l c65.ptxt
-PIN=9 ~/rz/MEM-finding/tool/experiments/stpd_parse_chr19.sh $HOME/tool/chr19/c65 $PAT $W; echo "script exit $?"
+PIN=9 ~/research/mem-finding/tool/experiments/stpd_parse_chr19.sh $HOME/research/rlbwt-tricks/chr19/c65 $PAT $W; echo "script exit $?"
 SUM=$W/summary.txt
 for L in 1000 100; do
   for v in "stpd-text --stpd --no-intervals" "stpd-text-locate --stpd --locate"; do set -- $v; name=L$L.$1; shift

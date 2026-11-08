@@ -1,5 +1,5 @@
 #!/bin/bash
-P=~/tool/silva/pc; D=$P/movi; cd $D; M=~/tool/movi_build/bin/movi-regular; K=~/rz/MEM-finding/tool/bin/katka; R=~/rz/MEM-finding/katka/silva/work/compare/reads_every50; mkdir -p t3; export MV_PLAIN=1; TMP=/tmp/mv.out
+P=~/research/katka/work/pc; D=$P/movi; cd $D; M=~/research/deps/movi_build/bin/movi-regular; K=~/research/mem-finding/tool/bin/katka; R=~/research/mem-finding/katka/silva/work/compare/reads_every50; mkdir -p t3; export MV_PLAIN=1; TMP=/tmp/mv.out
 CAP="systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0"
 one() { name=$1; kind=$2; tag=$3; rep=$4; d=t3/$name.r$rep; mkdir -p $d
   for r in V1_V2 V3_V4 V4_V4 V4_V5; do for m in 1 2; do f=${r}_$m
@@ -11,7 +11,7 @@ one() { name=$1; kind=$2; tag=$3; rep=$4; d=t3/$name.r$rep; mkdir -p $d
     if [ $rep = 1 ]; then
       if [ "$name" = csafull ]; then cp $TMP ref.$f
       elif [ $kind = csa ]; then cmp -s $TMP ref.$f && echo "$name $f: different 0" || echo "$name $f DIFFERS"
-      else python3 ~/tool/silva/mcmp3.py ref.$f $TMP $name $f; fi
+      else python3 ~/research/katka/work/mcmp3.py ref.$f $TMP $name $f; fi
     fi
   done; done; }
 for rep in 1 2 3 4 5; do echo "repeat $rep $(date +%T)"

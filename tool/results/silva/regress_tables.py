@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Old and new binaries in turn on find --preset silva, one thread, pinned (tool/results/silva/README.md)."""
 import glob, re, statistics as st, sys, os
-W = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/tool/silva/regress")
+W = os.path.expanduser(sys.argv[1] if len(sys.argv) > 1 else "~/research/katka/work/regress")
 for v in ("old", "new"):
     m = []; t = []; pk = 0
     for d in sorted(glob.glob("%s/%s.r?" % (W, v))):

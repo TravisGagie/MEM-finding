@@ -8,7 +8,7 @@
 set -euo pipefail
 export LC_ALL=C
 HERE=$(cd "$(dirname "$0")" && pwd)
-H=${H:-$HOME/shortcuts/chr19_scaling/hprc_chr19}
+H=${H:-$HOME/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19}
 export RS_DIR=${RS_DIR:-$HOME/shortcuts_build/reportable-shortcuts}
 SIZES=${SIZES:-"n32 n64"}
 ROUNDS=${ROUNDS:-5}

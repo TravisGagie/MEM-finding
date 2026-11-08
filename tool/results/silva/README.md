@@ -144,9 +144,9 @@ the aquatic reads favour well-represented genera through which genera are presen
 
 ## The α dial (2026-11-05, 07b5ffe)
 
-`MM=~/rz/MicrobeMixer tool/experiments/silva_queue.sh dial`: 200,000 simulated pairs per region with k_g ∝ N_g^α,
+`MM=~/research/datasets/MicrobeMixer tool/experiments/silva_queue.sh dial`: 200,000 simulated pairs per region with k_g ∝ N_g^α,
 for α = 1, 0 and −1, on the tool's default SILVA index. Full tables: `dial_tables.txt`, `dial_tables.tex`, from
-`dial_tables.py ~/tool/silva/queue` (run on the queue directory: it also reads `dial/a*/<region>.seqtax.txt`, 1.1 MB
+`dial_tables.py ~/research/katka/work/queue` (run on the queue directory: it also reads `dial/a*/<region>.seqtax.txt`, 1.1 MB
 each, which were not committed). The CSVs and logs are in `../silva_queue/dial/`.
 
 Strict genus accuracy, mean of the four regions:
@@ -246,7 +246,7 @@ The digest's three figures for "the same configuration" are not three samples of
 
 `bayesauto`'s ε: uniform 0.5, 0.5, 0.5, 0.6; aquatic 0.3, 0.5, 0.5, 0.5 (V1_V2, V3_V4, V4_V4, V4_V5). None is at the grid's edge.
 
-**Index size** (bytes, `~/tool/silva/bac.*`, and `silva.tex` line 249):
+**Index size** (bytes, `~/research/katka/work/bac.*`, and `silva.tex` line 249):
 
 | part | 1.87 GB | 1.56 GB | paper's 1.44 GB |
 |---|---:|---:|---:|
@@ -792,7 +792,7 @@ Two changes (`src/bits.hpp` `EFRank`, `src/rlcsa.hpp`), each profiled on the sam
 
 ## Time and space, eleven configurations, the faster Elias-Fano RLCSA (2026-11-07)
 
-`movi2/ef_table2.py`, `movi2/ef_table2.txt`; script `~/tool/silva/movi13.sh` (as `movi12.sh`, with more configurations). One rotation, 5 repeats, the 8 files of the aquatic reads (1.6 million reads), one thread, pinned to CPU 9, setup excluded. The Elias-Fano RLCSA is the 143.6 MB file of "The Elias-Fano RLCSA, made faster", before the select changes below. **Index sizes now include each index's lookup table:** the RLCSAs' 17.8 MB table (`-F 10`, built at load) and Movi 2's ftab (k = 10) and 58.5 MB row list. Every configuration has the same 207.5 MB of tag boundaries; the labels differ. Every output of the first repeat (88 files) is identical to `find --preset silva`'s.
+`movi2/ef_table2.py`, `movi2/ef_table2.txt`; script `~/research/katka/work/movi13.sh` (as `movi12.sh`, with more configurations). One rotation, 5 repeats, the 8 files of the aquatic reads (1.6 million reads), one thread, pinned to CPU 9, setup excluded. The Elias-Fano RLCSA is the 143.6 MB file of "The Elias-Fano RLCSA, made faster", before the select changes below. **Index sizes now include each index's lookup table:** the RLCSAs' 17.8 MB table (`-F 10`, built at load) and Movi 2's ftab (k = 10) and 58.5 MB row list. Every configuration has the same 207.5 MB of tag boundaries; the labels differ. Every output of the first repeat (88 files) is identical to `find --preset silva`'s.
 
 | index | tags | whole (MB) | µs per read, median (range) | Pareto |
 |---|---|---:|---:|:-:|

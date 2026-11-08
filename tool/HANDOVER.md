@@ -139,7 +139,7 @@ Posted. Superseded by `tool/`'s `zymo` and `silva` presets. Each repository's RE
 - **bigrepair:** use `-m 0` (plain RePair). Its memory-bounded RePair stalled on 64 M tag runs.
 - **Timing:** read files differ by up to 22% (42.48 to 51.94 µs), so compare over all the reads. The 43.0 µs was one
   file, V1_V2 mate 1, and 52.3 µs was a slow run. Over all the reads, 5 repeats vary by under 1% (`timing_repeats.txt`).
-- **c129 on the external drive:** `~/tool/chr19/c129.S` and `c129.bwt` are symlinks to it, so the drive must be
+- **c129 on the external drive:** `~/research/rlbwt-tricks/chr19/c129.S` and `c129.bwt` are symlinks to it, so the drive must be
   plugged in to rebuild anything for 64 individuals.
 - **`silva_queue.sh collect`** now copies only small text files (`fb7c06c`); committed results stay a few MB.
 - **The cloud container can't reach arb-silva.de;** anything needing the SILVA FASTA runs on the desktop.

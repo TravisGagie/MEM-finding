@@ -19,7 +19,7 @@ index 23ef7f4..b70862d 100644
 +static void bput(const char *fmt, ...) { char b[256]; va_list a; va_start(a, fmt); int n = vsnprintf(b, sizeof b, fmt, a); va_end(a); g_buf.append(b, n < (int)sizeof b ? n : (int)sizeof b - 1); }
 +static void g_print2();
 +static void g_print() { fprintf(stderr, "COUNTERS mems %lu count_runs %lu extend %lu walk1 %lu walk2 %lu walk3 %lu steps %lu\n", g_mems, g_cnt, g_ext, g_walk1, g_walk2, g_walk3, g_steps); if (g_out) fclose(g_out); g_print2(); }
-+#include "/home/travis/rz/MEM-finding/tool/src/tag_array.hpp"
++#include "/home/travis/research/mem-finding/tool/src/tag_array.hpp"
 +#include <filesystem>
 +// The prototype's bridge to katka: rows from runs and offsets, and tags.  Environment: KATKA_TAG (a tag array), KATKA_OUT (the output),
 +// KATKA_MEMS=1 (a line per MEM: name, start, end, sp, ep; else katka's listing).  Thread-safe: with -t T, reads come out in any order.

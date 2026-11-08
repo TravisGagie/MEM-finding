@@ -11,8 +11,8 @@
 set -uo pipefail
 HERE=$(cd "$(dirname "$0")/.." && pwd); TOP=$(cd "$HERE/.." && pwd); K=$HERE/bin/katka
 OUT=$1; PR=$2; mkdir -p "$OUT"; OUT=$(cd "$OUT" && pwd); SAMPLES=${SAMPLES:-$OUT/samples}
-S=${S:-$TOP/katka/silva}; IDX=${IDX:-$HOME/tool/silva/bac}; NSEQ=${NSEQ:-$HOME/tool/silva/queue/nseq.txt}
-EXP=${EXP:-$TOP/katka/cliffy-experiments/src}; MM=${MM:-$HOME/rz/MicrobeMixer}; THREADS=${THREADS:-12}
+S=${S:-$TOP/katka/silva}; IDX=${IDX:-$HOME/research/katka/work/bac}; NSEQ=${NSEQ:-$HOME/research/katka/work/queue/nseq.txt}
+EXP=${EXP:-$TOP/katka/cliffy-experiments/src}; MM=${MM:-$HOME/research/datasets/MicrobeMixer}; THREADS=${THREADS:-12}
 REGIONS=${REGIONS:-"V1_V2 V3_V4 V4_V4 V4_V5"}
 FASTA=${FASTA:-$S/exp1_data/SILVA_138.1_SSURef_NR99_tax_silva.fasta}; TAX=$S/exp1_data/tax_slv_ssu_138.1.txt
 D2T=$S/work/ref/rna/doc_to_traversal.txt; T2L=$S/work/ref/trav_to_length.txt; AB=${AB:-$S/work/abundance/aquatic.tsv}

@@ -10,9 +10,9 @@
 # without shortcuts, alternating, keeping the medians.
 #
 # Put this script and reportable-shortcuts-code.tar.gz in the same folder
-# (e.g. ~/shortcuts), close other programs, including the Claude app, and
+# (e.g. ~/research/rlbwt-tricks/shortcuts), close other programs, including the Claude app, and
 # run, with DATADIR a folder on the external drive:
-#   nohup bash ~/shortcuts/run_chr19_scaling.sh DATADIR > ~/shortcuts/run_chr19_scaling.log 2>&1 &
+#   nohup bash ~/research/rlbwt-tricks/shortcuts/run_chr19_scaling.sh DATADIR > ~/research/rlbwt-tricks/shortcuts/run_chr19_scaling.log 2>&1 &
 # If it is stopped, the same command resumes it: finished downloads,
 # indexes and query results are kept.
 #

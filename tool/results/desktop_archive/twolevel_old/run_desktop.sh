@@ -11,12 +11,12 @@
 #   MODE=twolevel bash run_desktop.sh            # only the two two-level versions (minutes)
 #   DATA=.../n32 MODE=full bash run_desktop.sh   # another collection size
 #
-# Nothing under ~/shortcuts is changed; levels and results go to ./results/<size>.
+# Nothing under ~/research/rlbwt-tricks/shortcuts is changed; levels and results go to ./results/<size>.
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
-DATA=${DATA:-$HOME/shortcuts/chr19_scaling/hprc_chr19/n16}
+DATA=${DATA:-$HOME/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19/n16}
 MODE=${MODE:-quick}
-RS_DIR=${RS_DIR:-$HOME/shortcuts/reportable-shortcuts}
+RS_DIR=${RS_DIR:-$HOME/research/rlbwt-tricks/shortcuts/reportable-shortcuts}
 stamp() { echo "[$(date '+%F %T')] $*"; }
 
 # ---- find the data
@@ -24,7 +24,7 @@ find_one() {  # first existing file among the arguments
   for f in "$@"; do [ -s "$f" ] && { echo "$f"; return; }; done; echo ""
 }
 COLL=${COLL:-$(find_one "$DATA/collection.txt" "$DATA/../collection.txt" $(ls "$DATA"/*collection*.txt 2>/dev/null | grep -v rev || true))}
-QUER=${QUER:-$(find_one "$DATA/queries.txt" "$DATA/../queries.txt" "$HOME/shortcuts/chr19/queries.txt")}
+QUER=${QUER:-$(find_one "$DATA/queries.txt" "$DATA/../queries.txt" "$HOME/research/rlbwt-tricks/shortcuts/chr19/queries.txt")}
 FWD=${FWD:-$DATA/fwd_t3}
 REV=${REV:-$DATA/rev_t3}
 SCS=""; BEST=""

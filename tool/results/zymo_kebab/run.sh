@@ -1,7 +1,7 @@
 #!/bin/bash
 # KeBaB stopping rules on Zymo (tool/NOTES.md, "KeBaB stopping rules for the journal revision"), tool at 7500ed0
-cd ~/zymo/kebab; K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
-S=~/rz/MEM-finding/tool/scripts; T=~/zymo/all.truth; B=~/zymo/hpc/zy.tbl
+cd ~/zymo/kebab; K=~/research/mem-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+S=~/research/mem-finding/tool/scripts; T=~/zymo/all.truth; B=~/zymo/hpc/zy.tbl
 step() { local name=$1; shift; echo "== $name $(date +%T)"
   systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "$name: %e s wall, %U s user, peak %M KB" "$@" > $name.err 2>&1
   local rc=$?; grep -E 'reads=|kebab|searches|wall,' $name.err; echo "$name exit $rc"; [ $rc = 0 ] || { echo "== STOPPED at $name"; exit 1; }; }

@@ -1,5 +1,5 @@
 #!/bin/bash
-H=~/zymo/hpc; O=~/zymo/newrun/reg; cd $O; NEW=~/rz/MEM-finding/tool/bin/katka
+H=~/zymo/hpc; O=~/zymo/newrun/reg; cd $O; NEW=~/research/mem-finding/tool/bin/katka
 step() { local name=$1; shift; echo "== $name $(date +%T)"
   systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "$name: %e s wall, %U s user, peak %M KB" "$@" > $name.err 2>&1
   local rc=$?; tail -3 $name.err; echo "$name exit $rc"; [ $rc = 0 ] || { echo "== STOPPED at $name"; exit 1; }; }

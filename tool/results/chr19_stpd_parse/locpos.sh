@@ -1,6 +1,6 @@
 #!/bin/bash
 # position-by-position comparison (65e46c4): two-level locating against STPD over the parse, --locate-out, cmp
-cd ~/tool/chr19; K=~/rz/MEM-finding/tool/bin/katka; W=~/tool/chr19/locpos; mkdir -p $W
+cd ~/research/rlbwt-tricks/chr19; K=~/research/mem-finding/tool/bin/katka; W=~/research/rlbwt-tricks/chr19/locpos; mkdir -p $W
 for P in c33 c65; do n=${P#c}
   for L in 1000 100; do
     echo "== $P L = $L $(date +%T)"

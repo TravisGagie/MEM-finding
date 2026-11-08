@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ~/zymo/hpc; K=~/rz/MEM-finding/tool/bin/katka
+cd ~/zymo/hpc; K=~/research/mem-finding/tool/bin/katka
 echo "== index-kebab $(date +%T)"
 /usr/bin/time -f "index-kebab: %e s wall, peak %M KB" $K index --kebab 20 zy; rc=$?; echo "index-kebab exit $rc"
 [ $rc = 0 ] || { echo "== STOPPED at index-kebab"; exit 1; }

@@ -1,23 +1,25 @@
 # Notes on the tool
 
+**~/rz reorganized as ~/research (2026-11-08).** By project: `katka/KATKA` (was `~/rz/KATKA-gh`), `katka/silva` (`~/rz/silva`), `katka/work` (`~/tool/silva`), `mem-finding` (`~/rz/MEM-finding`), `rlbwt-tricks/{shortcuts,chr19,STPD-index,twolevel_runs}` (`~/shortcuts`, `~/tool/chr19`, `~/rz/STPD-index`), `pfp-merge`, `hybrid-fm-csa` (`~/Hybrid-FM-CSA`; the `~/rz` copy, its first commit, is in `archive/`), `datasets/{MicrobeMixer,cliffy-experiments,data,zymo}` (`zymo` is a symlink to the drive's `moved_2026-11-08/zymo`), `deps` (`~/rz/deps` plus `bigrepair-home` = `~/bigrepair`, `cmake-3.31.8-linux-x86_64`, `movi_build` = `~/tool/movi_build`), `archive` (the rz-index code, old drafts, logs and scripts, and the old `mem_build` worktree). Old paths still work: `~/rz` is a symlink to `~/research`, `~/tool` holds symlinks, and so are `~/shortcuts`, `~/bigrepair`, `~/cmake-3.31.8-linux-x86_64`. Every symlink under `~/research` now points into `~/research` (43 relinked, none broken); `tool/`'s scripts and documents use the new paths (329 references in 83 files; raw logs unchanged); the STPD-index build's CMake files were updated and it builds. Checks: KATKA's `selftest.sh` and `scripts/run/toy.sh` pass, `tool/selftest.sh` passes.
+
 **For the chat session (2026-11-08): the desktop clean-up, and what else could go.** Travis's part is nearly over and he wants the desktop freed; he is moving on to More RLBWT Tricks (CPM in about 3 days). Internal disk: **29 GB free before, 122 GB after.**
-- **The twenty largest before** (`du -xsh`, top-level folders in `~` and `~/tool/silva`): `~/tool/silva` 58 G (SILVA work); `~/zymo` 47 G (Zymo: `all.fq` 22, `hpc` 13, `ref` 7.7); `~/tool/chr19` 22 G (chr19 indexes); `~/.config/Claude` 19 G (the Claude app, 17 G `vm_bundles`); `~/shortcuts` 17 G (chr19 HPRC data); `~/tool/silva/pc` 15 G (the paper's index, with 4.1 G of tag runs and the `.S`/`.bwt`); `~/tool/silva/queue` 9.7 G (dial, grammar, uniform, timing); `~/tool/silva/mbuild` 9.2 G (build measurement); `~/rz` 8.2 G; `~/tool/silva/heldout` 8.0 G (held-out index); `~/rz/silva` 5.1 G (reference, truth, `sample50`); `~/tool/silva/bac.tagruns` 4.1 G; `~/tool/silva/pc/movi` 3.7 G (index 0.55 G, rotation scratch); `~/.cache` 2.3 G; `~/tool/silva/heldout2` 1.9 G; `~/rz/zenodo` 1.8 G; `~/tool/silva/bac.bwt` and `bac.S` 1.1 G each (build intermediates); `~/tool/silva/dg.tagruns` 0.9 G; `~/tool/silva/bac.tag` 0.8 G.
-- **Deleted** (results all committed): `~/tool/silva/heldout`, `heldout2`, `mbuild`; `queue/{dial,uniform,timing,grammar}`; rotation scratch (`pc/movi/{r2,r3,r4,split,t,t2–t4,t5,t6}`, MEM dumps, `t14/ref.*`); tag-run caches (`*.tagruns`) and `.S`/`.bwt` build intermediates in `~/tool/silva` and `pc/`; `bac.efcsa.v1`, `bridge.bin` (select prototype), `classify_check`; `~/.cache`; `~/rz/zenodo` (after copying it to the drive, checksums verified); the desktop's own scratch (`~/tool/ef_sel` worktree, `~/tool/movi_clean`, `/tmp` test builds).
-- **Moved** to the external drive, `moved_2026-11-08/` (each checked by file count and byte total before deleting): `zymo` (47 GB), `zycheck`, `shortcuts_build`, `KATKA-git`, `zenodo`, and `rz/{KATKA-repo,KATKA-repo-new,KATKA-readable,KATKA.tar.gz}`. Note: `~/rz/STPD-index`'s build was configured with `~/zycheck/stpd/linker_lang_shim.cmake`, now at `moved_2026-11-08/zycheck/stpd/`; only a re-configure needs it.
-- **Kept on purpose:** `~/shortcuts` (17 GB, almost all `chr19_scaling`: the HPRC chr19 haplotypes behind More RLBWT Tricks' scaling experiments; Travis asked to move it, but held for the CPM work, his call); `~/tool/chr19` (22 GB, the chr19 indexes for the same paper); `~/tool/silva/pc` (4.9 GB, the paper's index: Movi 2, RLCSAs, all tag arrays); `~/rz/silva`, `~/rz/KATKA-gh`, `~/rz/MEM-finding`, `~/rz/deps`.
+- **The twenty largest before** (`du -xsh`, top-level folders in `~` and `~/research/katka/work`): `~/research/katka/work` 58 G (SILVA work); `~/zymo` 47 G (Zymo: `all.fq` 22, `hpc` 13, `ref` 7.7); `~/research/rlbwt-tricks/chr19` 22 G (chr19 indexes); `~/.config/Claude` 19 G (the Claude app, 17 G `vm_bundles`); `~/research/rlbwt-tricks/shortcuts` 17 G (chr19 HPRC data); `~/research/katka/work/pc` 15 G (the paper's index, with 4.1 G of tag runs and the `.S`/`.bwt`); `~/research/katka/work/queue` 9.7 G (dial, grammar, uniform, timing); `~/research/katka/work/mbuild` 9.2 G (build measurement); `~/research` 8.2 G; `~/research/katka/work/heldout` 8.0 G (held-out index); `~/research/katka/silva` 5.1 G (reference, truth, `sample50`); `~/research/katka/work/bac.tagruns` 4.1 G; `~/research/katka/work/pc/movi` 3.7 G (index 0.55 G, rotation scratch); `~/.cache` 2.3 G; `~/research/katka/work/heldout2` 1.9 G; `~/ext/moved_2026-11-08/zenodo` 1.8 G; `~/research/katka/work/bac.bwt` and `bac.S` 1.1 G each (build intermediates); `~/research/katka/work/dg.tagruns` 0.9 G; `~/research/katka/work/bac.tag` 0.8 G.
+- **Deleted** (results all committed): `~/research/katka/work/heldout`, `heldout2`, `mbuild`; `queue/{dial,uniform,timing,grammar}`; rotation scratch (`pc/movi/{r2,r3,r4,split,t,t2–t4,t5,t6}`, MEM dumps, `t14/ref.*`); tag-run caches (`*.tagruns`) and `.S`/`.bwt` build intermediates in `~/research/katka/work` and `pc/`; `bac.efcsa.v1`, `bridge.bin` (select prototype), `classify_check`; `~/.cache`; `~/ext/moved_2026-11-08/zenodo` (after copying it to the drive, checksums verified); the desktop's own scratch (`~/tool/ef_sel` worktree, `~/tool/movi_clean`, `/tmp` test builds).
+- **Moved** to the external drive, `moved_2026-11-08/` (each checked by file count and byte total before deleting): `zymo` (47 GB), `zycheck`, `shortcuts_build`, `KATKA-git`, `zenodo`, and `rz/{KATKA-repo,KATKA-repo-new,KATKA-readable,KATKA.tar.gz}`. Note: `~/research/rlbwt-tricks/STPD-index`'s build was configured with `~/zycheck/stpd/linker_lang_shim.cmake`, now at `moved_2026-11-08/zycheck/stpd/`; only a re-configure needs it.
+- **Kept on purpose:** `~/research/rlbwt-tricks/shortcuts` (17 GB, almost all `chr19_scaling`: the HPRC chr19 haplotypes behind More RLBWT Tricks' scaling experiments; Travis asked to move it, but held for the CPM work, his call); `~/research/rlbwt-tricks/chr19` (22 GB, the chr19 indexes for the same paper); `~/research/katka/work/pc` (4.9 GB, the paper's index: Movi 2, RLCSAs, all tag arrays); `~/research/katka/silva`, `~/research/katka/KATKA`, `~/research/mem-finding`, `~/research/deps`.
 - **Candidates, for whoever decides:**
-  - After CPM: `~/shortcuts/chr19_scaling` (17 GB) and `~/tool/chr19` (22 GB) to the drive.
+  - After CPM: `~/research/rlbwt-tricks/shortcuts/chr19_scaling` (17 GB) and `~/research/rlbwt-tricks/chr19` (22 GB) to the drive.
   - `~/.config/Claude` (19 GB, 17 GB of it `vm_bundles`): the Claude desktop app's own data, not the desktop session's; clear it from the app if unused.
-  - `~/tool/silva`'s older `X`-separator index (`bac.*`, about 3.5 GB) and the digested index (`dg.*`, 1.1 GB): neither is in the paper now (`pc/` is). Deletable.
+  - `~/research/katka/work`'s older `X`-separator index (`bac.*`, about 3.5 GB) and the digested index (`dg.*`, 1.1 GB): neither is in the paper now (`pc/` is). Deletable.
   - In `pc/`, everything but the default (Movi 2 `movi/idx` + `bac.tag` + `bac.tbl`, about 1.4 GB): the RLCSAs and other tag arrays, about 3.5 GB, rebuildable with `scripts/reproduce/01_build.sh`.
-  - `~/tool/silva/k2` (0.6 GB) and `tagger` (0.8 GB): Kraken 2 and Tagger indexes, rebuildable in 2 and 15 minutes.
-  - `~/tool/movi_build` (0.5 GB, the paper's Movi 2 build; `movi/build_movi.sh` makes a new one). `~/tool/mem_build` (0.1 GB): an old worktree of MEM-finding at 0db8992 with uncommitted edits to `main.cpp`, `rlcsa.hpp`, `dial_toy.sh` from an earlier session; look before removing (`git -C ~/rz/MEM-finding worktree remove`).
-  - Small: `~/rz/STPD-index` 0.5 GB, `~/rz/test-small` 0.3 GB, `~/Hybrid-FM-CSA` 0.15 GB, `~/cmake-3.31.8*` 0.2 GB (used by the STPD build), `~/snap` 0.4 GB, `~/Downloads` 0.2 GB.
+  - `~/research/katka/work/k2` (0.6 GB) and `tagger` (0.8 GB): Kraken 2 and Tagger indexes, rebuildable in 2 and 15 minutes.
+  - `~/research/deps/movi_build` (0.5 GB, the paper's Movi 2 build; `movi/build_movi.sh` makes a new one). `~/research/archive/mem_build-worktree` (0.1 GB): an old worktree of MEM-finding at 0db8992 with uncommitted edits to `main.cpp`, `rlcsa.hpp`, `dial_toy.sh` from an earlier session; look before removing (`git -C ~/research/mem-finding worktree remove`).
+  - Small: `~/research/rlbwt-tricks/STPD-index` 0.5 GB, `~/research/archive/test-small` 0.3 GB, `~/research/hybrid-fm-csa` 0.15 GB, `~/cmake-3.31.8*` 0.2 GB (used by the STPD build), `~/snap` 0.4 GB, `~/Downloads` 0.2 GB.
   - On the drive: `moved_2026-11-05/heldout_samples` and `heldout2_runs` (the held-out test, now out of the paper).
 
-**Reads on Zenodo (2026-11-08): https://doi.org/10.5281/zenodo.24053299**, uploaded by Travis from `~/rz/zenodo/` (1.8 GB): `MSv1.1.tar` … `MSv3.3.tar` (each 8 gzipped FASTQ files of 200,000 reads, checked, and the 4 truth files), `README.md` (how they were made, layout, truth format, the paper) and `SHA256SUMS`. MSv1.1 is `~/rz/silva/work/reads/sample50` (identical to `reads_every50`, and its truth files to the ones the scoring used), renamed `<region>_<mate>.fq.gz`. The held-out repeats were not run: the held-out test is out of the paper.
+**Reads on Zenodo (2026-11-08): https://doi.org/10.5281/zenodo.24053299**, uploaded by Travis from `~/ext/moved_2026-11-08/zenodo/` (1.8 GB): `MSv1.1.tar` … `MSv3.3.tar` (each 8 gzipped FASTQ files of 200,000 reads, checked, and the 4 truth files), `README.md` (how they were made, layout, truth format, the paper) and `SHA256SUMS`. MSv1.1 is `~/research/katka/silva/work/reads/sample50` (identical to `reads_every50`, and its truth files to the ones the scoring used), renamed `<region>_<mate>.fq.gz`. The held-out repeats were not run: the held-out test is out of the paper.
 
-**New KATKA repository (2026-11-08), pushed:** github.com/TravisGagie/KATKA `main` = 43fefdd (local clone `~/rz/KATKA-gh`); the old main is the tag `archive/rz-index-2026-11-04` on GitHub. `paper/` there belongs to the chat session. Contents: `src/` (index, search, tags, classify; 2,746 lines, from `tool/`'s 6,408), `movi/` (two patches against Movi 2 9bc0acc and `build_movi.sh`), `scripts/build`, `run`, `score`, `reproduce` (00–07, every number of the paper's table and text), `tests/`, `docs/` (formats, configurations with the final table, credit schemes, limitations), `paper/` (empty: the source is with the chat session). Checks: selftest passes; `find` outputs and index files byte-identical to `tool/`'s on SILVA and the toy data; the patched Movi 2 rebuilt from `movi/` with 12 threads gives, merged, the paper's `find` output with RLE, SLP and s = 4 tags; `scripts/run/toy.sh` runs end to end. MEM-finding is unchanged as the archive.
+**New KATKA repository (2026-11-08), pushed:** github.com/TravisGagie/KATKA `main` = 43fefdd (local clone `~/research/katka/KATKA`); the old main is the tag `archive/rz-index-2026-11-04` on GitHub. `paper/` there belongs to the chat session. Contents: `src/` (index, search, tags, classify; 2,746 lines, from `tool/`'s 6,408), `movi/` (two patches against Movi 2 9bc0acc and `build_movi.sh`), `scripts/build`, `run`, `score`, `reproduce` (00–07, every number of the paper's table and text), `tests/`, `docs/` (formats, configurations with the final table, credit schemes, limitations), `paper/` (empty: the source is with the chat session). Checks: selftest passes; `find` outputs and index files byte-identical to `tool/`'s on SILVA and the toy data; the patched Movi 2 rebuilt from `movi/` with 12 threads gives, merged, the paper's `find` output with RLE, SLP and s = 4 tags; `scripts/run/toy.sh` runs end to end. MEM-finding is unchanged as the archive.
 
 **For the paper, re-posting 2026-11-08 (items A1–A10).** All final (A9 skipped at the chat session's request).
 
@@ -178,7 +180,7 @@ Also new: `katka bwt` (libsais) and `katka bwt -d` (one string per dataset, like
   ```
   mkdir -p /mnt/ext/tmp
   systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "blam: %e s, peak %M KB" \
-    ~/rz/MEM-finding/tool/bin/katka index --tags --by-tag --no-rmq --tag-out /dev/null --tag-lcp 0,10,30,100,1000 --tmp /mnt/ext/tmp ~/zymo/hpc/zy > blam.zymo.err 2>&1
+    ~/research/mem-finding/tool/bin/katka index --tags --by-tag --no-rmq --tag-out /dev/null --tag-lcp 0,10,30,100,1000 --tmp /mnt/ext/tmp ~/zymo/hpc/zy > blam.zymo.err 2>&1
   ```
 
   For SILVA, the same command on its index without `--by-tag` if its tags are per genome, as in `results/silva_profile/`. Its text fits the budget, so it is compared directly. Report the `tag runs rho` and `lambda = ...` lines (B_λ and the bound), the time and peak, and the run count against the cached `.tagruns` (it must be equal). Put the results in `tool/results/blam/`.
@@ -225,7 +227,7 @@ Their text has no separators, so a match can run across the junction between two
 1. Build their code (pinned; its CMake fetches sdsl, malloc_count and gsacak, and needs `chromium.googlesource.com`). The first `make` fails with "divsufsort.h: No such file or directory"; reconfiguring with the generated include directory fixes it:
 
    ```
-   git clone https://github.com/regindex/STPD-index ~/rz/STPD-index && cd ~/rz/STPD-index && git checkout 8a432a4
+   git clone https://github.com/regindex/STPD-index ~/research/rlbwt-tricks/STPD-index && cd ~/research/rlbwt-tricks/STPD-index && git checkout 8a432a4
    mkdir -p build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release && (make -j4 || true)
    cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-I$PWD/_deps/sdsl-build/external/libdivsufsort/include" && make -j4
    ```
@@ -233,16 +235,16 @@ Their text has no separators, so a match can run across the junction between two
 2. Add the STPD sample (with φ⁻¹) to katka's chr19 index of the same collection, e.g. 16 individuals (`c33` from "Chromosome 19" above). It rebuilds the RLBWT too, which is quick:
 
    ```
-   cd ~/tool/chr19 && $T index --stpd c33
+   cd ~/research/rlbwt-tricks/chr19 && $T index --stpd c33
    ```
 
 3. Run the comparison (single-threaded, pinned; L = 1000, then 100):
 
    ```
-   cd ~/tool/chr19
-   BIGBWT=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt OURS=$PWD/c33 PIN=0 \
-     ~/rz/MEM-finding/tool/experiments/stpd_index_chr19.sh ~/rz/STPD-index list33.tsv queries.fa stpd33 1000
-   OURS=$PWD/c33 PIN=0 ~/rz/MEM-finding/tool/experiments/stpd_index_chr19.sh ~/rz/STPD-index list33.tsv queries.fa stpd33 100
+   cd ~/research/rlbwt-tricks/chr19
+   BIGBWT=~/research/mem-finding/katka/deps/Big-BWT/bigbwt OURS=$PWD/c33 PIN=0 \
+     ~/research/mem-finding/tool/experiments/stpd_index_chr19.sh ~/research/rlbwt-tricks/STPD-index list33.tsv queries.fa stpd33 1000
+   OURS=$PWD/c33 PIN=0 ~/research/mem-finding/tool/experiments/stpd_index_chr19.sh ~/research/rlbwt-tricks/STPD-index list33.tsv queries.fa stpd33 100
    ```
 
    The second run reuses their index in `stpd33`. Results are in `stpd33/summary.txt`, which overwrites itself, so copy it between runs.
@@ -277,10 +279,10 @@ On the synthetic reads (40-bp MEMs, k = 8), crossings would cost 0.68 steps per 
 **For the desktop (SILVA):** it needs the tool's SILVA index (`bac.S`, `bac.rlbwt`, and `bac.csa` for speed), a few thousand reads, and the listing of `katka find -L 30` on exactly those reads:
 
 ```
-cd ~/tool/silva                         # where katka index --preset silva built bac.*
+cd ~/research/katka/work                         # where katka index --preset silva built bac.*
 head -n 20000 READS.fq > blocks_reads.fq      # 5,000 reads (FASTQ: 4 lines each), e.g. one region's mate-1 reads
 $T find -L 30 -c --csa -F 10 bac blocks_reads.fq blocks_L30.listings
-~/rz/MEM-finding/tool/bin/katka-blocks bac blocks_reads.fq blocks_L30.listings -k 8,12,16 -L 30 > blocks_silva.txt 2>&1
+~/research/mem-finding/tool/bin/katka-blocks bac blocks_reads.fq blocks_L30.listings -k 8,12,16 -L 30 > blocks_silva.txt 2>&1
 ```
 
 For several regions, run it once per region, each with its own reads and listing. Memory:
@@ -354,8 +356,8 @@ A cheap fix for the random seeks, not implemented: store each sampled position a
 **For the desktop:** run `experiments/parse_oracle_chr19.sh` on the 16-individual index, which has `c33.S` and `c33.stpd`, with the chromosome-19 preset's syncmers and one smaller setting:
 
 ```
-cd ~/rz/MEM-finding && git pull origin tool && make -C tool
-PIN=9 ~/rz/MEM-finding/tool/experiments/parse_oracle_chr19.sh ~/tool/chr19/c33 ~/tool/chr19/queries.fa ~/tool/chr19/poracle33 51,12 31,8
+cd ~/research/mem-finding && git pull origin tool && make -C tool
+PIN=9 ~/research/mem-finding/tool/experiments/parse_oracle_chr19.sh ~/research/rlbwt-tricks/chr19/c33 ~/research/rlbwt-tricks/chr19/queries.fa ~/research/rlbwt-tricks/chr19/poracle33 51,12 31,8
 ```
 
 It needs `c33.rlbwt` too (for `find`), but not `c33.bwt`. Each oracle is built in `poracle33/k51s12/` and `poracle33/k31s8/` next to links to c33's files, so c33 is not changed. Single-threaded, it runs `--stpd --no-intervals` and `--stpd --locate` at L = 1000 and 100, and FB at L = 1000, each with the text and with each oracle. It cmps every oracle output against the text's and writes `poracle33/summary.txt` (sizes, times, peaks, seek counts). The plain-text runs hold the 4.07 GB text. The oracle runs should take about 1 GB. Copy `summary.txt` and the `*.log` files to `tool/results/chr19/poracle33/` and push.
@@ -411,9 +413,9 @@ The queue is: one timing protocol, credit accuracies on all four regions, B_λ, 
   - So no post-processing is needed. Report both, as the protocol asks, and take the thread count from the same line.
 - **The uniform-abundance simulation: `experiments/uniform_microbemixer.sh`.**
   ```
-  KATKA=~/tool/silva/bac EXP=~/MEM-finding/katka/cliffy-experiments/src TRAV_TO_LENGTH=$S/work/ref/trav_to_length.txt \
-    tool/experiments/uniform_microbemixer.sh ~/rz/MicrobeMixer $FASTA $S/exp1_data/tax_slv_ssu_138.1.txt \
-    $S/work/ref/rna/doc_to_traversal.txt ~/tool/silva/uniform 200000
+  KATKA=~/research/katka/work/bac EXP=~/MEM-finding/katka/cliffy-experiments/src TRAV_TO_LENGTH=$S/work/ref/trav_to_length.txt \
+    tool/experiments/uniform_microbemixer.sh ~/research/datasets/MicrobeMixer $FASTA $S/exp1_data/tax_slv_ssu_138.1.txt \
+    $S/work/ref/rna/doc_to_traversal.txt ~/research/katka/work/uniform 200000
   ```
   (`S=~/MEM-finding/katka/silva`; `$FASTA` is the SILVA reference `run_silva.sh` simulates from.)
   - It lists every genus of the reference (`doc_to_traversal.txt`) in an abundance table, then runs MicrobeMixer per region (V1_V2, V3_V4, V4_V4, V4_V5), with the same primers and command line as `katka/silva/run_silva.sh`.
@@ -443,18 +445,18 @@ Everything the desktop's SILVA queue needs, as one runner, `experiments/silva_qu
   cd ~ && git clone https://gitlab.com/manzai/bigrepair && make -C bigrepair && pip install psutil
   ```
   (bigrepair's driver is a Python script that needs psutil.)
-- The rest is in place already: the undigested index `~/tool/silva/bac` (`index --preset silva`, see "SILVA" below; it has the tag-run cache `bac.tagruns`), `~/tool/silva/list.tsv`, Big-BWT in `katka/deps`, MicrobeMixer in `katka/MicrobeMixer`, cliffy-experiments in `katka/cliffy-experiments`, and the reads and truth under `katka/silva/work`.
+- The rest is in place already: the undigested index `~/research/katka/work/bac` (`index --preset silva`, see "SILVA" below; it has the tag-run cache `bac.tagruns`), `~/research/katka/work/list.tsv`, Big-BWT in `katka/deps`, MicrobeMixer in `katka/MicrobeMixer`, cliffy-experiments in `katka/cliffy-experiments`, and the reads and truth under `katka/silva/work`.
 
 **The queue, in its order** (each step skips work whose output exists, so a step can be rerun after a failure):
 
 ```
 cd ~/MEM-finding && git pull && make -C tool
-BIGREPAIR=~/bigrepair/bigrepair tool/experiments/silva_queue.sh timing credit blam grammar digests uniform
+BIGREPAIR=~/research/deps/bigrepair-home/bigrepair tool/experiments/silva_queue.sh timing credit blam grammar digests uniform
 tool/experiments/silva_queue.sh collect                  # the small outputs to tool/results/silva_queue, to commit
 python3 tool/scripts/silva_tables.py tool/results/silva_queue --latex
 ```
 
-Outputs go to `Q=~/tool/silva/queue`. Every timed run is capped at 11 GB (`MEMMAX`) and logs its wall time and peak memory.
+Outputs go to `Q=~/research/katka/work/queue`. Every timed run is capped at 11 GB (`MEMMAX`) and logs its wall time and peak memory.
 
 - **timing.**
   - The timing protocol, used by every timed step: `katka find` with one thread pinned to CPU 9 (`PIN`), then with 12 threads (`THREADS`), on both mates of every region.
@@ -474,7 +476,7 @@ Outputs go to `Q=~/tool/silva/queue`. Every timed run is capped at 11 GB (`MEMMA
   - It checks that every output is byte-identical to the default's.
   - It scores the outputs under proportional credit.
 - **digests.**
-  - Builds the digested index `~/tool/silva/dg` if it is not there:
+  - Builds the digested index `~/research/katka/work/dg` if it is not there:
     - `prep --digest 4,11 list.tsv dg`;
     - Big-BWT on `dg.S`;
     - `index --csa --efcsa --tags dg`;
@@ -525,8 +527,8 @@ Outputs go to `Q=~/tool/silva/queue`. Every timed run is capped at 11 GB (`MEMMA
 #### Grammar tags: built-in RePair against bigrepair (`experiments/grammar_tags.sh`)
 
 ```
-BIGREPAIR=~/bigrepair/bigrepair tool/experiments/grammar_tags.sh ~/tool/silva/bac \
-    katka/silva/work/compare/reads_every50/V1_V2_1.fq ~/tool/silva/queue/grammar -L 30 --csa -F 10
+BIGREPAIR=~/research/deps/bigrepair-home/bigrepair tool/experiments/grammar_tags.sh ~/research/katka/work/bac \
+    katka/silva/work/compare/reads_every50/V1_V2_1.fq ~/research/katka/work/queue/grammar -L 30 --csa -F 10
 ```
 
 (The `grammar` step of the runner does exactly this.) It writes `WORK/summary.txt` with each step's time and peak memory:
@@ -740,7 +742,7 @@ A table entry is the mean of the four regions' strict accuracies, each computed 
 ```
 cd ~/MEM-finding && git pull origin tool && make -C tool
 S=~/MEM-finding/katka/silva
-python3 tool/scripts/silva_alpha_fit.py $S/work/ref/rna/doc_to_traversal.txt ~/tool/silva/queue/nseq.txt \
+python3 tool/scripts/silva_alpha_fit.py $S/work/ref/rna/doc_to_traversal.txt ~/research/katka/work/queue/nseq.txt \
     $S/work/reads/aquatic/*/*_seqtax.txt
 tool/experiments/silva_queue.sh dial
 tool/experiments/silva_queue.sh collect
@@ -768,7 +770,7 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 - **Three things for the cloud session:**
   - **`bayesauto`'s fit fails on SILVA.** ε = 0.5, the top of the grid, in all 12 runs, with the log-likelihood still rising there; the toy fitted 0.03 to 0.2. The accuracy above is for ε = 0.5, so don't describe it as fitted.
   - **`scripts/simulate_dial.py` has no `__main__` guard.** Python 3.14's default start method, forkserver, re-imports the script, reruns `art(jobs)` at line 114, and the `Pool` at line 96 raises multiprocessing's bootstrapping `RuntimeError`. The first dial stopped there at α = 1, V1_V2, with nothing simulated. The rerun set the start method to `fork` from outside (`PYTHONPATH` with a `sitecustomize.py`), without changing the script. The script needs a guard or `multiprocessing.get_context("fork")`.
-  - **`silva_queue.sh collect` copies 3.5 GB** (grammar binaries, `out.*`, tags) into `results/silva_queue`, and those can't be committed. The desktop deletes files over 1 MB after each collect. That also removes `dial/a*/<region>.seqtax.txt`, so `dial_tables.py tool/results/silva_queue`, as in the steps above, reports them missing and exits 1. It was run on `~/tool/silva/queue` instead.
+  - **`silva_queue.sh collect` copies 3.5 GB** (grammar binaries, `out.*`, tags) into `results/silva_queue`, and those can't be committed. The desktop deletes files over 1 MB after each collect. That also removes `dial/a*/<region>.seqtax.txt`, so `dial_tables.py tool/results/silva_queue`, as in the steps above, reports them missing and exits 1. It was run on `~/research/katka/work/queue` instead.
 - **The cloud session's answers (2026-11-05, fb7c06c and before):**
   - **`simulate_dial.py`:** its `Pool` now comes from `multiprocessing.get_context("fork")`, as `score_silva.py`'s does. Checked with the start method set to forkserver.
   - **`bayesauto`:** the fit isn't broken. The likelihood really is still rising at 0.5.
@@ -780,7 +782,7 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 
     ```
     cd ~/MEM-finding && git pull origin tool
-    rm -f ~/tool/silva/queue/dial/a*/credit/bayesauto.*
+    rm -f ~/research/katka/work/queue/dial/a*/credit/bayesauto.*
     tool/experiments/silva_queue.sh dial collect
     python3 tool/scripts/dial_tables.py tool/results/silva_queue
     ```
@@ -801,7 +803,7 @@ python3 tool/scripts/dial_tables.py tool/results/silva_queue
 - **For the cloud session:** `tests/test_score_schemes.py` gives 25 "reference" failures on the desktop with the toy's files and with the real reference, on fb7c06c's scorer as well as with the change above, while `dial_toy.sh` passes. So the change didn't cause them, but it hasn't been tested by that suite either. The failures start at "reference: freq".
 
 **Time and memory on the desktop** (estimates; the toy runs in under a minute):
-- **The simulation,** for α = 1, 0 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/tool/silva/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
+- **The simulation,** for α = 1, 0 and −1, each over 4 regions: each region costs about one MicrobeMixer run, mostly reading SILVA and extracting regions, with ART much faster. The uniform step's runs are the measure: see the timestamps of `~/research/katka/work/queue/uniform/work/<region>/stdout.log`. Memory is MicrobeMixer's, within the 4.5 GB the uniform step ran in.
 - **The searches:** 24 runs of 200,000 reads with 12 threads, a few seconds each.
 - **The scoring** (genus level only):
   - Six single schemes at about 15 s each.
@@ -970,18 +972,18 @@ Every variant gave the same MEMs.
 - **Status:** not started in code. The three pieces it needs are a phrase-text range lookup (`.ptxt`), Ψ on Δ (select on the block BWT), and the co-lex wavelet tree, plus the counting argument for runs that continue past b′. The rule stands: exact intervals or nothing, so no approximate version was tried.
 - **What it could save:** the entry and end steps measured above, 55–58% and 42–45% of the steps at match ends. On the 2 Mb data that is 0.0011 (smallest successor) to 0.0106 (most frequent successor) parse steps per character at N = 1024. At about 0.2 µs per step that is under 0.1 s of a 1 s search, so a few percent on these data. It could be more where matches are shorter and match ends more frequent.
 
-**For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/tool/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/shortcuts/chr19_scaling/queries.txt`:
+**For the desktop: chr19 with 16, 32 and 64 individuals.** This reuses the existing indexes (`~/research/rlbwt-tricks/chr19/c33`, `c65`, `c129`, built with `index --preset chr19`) and the patterns from `~/research/rlbwt-tricks/shortcuts/chr19_scaling/queries.txt`:
 
 ```
 cd ~/MEM-finding && git pull origin tool && make -C tool
-EXISTING=$HOME/tool/chr19/c%d PIN=9 tool/experiments/block_scaling.sh ~/shortcuts/chr19_scaling ~/tool/chr19/blocks "33 65 129" 1000
-cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv     # and commit, with the printed table
+EXISTING=$HOME/research/rlbwt-tricks/chr19/c%d PIN=9 tool/experiments/block_scaling.sh ~/research/rlbwt-tricks/shortcuts/chr19_scaling ~/research/rlbwt-tricks/chr19/blocks "33 65 129" 1000
+cp ~/research/rlbwt-tricks/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv     # and commit, with the printed table
 ```
 
-- **What it builds:** for each n, the most frequent successor's `.lvl` (under `~/tool/chr19/blocks/c<n>f`, linked to the existing text, BWT and RLCSA), and the smallest successor's `.lvl` once more, under a probe prefix, only for its statistics; the probe is deleted.
+- **What it builds:** for each n, the most frequent successor's `.lvl` (under `~/research/rlbwt-tricks/chr19/blocks/c<n>f`, linked to the existing text, BWT and RLCSA), and the smallest successor's `.lvl` once more, under a probe prefix, only for its statistics; the probe is deleted.
 - **Cost:** each two-level build is the two-level step of the original build: about 200 s and 4.6 GB at 33, 360 s and 5.2 GB at 65, and 700 s and 8.3 GB at 129. Then four searches per n of 5–10 s each.
 - **In all:** about 45 minutes, within the 11 GB cap.
-- **If `c129` was deleted for disk space:** put a link `collection.txt -> hprc_chr19` in `~/shortcuts/chr19_scaling` and run without `EXISTING` for 129, with `BIGBWT=~/rz/MEM-finding/katka/deps/Big-BWT/bigbwt`. It needs about 40 GB of disk, as before.
+- **If `c129` was deleted for disk space:** put a link `collection.txt -> hprc_chr19` in `~/research/rlbwt-tricks/shortcuts/chr19_scaling` and run without `EXISTING` for 129, with `BIGBWT=~/research/mem-finding/katka/deps/Big-BWT/bigbwt`. It needs about 40 GB of disk, as before.
 - **Optional:** `L = 100` instead of 1000 is the paper's other threshold.
 - **Capped blocks as well:** add `CAPS="16 64"`, which builds the most frequent successor with blocks of at most 16 and 64 phrases. Each cap costs one more two-level build per n.
 
@@ -999,7 +1001,7 @@ cp ~/tool/chr19/blocks/blocks.tsv tool/results/block_scaling/chr19_blocks.tsv   
 - **As on the synthetic pangenomes, the expectation holds for block length but search doesn't get faster.** Under the smallest successor, phrases per block fall from 9.52 to 7.15 as the individuals quadruple. Under the most frequent they stay at about 30, and as the patterns see them they rise from 21.5 to 25.5.
 - **The fall on chr19 is mild.** As the patterns see it, the smallest successor's block length barely moves (6.93, 6.95, 6.37).
 - **The most frequent successor takes more steps at every n,** in parse plus block steps, and its extra parse steps are again at the ends of searches (entry and end, in the table's second part). Times are the same within noise, and block steps save 30–40% of the time under both rules.
-- **The c129 run:** `c129.S` and `c129.bwt` had been deleted for disk space, so they were rebuilt on the external drive and linked (`~/ext/chr19_c129`; prep and Big-BWT took 33 minutes, the `.tbl` and `.info` match). `c129.rlbwt`, which `index` rewrites from the BWT, kept the same SHA-256, so the rebuilt BWT gives the same RLBWT as the original. The `.lvl` builds at 129 took about 30 minutes each against the estimated 12, reading from that drive. DATA was `~/shortcuts/chr19_scaling/hprc_chr19`, so no link was needed.
+- **The c129 run:** `c129.S` and `c129.bwt` had been deleted for disk space, so they were rebuilt on the external drive and linked (`~/ext/chr19_c129`; prep and Big-BWT took 33 minutes, the `.tbl` and `.info` match). `c129.rlbwt`, which `index` rewrites from the BWT, kept the same SHA-256, so the rebuilt BWT gives the same RLBWT as the original. The `.lvl` builds at 129 took about 30 minutes each against the estimated 12, reading from that drive. DATA was `~/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19`, so no link was needed.
 
 ### Cliffy (2026-11-04)
 
@@ -1039,7 +1041,7 @@ Cliffy, github.com/oma219/cliffy at `3763529`, built here with `katka/silva/buil
 
 `CHR19.md` is the guide for others (Eddie Ferro's group): the commit, the build, the data, the commands for Table 1, Table 2 and the locating paragraph, their expected outputs, and using two-level search with blocks from code.
 - **The driver:** `experiments/chr19_paper.sh` (`build`, `table1`, `table2`, `locating`, `all`). It checks every output against plain search and writes the tables in the paper's layout.
-- **The data:** `experiments/hprc_chr19.py`. It reuses `chr19/twolevel/download_hprc_chr19.py`'s download code for the 16 individuals, or takes a manifest. **For the desktop:** write `experiments/hprc_chr19_64.tsv` from the sources of `~/shortcuts/chr19_scaling/hprc_chr19`: role, sample, haplotype, sequence name, length, number of N, for CHM13, the 128 haplotypes in collection order, and the two queries. Then `CHR19.md`'s data section works for 32 and 64 individuals.
+- **The data:** `experiments/hprc_chr19.py`. It reuses `chr19/twolevel/download_hprc_chr19.py`'s download code for the 16 individuals, or takes a manifest. **For the desktop:** write `experiments/hprc_chr19_64.tsv` from the sources of `~/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19`: role, sample, haplotype, sequence name, length, number of N, for CHM13, the 128 haplotypes in collection order, and the two queries. Then `CHR19.md`'s data section works for 32 and 64 individuals.
 - **The API example:** `experiments/twolevel_example.cpp`. Its MEMs and intervals are byte-identical to `katka find`'s.
 - **The synthetic check:** `experiments/chr19_synthetic.py`.
 
@@ -1072,7 +1074,7 @@ On the self-test reads: 24,480 runs (6,426 fallbacks) and 2,040 runs; on the hom
 **For the desktop (Zymo, as in `results/zymo_kebab/`):** for t in 1, 3 and 5, and T in t and 2t:
 
 ```
-K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+K=~/research/mem-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
 $K find $Z -L 20 -K 20 --kebab-check $T $t          --read-stats e.$T.$t.tsv  $H $R e.$T.$t     # exact check rule
 $K find $Z -L 20 -K 20 --kebab-check $T $t --strict --read-stats es.$T.$t.tsv $H $R es.$T.$t    # strict (ties)
 ```
@@ -1109,7 +1111,7 @@ A pseudo-MEM shorter than the current L is skipped (no backward steps) and not c
 **For the desktop (Zymo, `~/zymo/hpc/zy`, `~/zymo/all.fq`; one run at a time, 12 threads, in the 11 GB cgroup as in `results/zymo/run_scripts/runs2.sh`).** After `git pull origin tool && make -C tool` and `tool/selftest.sh`, for t in 1, 3 and 5:
 
 ```
-K=~/rz/MEM-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
+K=~/research/mem-finding/tool/bin/katka; H=~/zymo/hpc/zy; R=~/zymo/all.fq; Z="-U -D 14 -c --csa -j 12 --stats"
 $K find $Z -L 20 -K 20 --kebab-top $t   --read-stats a.$t.tsv $H $R a.$t      # (a) heuristic
 $K find $Z -L 20 -K 20 --kebab-batch $t --read-stats b.$t.tsv $H $R b.$t      # (b) batch rule
 $K find $Z -L 1  -K 20 --kebab-batch $t --read-stats b1.$t.tsv $H $R b1.$t    # (b') batch rule with L = 1 (the fallback can run)
@@ -1156,8 +1158,8 @@ Decoding is exact (X and $ come back as themselves), so every comparison gives t
 **For the desktop (c33):**
 
 ```
-cd ~/rz/MEM-finding && git pull origin tool && make -C tool
-cd ~/tool/chr19 && ~/rz/MEM-finding/tool/bin/katka index --parse-oracle c33 2>&1 | grep "parse oracle"
+cd ~/research/mem-finding && git pull origin tool && make -C tool
+cd ~/research/rlbwt-tricks/chr19 && ~/research/mem-finding/tool/bin/katka index --parse-oracle c33 2>&1 | grep "parse oracle"
 ```
 
 That rebuilds `c33.ptxt` (reading only `c33.S`). Its line gives the new dictionary size, the number of phrases with exceptions and the total. (`stpd_parse_chr19.sh` also rebuilds a `.ptxt` of the old format by itself. The `.pstpd` does not depend on the dictionary's format.)
@@ -1216,11 +1218,11 @@ For comparison: two-level search with blocks reads 979 MB (RLBWT, RLCSA, `.lvl`)
 **For the desktop (c33, then c65 if it fits):**
 
 ```
-cd ~/rz/MEM-finding && git pull origin tool && make -C tool && tool/selftest.sh
-cd ~/tool/chr19
-systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "tloc: %e s, peak %M KB" ~/rz/MEM-finding/tool/bin/katka index --twolevel-locate c33 > tloc33.err 2>&1
+cd ~/research/mem-finding && git pull origin tool && make -C tool && tool/selftest.sh
+cd ~/research/rlbwt-tricks/chr19
+systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "tloc: %e s, peak %M KB" ~/research/mem-finding/tool/bin/katka index --twolevel-locate c33 > tloc33.err 2>&1
 for L in 1000 100; do
-  taskset -c 9 ~/rz/MEM-finding/tool/bin/katka find -L $L --format mems --csa --twolevel --locate --stats c33 queries.fa tlloc$L.33.tsv 2> tlloc$L.33.err
+  taskset -c 9 ~/research/mem-finding/tool/bin/katka find -L $L --format mems --csa --twolevel --locate --stats c33 queries.fa tlloc$L.33.tsv 2> tlloc$L.33.err
 done
 ```
 
@@ -1355,8 +1357,8 @@ Components (MB): plain parse 7.6; boundaries 2.8; dictionary strings 33.1 (+ off
 **For the desktop.** Run on the 16-individual index:
 
 ```
-cd ~/rz/MEM-finding && git pull origin tool && make -C tool && tool/selftest.sh
-PIN=9 ~/rz/MEM-finding/tool/experiments/stpd_parse_chr19.sh ~/tool/chr19/c33 ~/tool/chr19/queries.fa ~/tool/chr19/stpd_parse33
+cd ~/research/mem-finding && git pull origin tool && make -C tool && tool/selftest.sh
+PIN=9 ~/research/mem-finding/tool/experiments/stpd_parse_chr19.sh ~/research/rlbwt-tricks/chr19/c33 ~/research/rlbwt-tricks/chr19/queries.fa ~/research/rlbwt-tricks/chr19/stpd_parse33
 ```
 
 The script adds `c33.ptxt` and `c33.pstpd` next to c33 (`index --stpd-parse`, which reads only `c33.S` and `c33.lvl`), and `c33.stpd` if it is missing. It runs each step in an 11 GB cgroup. Then, single-threaded and pinned, for L = 1000 and 100, it runs:
@@ -1367,7 +1369,7 @@ The script adds `c33.ptxt` and `c33.pstpd` next to c33 (`index --stpd-parse`, wh
 
 Each output is compared with plain search (MEMs, and the `--locate` counts against ep − sp). Times, peaks, counters and component sizes go to `stpd_parse33/summary.txt`.
 
-Then try 32 individuals: run the same command on `~/tool/chr19/c65`, with the work directory `stpd_parse65`. It needs `c65.bwt` once, to build `c65.stpd` through the parse oracle. That build holds O(r) and the oracle, not the 8 GB text; if it exceeds 11 GB, the cgroup stops it, and the summary says so.
+Then try 32 individuals: run the same command on `~/research/rlbwt-tricks/chr19/c65`, with the work directory `stpd_parse65`. It needs `c65.bwt` once, to build `c65.stpd` through the parse oracle. That build holds O(r) and the oracle, not the 8 GB text; if it exceeds 11 GB, the cgroup stops it, and the summary says so.
 
 Copy the summaries and logs (not the TSVs) to `tool/results/chr19_stpd_parse/`, then commit and push.
 
@@ -1452,7 +1454,7 @@ Big-BWT and pfp-merge are where `katka/setup_deps.sh` put them: `katka/deps/Big-
 The reference is the one built by the first step of `katka/silva/build_katka.sh`: `katka/silva/work/ref/dna/doc_<i>_seq.fa`, one file per genus, in tree order.
 
 ```
-S=$HOME/MEM-finding/katka/silva; mkdir -p ~/tool/silva && cd ~/tool/silva
+S=$HOME/MEM-finding/katka/silva; mkdir -p ~/research/katka/work && cd ~/research/katka/work
 n=$(cut -d' ' -f1 $S/work/ref/done)
 for i in $(seq 1 $n); do printf 'silva\t%s\n' "$S/work/ref/dna/doc_${i}_seq.fa"; done > list.tsv
 $T prep list.tsv bac
@@ -1500,10 +1502,10 @@ The tag build streams the suffix array once by φ. KATKA's construction took 7.2
 
 ### Chromosome 19
 
-`$H` is the directory `chr19/twolevel/run_final.sh` uses (`~/shortcuts/chr19_scaling/hprc_chr19`), with `collection.txt` (one sequence per line, CHM13 first, 129 lines for 64 individuals) and `queries.txt`. Take the first 33, 65 or 129 lines for 16, 32 or 64 individuals:
+`$H` is the directory `chr19/twolevel/run_final.sh` uses (`~/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19`), with `collection.txt` (one sequence per line, CHM13 first, 129 lines for 64 individuals) and `queries.txt`. Take the first 33, 65 or 129 lines for 16, 32 or 64 individuals:
 
 ```
-H=$HOME/shortcuts/chr19_scaling/hprc_chr19; mkdir -p ~/tool/chr19 && cd ~/tool/chr19
+H=$HOME/research/rlbwt-tricks/shortcuts/chr19_scaling/hprc_chr19; mkdir -p ~/research/rlbwt-tricks/chr19 && cd ~/research/rlbwt-tricks/chr19
 for n in 33 65 129; do
   mkdir -p fa$n; head -n $n $H/collection.txt | awk -v d=fa$n '{f = sprintf("%s/s%03d.fa", d, NR); print ">s" NR > f; print > f; close(f)}'
   ls fa$n/*.fa | sed 's/^/-\t/' > list$n.tsv
@@ -1540,8 +1542,8 @@ Not changed: `index --stpd` holds the text (1 byte per character) plus O(r). At 
 **For the desktop (2026-11-03): the new two-level build, at 32 and then 64 individuals.** After `git pull origin tool && make -C tool`, rebuild the 32-individual index in the same 11 GB cgroup as `run_n.sh`, keeping the old `.lvl` to compare:
 
 ```
-cd ~/tool/chr19 && mv c65.lvl c65.lvl.old
-systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "index: %e s wall, peak %M KB" ~/rz/MEM-finding/tool/bin/katka index --preset chr19 c65 > index.65.new.err 2>&1
+cd ~/research/rlbwt-tricks/chr19 && mv c65.lvl c65.lvl.old
+systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "index: %e s wall, peak %M KB" ~/research/mem-finding/tool/bin/katka index --preset chr19 c65 > index.65.new.err 2>&1
 tail -5 index.65.new.err; cmp c65.lvl c65.lvl.old && echo "same .lvl"
 ```
 

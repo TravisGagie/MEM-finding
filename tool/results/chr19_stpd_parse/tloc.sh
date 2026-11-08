@@ -1,7 +1,7 @@
 #!/bin/bash
 # two-level locating (bb42c5a): index --twolevel-locate PREFIX, then find --twolevel --locate at L = 1000 and 100,
 # pinned to CPU 9; checked against plain search (columns 1-5), ep - sp, and STPD over the parse with --locate
-P=$1; W=$2; cd ~/tool/chr19; K=~/rz/MEM-finding/tool/bin/katka; mkdir -p $W
+P=$1; W=$2; cd ~/research/rlbwt-tricks/chr19; K=~/research/mem-finding/tool/bin/katka; mkdir -p $W
 echo "== index --twolevel-locate $P $(date +%T)"
 systemd-run --user --scope -q -p MemoryMax=11G -p MemorySwapMax=0 /usr/bin/time -f "tloc: %e s wall, peak %M KB" $K index --twolevel-locate $P > $W/tloc.$P.err 2>&1; echo "exit $?"; cat $W/tloc.$P.err; ls -l $P.tloc
 for L in 1000 100; do
